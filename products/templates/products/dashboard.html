@@ -1,0 +1,426 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %} Exabay-Seller Dashboard {% endblock %}
+{% block content %}
+<div class="app-shell" id="top">
+    <aside class="sidebar" id="sidebar" aria-label="Global navigation">
+      <div class="sidebar__header">
+        <a class="brand" href="#top">
+          <span class="brand__mark">SC</span>
+          <span class="brand__text">
+            <span class="brand__eyebrow">Commerce Suite</span>
+            <span class="brand__name">Seller Console</span>
+          </span>
+        </a>
+        <a class="icon-btn icon-btn--ghost sidebar__close" href="#top" aria-label="Close navigation">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <p class="nav__label">Workspace</p>
+        <ul class="nav__list">
+          <li class="nav__item-wrapper">
+            <a class="nav__item nav__item--active" href="{% url 'products:sellerDashboard' %}">
+              <span class="nav__icon"><i class="fa-solid fa-table-columns" aria-hidden="true"></i></span>
+              <span class="nav__text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="{% url 'products:sellerDashboard' %}">
+              <span class="nav__icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+              <span class="nav__text">Products</span>
+            </a>
+          </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="#">
+              <span class="nav__icon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>
+              <span class="nav__text">Orders</span>
+            </a>
+          </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="#featured-products">
+              <span class="nav__icon"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
+              <span class="nav__text">Featured Products</span>
+            </a>
+          </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="#">
+              <span class="nav__icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+              <span class="nav__text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="#">
+              <span class="nav__icon"><i class="fa-solid fa-gear" aria-hidden="true"></i></span>
+              <span class="nav__text">Settings</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <a class="app-shell__overlay" href="#top" aria-hidden="true"></a>
+
+    <div class="app-shell__content">
+      <header class="topbar">
+        <div class="topbar__left">
+          <a class="icon-btn topbar__menu" href="#sidebar" aria-label="Open navigation">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          </a>
+
+          <!-- Update the search bar form -->
+          <form class="search-bar" id="searchForm" role="search">
+              <span class="search-bar__icon" aria-hidden="true">
+                  <i class="fa-solid fa-magnifying-glass" id="searchIcon"></i>
+                  <i class="fa-solid fa-spinner" id="searchSpinner" style="display: none; animation: spin 1s linear infinite;"></i>
+              </span>
+              <input class="search-bar__input" 
+                    type="search" 
+                    name="query" 
+                    id="searchInput"
+                    placeholder="Search products...">
+          </form>
+        </div>
+
+        <div class="topbar__actions">
+          <button class="icon-btn" type="button" aria-label="Notifications">
+            <span class="notification-dot" aria-hidden="true"></span>
+            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+          </button>
+
+          <button class="profile-menu" type="button">
+            <span class="avatar" aria-hidden="true">{{ seller_name|slice:":2"|upper }}</span>
+            <span class="profile-menu__body">
+              <span class="profile-menu__name">{{ seller_name }}</span>
+              <span class="profile-menu__meta">Store owner</span>
+            </span>
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+
+          <a class="btn btn--primary" href="{% url 'products:add_product' %}">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span>Add Product</span>
+          </a>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="page-header">
+          <div class="page-header__main">
+            <div class="page-header__copy">
+              <p class="eyebrow">Overview</p>
+              <h1 class="page-header__title">Seller Dashboard</h1>
+              <p class="page-header__subtitle">
+                {% if use_demo_data %}
+                  Showing demo values because your product table is still empty.
+                {% else %}
+                  Live product data for {{ seller_name }}.
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="page-header__aside">
+              <div class="status-card">
+                <span class="status-card__label">Catalog</span>
+                <strong class="status-card__value">{{ total_products }} Products</strong>
+                <span class="status-card__meta">
+                  {% if use_demo_data %}Demo data active{% else %}Live data active{% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="stats-heading">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="stats-heading">Catalog Snapshot</h2>
+              <p class="section__description">All values below now come from the Django context.</p>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--primary" aria-hidden="true">
+                  <i class="fa-solid fa-boxes-stacked"></i>
+                </span>
+                <span class="badge badge--neutral">Inventory</span>
+              </div>
+              <p class="metric-card__value">{{ total_products }}</p>
+              <h3 class="metric-card__label">Total Products</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--success" aria-hidden="true">
+                  <i class="fa-solid fa-circle-check"></i>
+                </span>
+                <span class="badge badge--success">Healthy</span>
+              </div>
+              <p class="metric-card__value">{{ active_products }}</p>
+              <h3 class="metric-card__label">Active Products</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--danger" aria-hidden="true">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </span>
+                <span class="badge badge--danger">Needs attention</span>
+              </div>
+              <p class="metric-card__value">{{ inactive_products }}</p>
+              <h3 class="metric-card__label">Inactive Products</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--warning" aria-hidden="true">
+                  <i class="fa-solid fa-star"></i>
+                </span>
+                <span class="badge badge--warning">Max {{ featured_limit }}</span>
+              </div>
+              <p class="metric-card__value">{{ featured_usage }}</p>
+              <h3 class="metric-card__label">Featured Products</h3>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="featured-products" aria-labelledby="featured-heading">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="featured-heading">Featured Products Module</h2>
+              <p class="section__description">The slots stay filled with placeholders until you have real featured products.</p>
+            </div>
+          </div>
+
+          <article class="panel slot-module">
+            <div class="slot-module__header">
+              <div>
+                <h3 class="slot-module__title">Featured placements</h3>
+                <p class="slot-module__description">Maximum {{ featured_limit }} products.</p>
+              </div>
+              <div class="slot-module__meter">
+                <progress class="progress" max="{{ featured_limit }}" value="{{ featured_usage }}">{{ featured_usage }} of {{ featured_limit }}</progress>
+                <span class="slot-module__usage">Featured usage: {{ featured_usage }}/{{ featured_limit }}</span>
+              </div>
+            </div>
+
+            <div class="slot-grid">
+              {% for product in featured_slots %}
+                {% if product %}
+                  <article class="slot-card" data-product-id="{{ product.id }}" style="overflow: hidden;">
+                    {% if product.image_url %}
+                      <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 16px; margin-bottom: 16px;">
+                        <img src="{{ product.image_url }}" 
+                            alt="{{ product.name }}"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                      </div>
+                    {% endif %}
+                    <div class="media-object" style="align-items: center; gap: 12px; margin-bottom: 16px;">
+                      {% if not product.image_url %}
+                        <span class="media-object__thumb media-object__thumb--blue media-object__thumb--lg" aria-hidden="true">
+                          <i class="fa-solid fa-box-open"></i>
+                        </span>
+                      {% endif %}
+                      <div class="media-object__body">
+                        <p class="media-object__title" style="font-size: 1.1rem; font-weight: 700;">{{ product.name }}</p>
+                        <p class="media-object__subtitle" style="color: var(--color-muted); font-size: 0.9rem;">Tsh {{ product.price|floatformat:"0"|intcomma }}</p>
+                      </div>
+                    </div>
+                    <div class="slot-card__footer" style="display: flex; align-items: center; justify-content: space-between;">
+                      <span class="slot-card__price" style="font-size: 1.2rem; font-weight: 700;">Tsh {{ product.price|floatformat:"0"|intcomma }}</span>
+                      <button class="btn btn--danger btn--soft btn--sm remove-featured-btn" 
+                              type="button"
+                              data-product-id="{{ product.id }}"
+                              data-product-name="{{ product.name|escapejs }}"
+                              {% if use_demo_data and not product.id %}disabled{% endif %}>
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                        <span>Remove</span>
+                      </button>
+                    </div>
+                  </article>
+                {% else %}
+                  <article class="slot-card slot-card--placeholder">
+                    <span class="slot-card__placeholder-icon" aria-hidden="true">
+                      <i class="fa-solid fa-plus"></i>
+                    </span>
+                    <div class="slot-card__placeholder-copy">
+                      <h3 class="slot-card__title">Add to Featured</h3>
+                      <p class="slot-card__description">This slot is empty.</p>
+                    </div>
+                    <button class="btn btn--secondary btn--sm btn--full" type="button" disabled>
+                      <i class="fa-solid fa-star" aria-hidden="true"></i>
+                      <span>Choose Product</span>
+                    </button>
+                  </article>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </article>
+        </section>
+
+        <section class="section" aria-labelledby="inventory-heading">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="inventory-heading">Product Inventory Table</h2>
+              <p class="section__description">Products now render from a loop instead of hardcoded rows.</p>
+            </div>
+          </div>
+
+          <article class="panel table-shell">
+            <div class="table-shell__header">
+              <div>
+                <h3 class="panel__title">Products</h3>
+                <p class="panel__description" id="tableDescription">
+                  {% if use_demo_data %}
+                    These are fallback demo products.
+                  {% else %}
+                    These are your live seller products.
+                  {% endif %}
+                </p>
+              </div>
+              <span class="badge badge--neutral" id="itemCount">{{ page_obj.paginator.count }} items</span>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead class="data-table__head">
+                  <tr class="data-table__row">
+                    <th class="data-table__cell" scope="col">Product Image</th>
+                    <th class="data-table__cell" scope="col">Name</th>
+                    <th class="data-table__cell" scope="col">Price</th>
+                    <th class="data-table__cell" scope="col">Stock</th>
+                    <th class="data-table__cell" scope="col">Status</th>
+                    <th class="data-table__cell" scope="col">Featured</th>
+                    <th class="data-table__cell data-table__cell--actions" scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="data-table__body" id="productsTableBody">
+                {% for product in products %}
+                  <tr class="data-table__row">
+                    <td class="data-table__cell">
+                      {% if product.image_url %}
+                        <img class="media-object__thumb" 
+                             src="{{ product.image_url }}" 
+                             alt="{{ product.name }}"
+                             style="width: 48px; height: 48px; object-fit: cover; border-radius: 12px;">
+                      {% else %}
+                        <span class="media-object__thumb media-object__thumb--slate" aria-hidden="true">
+                          <i class="fa-solid fa-image"></i>
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td class="data-table__cell">
+                      <div class="table-item">
+                        <strong class="table-item__title">{{ product.name }}</strong>
+                      </div>
+                    </td>
+                    <td class="data-table__cell">Tsh {{ product.price|floatformat:"0"|intcomma }}</td>
+                    <td class="data-table__cell">{{ product.stock }}</td>
+                    <td class="data-table__cell">
+                      {% if product.is_available %}
+                        <span class="badge badge--success available-badge">Active</span>
+                      {% else %}
+                        <span class="badge badge--danger available-badge">Inactive</span>
+                      {% endif %}
+                    </td>
+                    <td class="data-table__cell">
+                        {% if product.is_featured %}
+                          <span class="badge badge--warning featured-badge">Featured</span>
+                        {% else %}
+                          <span class="badge badge--neutral featured-badge">Not featured</span>
+                        {% endif %}
+                    </td>
+                    <td class="data-table__cell data-table__cell--actions">
+                      <div class="table-actions">
+                        {% if product.id %}
+                          <a class="btn btn--secondary btn--sm" href="{% url 'products:product_update' product.id %}">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                            <span>Edit</span>
+                          </a>
+                          <button class="btn btn--danger btn--soft btn--sm delete-product-btn" 
+                                  data-product-id="{{ product.id }}"
+                                  data-product-name="{{ product.name|escapejs }}"
+                                  type="button">
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                            <span>Delete</span>
+                          </button>
+                        {% else %}
+                          <button class="btn btn--secondary btn--sm" type="button" disabled>
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                            <span>Edit</span>
+                          </button>
+                          <button class="btn btn--danger btn--soft btn--sm" type="button" disabled>
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                            <span>Delete</span>
+                          </button>
+                        {% endif %}
+                        <button class="btn btn--success btn--sm toggle-featured-btn" 
+                                data-product-id="{{ product.id }}"
+                                type="button" 
+                                {% if use_demo_data or not has_featured_field or not product.id %}disabled{% endif %}>
+                          <i class="fa-solid fa-star" aria-hidden="true"></i>
+                          <span>{% if product.is_featured %}Unfeature{% else %}Feature{% endif %}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr class="data-table__row">
+                    <td class="data-table__cell" colspan="7">No products found.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+              </table>
+            </div>
+
+            <footer class="pagination" aria-label="Pagination" id="paginationFooter">
+              <p class="pagination__summary" id="paginationSummary">
+                Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} products
+              </p>
+              <div class="pagination__controls" id="paginationControls"></div>
+                {% if page_obj.has_previous %}
+                  <a class="pagination__button" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    <span>Previous</span>
+                  </a>
+                {% else %}
+                  <button class="pagination__button" type="button" disabled>
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    <span>Previous</span>
+                  </button>
+                {% endif %}
+
+                <span class="pagination__button pagination__button--active">{{ page_obj.number }}</span>
+
+                {% if page_obj.has_next %}
+                  <a class="pagination__button" href="?page={{ page_obj.next_page_number }}">
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                  </a>
+                {% else %}
+                  <button class="pagination__button" type="button" disabled>
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                  </button>
+                {% endif %}
+              </div>
+            </footer>
+          </article>
+        </section>
+      </main>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+<script src="{% static 'products/productsJS/toggle_editing.js' %}"></script>
+<script src="{% static 'products/productsJS/search_product.js' %}"></script>
+{% endblock %}

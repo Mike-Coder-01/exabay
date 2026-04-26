@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Products | Seller Dashboard</title>
+  <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
+</head>
+<body class="dashboard">
+  <main class="page">
+    <section class="page__hero">
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+      <a href="{% url 'products:sellerDashboard' %}" class="btn btn--secondary" style="min-height: 40px; padding: 0 16px;">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+    
+      <div class="page__badge">Seller Workspace</div>
+      <h1 class="page__title">Add Products</h1>
+      <p class="page__subtitle">Create and manage your products easily</p>
+    </section>
+
+    <section class="workspace-card">
+      <div class="workspace-card__top">
+        <div class="workspace-card__intro">
+          <span class="counter-badge" id="featuredCounter">Featured: 0 / 3</span>
+          <p class="workspace-card__hint">
+            Create one product or an entire batch in a single flow. New cards carry over the last selected category, while image previews stay isolated inside each product card.
+          </p>
+        </div>
+
+        <button class="btn btn--secondary" id="addProductButton" type="button">
+          + Add Another Product
+        </button>
+      </div>
+
+      <div class="status-banner" id="featuredWarning" role="alert" aria-live="assertive" hidden></div>
+
+      <noscript>
+        <div class="status-banner status-banner--warning">
+          JavaScript is required to add products dynamically and preview uploaded images in this demo.
+        </div>
+      </noscript>
+
+      <form class="product-form" id="productForm" novalidate>
+        {% csrf_token %}
+        <div class="product-list" id="productList"></div>
+
+        <div class="page-actions">
+          <button class="btn btn--primary" type="submit">Save Products</button>
+          <button class="btn btn--secondary" id="cancelButton" type="button">Cancel</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <template id="productCardTemplate">
+    <article class="product-card" data-product-card>
+      <div class="product-card__header">
+        <div class="product-card__heading">
+          <p class="product-card__eyebrow">Product Setup</p>
+          <h2 class="product-card__title" data-product-title>Product #1</h2>
+        </div>
+
+        <button class="btn btn--danger btn--small product-card__remove" data-remove-product type="button">
+          Remove
+        </button>
+      </div>
+
+      <div class="product-card__grid">
+        <div class="form-group form-group--category">
+          <label class="form-group__label" data-label-for="category">Category</label>
+          <select class="form-input" data-field="category" required>
+            <option value="" selected disabled>Select a category</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group form-group--name">
+          <label class="form-group__label" data-label-for="name">Name</label>
+          <input
+            class="form-input"
+            data-field="name"
+            type="text"
+            maxlength="120"
+            placeholder="Enter a product name"
+            required
+          >
+        </div>
+
+        <div class="form-group form-group--description">
+          <label class="form-group__label" data-label-for="description">Description</label>
+          <textarea
+            class="form-input form-input--textarea"
+            data-field="description"
+            rows="5"
+            placeholder="Write a short, compelling product description"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group form-group--price">
+          <label class="form-group__label" data-label-for="price">Price</label>
+          <input
+            class="form-input"
+            data-field="price"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            required
+          >
+        </div>
+
+        <div class="form-group form-group--stock">
+          <label class="form-group__label" data-label-for="stock">Stock</label>
+          <input
+            class="form-input"
+            data-field="stock"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0"
+            required
+          >
+        </div>
+
+        <div class="form-group form-group--featured">
+          <span class="form-group__label">Is Featured</span>
+
+          <label class="toggle-switch" data-toggle-control>
+            <input class="toggle-switch__input" data-field="is_featured" role="switch" type="checkbox">
+            <span class="toggle-switch__track" aria-hidden="true"></span>
+            <span class="toggle-switch__copy">
+              <span class="toggle-switch__title">Highlight this product</span>
+              <span class="toggle-switch__meta" data-toggle-status>Not featured</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="form-group form-group--images">
+          <span class="form-group__label">Product Images</span>
+
+          <div class="image-upload" data-image-upload>
+            <input class="image-upload__input" data-field="images" type="file" accept="image/*" multiple>
+
+            <button class="image-upload__dropzone" data-upload-button type="button">
+              <span class="image-upload__icon" aria-hidden="true">+</span>
+              <span class="image-upload__content">
+                <span class="image-upload__title">Upload product images</span>
+                <span class="image-upload__subtitle">Drag and drop images here or click to browse.</span>
+                <span class="image-upload__meta" data-image-count>No images uploaded yet</span>
+              </span>
+            </button>
+
+            <div class="image-preview" data-image-preview aria-live="polite">
+              <div class="image-preview__empty">Selected images will appear here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="{% static 'products/productsJS/add_products.js' %}"></script>
+</body>
+</html>

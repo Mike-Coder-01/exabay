@@ -1,0 +1,207 @@
+{% extends 'products/base.html' %}
+{% load static %}
+{% block title %} Edit Product | Exabay {% endblock %}
+{% block content %}
+<main class="page">
+  <section class="page__hero">
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+      <a href="{% url 'products:sellerDashboard' %}" class="btn btn--secondary" style="min-height: 40px; padding: 0 16px;">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+    <div class="page__badge">Product Editor</div>
+    <h1 class="page__title">Edit Product</h1>
+    <p class="page__subtitle">Update your product information below</p>
+  </section>
+
+  <section class="workspace-card">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="status-banner {% if message.tags == 'success' %}{% elif message.tags == 'error' %}status-banner--warning{% elif message.tags == 'warning' %}{% endif %}" 
+             role="alert"
+             style="{% if message.tags == 'success' %}background: var(--color-success-soft); color: var(--color-success); border-color: rgba(11, 139, 116, 0.18);{% endif %}">
+            <strong>{{ message.tags|title }}:</strong> {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="workspace-card__top">
+      <div class="workspace-card__intro">
+        <span class="counter-badge">Editing: {{ product.name }}</span>
+        <p class="workspace-card__hint">
+          Make changes to your product details. Changes are saved when you click "Update Product".
+        </p>
+      </div>
+    </div>
+
+    <form class="product-form" method="POST" novalidate>
+      {% csrf_token %}
+      
+      <div class="product-list">
+        <article class="product-card">
+          <div class="product-card__header">
+            <div class="product-card__heading">
+              <p class="product-card__eyebrow">Product Details</p>
+              <h2 class="product-card__title">{{ product.name }}</h2>
+            </div>
+          </div>
+
+          <div class="product-card__grid">
+            <!-- Category -->
+            <div class="form-group form-group--category">
+              <label class="form-group__label" for="{{ form.category.id_for_label }}">Category</label>
+              {{ form.category }}
+              {% if form.category.errors %}
+                <div class="status-banner status-banner--warning" role="alert">
+                  {{ form.category.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Name -->
+            <div class="form-group form-group--name">
+              <label class="form-group__label" for="{{ form.name.id_for_label }}">Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                <div class="status-banner status-banner--warning" role="alert">
+                  {{ form.name.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="form-group form-group--description">
+              <label class="form-group__label" for="{{ form.description.id_for_label }}">Description</label>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="status-banner status-banner--warning" role="alert">
+                  {{ form.description.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Price -->
+            <div class="form-group form-group--price">
+              <label class="form-group__label" for="{{ form.price.id_for_label }}">Price</label>
+              {{ form.price }}
+              {% if form.price.errors %}
+                <div class="status-banner status-banner--warning" role="alert">
+                  {{ form.price.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Stock -->
+            <div class="form-group form-group--stock">
+              <label class="form-group__label" for="{{ form.stock.id_for_label }}">Stock</label>
+              {{ form.stock }}
+              {% if form.stock.errors %}
+                <div class="status-banner status-banner--warning" role="alert">
+                  {{ form.stock.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Availability Toggle -->
+            <div class="form-group form-group--featured">
+              <span class="form-group__label">Status</span>
+              <label class="toggle-switch" data-toggle-control>
+                {{ form.is_available }}
+                <span class="toggle-switch__track" aria-hidden="true"></span>
+                <span class="toggle-switch__copy">
+                  <span class="toggle-switch__title">
+                    {% if product.is_available %}Product is Active{% else %}Product is Inactive{% endif %}
+                  </span>
+                  <span class="toggle-switch__meta" data-toggle-status>
+                    {% if product.is_available %}Available for purchase{% else %}Hidden from store{% endif %}
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Featured Toggle -->
+            <div class="form-group form-group--featured">
+              <span class="form-group__label">Featured Status</span>
+              <label class="toggle-switch" data-toggle-control>
+                {{ form.is_featured }}
+                <span class="toggle-switch__track" aria-hidden="true"></span>
+                <span class="toggle-switch__copy">
+                  <span class="toggle-switch__title">
+                    {% if product.is_featured %}Featured Product{% else %}Standard Product{% endif %}
+                  </span>
+                  <span class="toggle-switch__meta" data-toggle-status>
+                    {% if product.is_featured %}Displayed on storefront{% else %}Not in featured section{% endif %}
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </article>
+
+        <!-- Current Images -->
+        {% if product.images.exists %}
+        <article class="product-card">
+          <div class="product-card__header">
+            <div class="product-card__heading">
+              <p class="product-card__eyebrow">Product Images</p>
+              <h2 class="product-card__title">Current Images</h2>
+            </div>
+          </div>
+
+          <div class="image-preview" aria-live="polite">
+            {% for image in product.images.all %}
+            <article class="image-preview__item">
+              <div class="image-preview__thumb">
+                <img class="image-preview__image" src="{{ image.image.url }}" alt="{{ product.name }} - Image {{ forloop.counter }}">
+              </div>
+              <div class="image-preview__details">
+                <p class="image-preview__name">Image {{ forloop.counter }}</p>
+                <p class="image-preview__size">Uploaded image</p>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+        </article>
+        {% endif %}
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="page-actions">
+        <a href="{% url 'products:sellerDashboard' %}" class="btn btn--secondary">
+          Cancel
+        </a>
+        <button class="btn btn--primary" type="submit">
+          Update Product
+        </button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script>
+  // Toggle switch status updates
+  document.querySelectorAll('[data-toggle-control]').forEach(control => {
+    const input = control.querySelector('input[type="checkbox"]');
+    const status = control.querySelector('[data-toggle-status]');
+    
+    if (input && status) {
+      input.addEventListener('change', () => {
+        if (input.name === 'is_available') {
+          control.querySelector('.toggle-switch__title').textContent = 
+            input.checked ? 'Product is Active' : 'Product is Inactive';
+          status.textContent = 
+            input.checked ? 'Available for purchase' : 'Hidden from store';
+        } else if (input.name === 'is_featured') {
+          control.querySelector('.toggle-switch__title').textContent = 
+            input.checked ? 'Featured Product' : 'Standard Product';
+          status.textContent = 
+            input.checked ? 'Displayed on storefront' : 'Not in featured section';
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'products/base.html' %}
+{% load static %}
+{% block title %} Delete Product | Exabay {% endblock %}
+{% block content %}
+<main class="page">
+  <section class="page__hero">
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+      <a href="{% url 'products:sellerDashboard' %}" class="btn btn--secondary" style="min-height: 40px; padding: 0 16px;">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+    <div class="page__badge" style="background: rgba(204, 69, 99, 0.12); color: var(--color-danger); border-color: rgba(204, 69, 99, 0.18);">
+      Danger Zone
+    </div>
+    <h1 class="page__title">Delete Product</h1>
+    <p class="page__subtitle">This action cannot be undone. Please confirm your decision.</p>
+  </section>
+
+  <section class="workspace-card">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="status-banner {% if message.tags == 'success' %}{% elif message.tags == 'error' %}status-banner--warning{% elif message.tags == 'warning' %}{% endif %}" 
+             role="alert"
+             style="{% if message.tags == 'success' %}background: var(--color-success-soft); color: var(--color-success); border-color: rgba(11, 139, 116, 0.18);{% endif %}">
+            <strong>{{ message.tags|title }}:</strong> {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="status-banner status-banner--warning" role="alert">
+      <strong>Warning:</strong> You are about to permanently delete this product. This will also remove all associated images and data.
+    </div>
+
+    <!-- Product Preview Card -->
+    <article class="product-card" style="margin-top: 20px;">
+      <div class="product-card__header">
+        <div class="product-card__heading">
+          <p class="product-card__eyebrow">Product to be deleted</p>
+          <h2 class="product-card__title">{{ product.name }}</h2>
+        </div>
+      </div>
+
+      <div class="product-card__grid">
+        <!-- Product Image -->
+        {% if product.images.first %}
+        <div class="form-group form-group--images">
+          <span class="form-group__label">Product Image</span>
+          <div class="image-preview">
+            <article class="image-preview__item">
+              <div class="image-preview__thumb">
+                <img class="image-preview__image" src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
+              </div>
+              <div class="image-preview__details">
+                <p class="image-preview__name">Primary Image</p>
+                <p class="image-preview__size">{{ product.images.count }} image(s) total</p>
+              </div>
+            </article>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Category -->
+        <div class="form-group form-group--category">
+          <span class="form-group__label">Category</span>
+          <p class="form-input" style="display: flex; align-items: center; background: rgba(249, 251, 255, 0.6);">
+            {{ product.category.name|default:"Uncategorized" }}
+          </p>
+        </div>
+
+        <!-- Price -->
+        <div class="form-group form-group--price">
+          <span class="form-group__label">Price</span>
+          <p class="form-input" style="display: flex; align-items: center; background: rgba(249, 251, 255, 0.6);">
+            ${{ product.price|floatformat:2 }}
+          </p>
+        </div>
+
+        <!-- Stock -->
+        <div class="form-group form-group--stock">
+          <span class="form-group__label">Stock</span>
+          <p class="form-input" style="display: flex; align-items: center; background: rgba(249, 251, 255, 0.6);">
+            {{ product.stock }} units
+          </p>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group form-group--description">
+          <span class="form-group__label">Description</span>
+          <p class="form-input form-input--textarea" style="display: flex; align-items: flex-start; background: rgba(249, 251, 255, 0.6); min-height: auto; padding: 14px 16px;">
+            {{ product.description|default:"No description provided."|truncatewords:50 }}
+          </p>
+        </div>
+
+        <!-- Status Badges -->
+        <div class="form-group form-group--featured">
+          <span class="form-group__label">Status</span>
+          <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <span class="counter-badge" style="background: {% if product.is_available %}var(--color-success-soft){% else %}var(--color-danger-soft){% endif %}; color: {% if product.is_available %}var(--color-success){% else %}var(--color-danger){% endif %};">
+              {% if product.is_available %}Active{% else %}Inactive{% endif %}
+            </span>
+            {% if product.is_featured %}
+            <span class="counter-badge" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              Featured
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Created Date -->
+        <div class="form-group form-group--category">
+          <span class="form-group__label">Created</span>
+          <p class="form-input" style="display: flex; align-items: center; background: rgba(249, 251, 255, 0.6);">
+            {{ product.created_at|date:"F j, Y" }}
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- Confirmation Form -->
+    <form method="POST" action="{% url 'products:product_delete' product.id %}" style="margin-top: 28px;">
+      {% csrf_token %}
+      <div class="page-actions">
+        <a href="{% url 'products:sellerDashboard' %}" class="btn btn--secondary">
+          Cancel
+        </a>
+        <button class="btn" type="submit" style="background: linear-gradient(135deg, var(--color-danger) 0%, #e85d7a 100%); box-shadow: 0 16px 24px rgba(204, 69, 99, 0.18); color: #ffffff; border-color: transparent;">
+          Delete Product
+        </button>
+      </div>
+    </form>
+  </section>
+</main>
+{% endblock %}

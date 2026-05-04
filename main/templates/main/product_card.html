@@ -1,0 +1,61 @@
+<article
+  class="product-card"
+  data-seller-name="{{ seller.user.get_full_name|default:seller.user.username }}"
+  data-business-name="{{ seller.business_name|default:'Independent seller' }}"
+  data-trust-status="{{ trust_status }}"
+  data-trust-label="{{ trust_label }}"
+  data-trust-copy="{{ trust_copy }}"
+  data-total-products="{{ seller.product_set.count }}"
+  data-completed-orders="248"
+  data-rating="4.8"
+  data-license-document="{% if seller.license_document %}On file{% else %}Not submitted{% endif %}"
+  data-license-status="{% if seller.license_document %}Submitted{% else %}Missing{% endif %}"
+  data-id-document="{% if seller.tin_number %}TIN on file{% else %}Not submitted{% endif %}"
+  data-id-status="{% if seller.tin_number %}Submitted{% else %}Missing{% endif %}"
+  data-store-document="{% if seller.business_name %}Business profile on file{% else %}Not submitted{% endif %}"
+  data-store-status="{% if seller.business_name %}Submitted{% else %}Missing{% endif %}"
+>
+  <div class="product-card__media">
+    {% if first_image %}
+      <img class="product-card__image" src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+    {% else %}
+      <div class="product-card__image product-card__image--placeholder" aria-label="{{ product.name }}">
+        <span>{{ product.name|first }}</span>
+      </div>
+    {% endif %}
+    <span class="badge product-card__category">{{ product.category.name|default:"Uncategorized" }}</span>
+  </div>
+
+  <div class="product-card__body">
+    <h3 class="product-card__name">{{ product.name }}</h3>
+    <div class="product-card__price-row">
+      <span class="product-card__price">${{ product.price }}</span>
+      {% if product.stock <= 5 %}
+        <span class="stock stock--low" data-stock-key="lowStock">Low Stock</span>
+      {% else %}
+        <span class="stock stock--in" data-stock-key="inStock">In Stock</span>
+      {% endif %}
+    </div>
+
+    <div class="product-card__seller">
+      <div class="product-card__seller-line">
+        <span class="product-card__seller-name">
+          <span data-card-i18n="seller">Seller</span>:
+          <strong>{{ seller.business_name|default:seller.user.username }}</strong>
+        </span>
+        <span class="status-badge status-badge--{{ trust_status }}" data-status-key="{{ trust_status }}">
+          {% if trust_status == "verified" %}OK{% elif trust_status == "pending" %}!{% else %}X{% endif %}
+          {{ trust_label }}
+        </span>
+      </div>
+      <button class="product-card__trust-link" type="button" data-seller-trigger>
+        <span data-card-i18n="viewSellerTrust">View Seller Trust</span>
+      </button>
+    </div>
+
+    <div class="product-card__actions">
+      <button class="btn btn--primary" type="button" data-card-i18n="addToCart">Add to Cart</button>
+      <button class="btn btn--secondary" type="button" data-card-i18n="viewDetails">View Details</button>
+    </div>
+  </div>
+</article>

@@ -8,43 +8,7 @@
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:navLabel">
-      <a class="nav__logo" href="/" aria-label="Exabay homepage">Exabay</a>
-
-      <form class="nav__search" role="search" method="get">
-        <label class="sr-only" for="site-search" data-i18n="searchProducts">Search Exabay products</label>
-        <input id="site-search" class="nav__search-input" name="q" type="search" placeholder="Search trusted products, brands, sellers" data-i18n-attr="placeholder:navSearchPlaceholder" value="{{ request.GET.q }}">
-        <button class="nav__search-button" type="submit" aria-label="Search" data-i18n-attr="aria-label:search">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
-          </svg>
-        </button>
-      </form>
-
-      <div class="nav__actions">
-        <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch language to Swahili" aria-pressed="false">
-          <span class="language-toggle__option language-toggle__option--sw">SW</span>
-          <span class="language-toggle__option language-toggle__option--en is-active">EN</span>
-        </button>
-
-        <button class="icon-button" type="button" aria-label="View cart" data-i18n-attr="aria-label:viewCart">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6h15l-1.8 8.4a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.6L5 3H2"/>
-            <circle cx="9" cy="20" r="1.5"/>
-            <circle cx="18" cy="20" r="1.5"/>
-          </svg>
-        </button>
-        <button class="icon-button" type="button" aria-label="Open profile" data-i18n-attr="aria-label:openProfile">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 21a8 8 0 0 0-16 0"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </button>
-      </div>
-    </nav>
-  </header>
-
+{% include 'partials/header_bar.html' %}
   <main>
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__content">
@@ -52,9 +16,9 @@
         <h1 id="hero-title" class="hero__title" data-i18n="heroTitle">Buy from verified sellers with confidence</h1>
         <p class="hero__copy" data-i18n="heroCopy">Discover everyday essentials, electronics, fashion, and home goods with visible seller verification on every listing.</p>
 
-        <form class="hero__search" role="search" method="get">
+        <form class="hero__search" role="search" method="get" action="{% url 'products:filter_product' %}">
           <label class="sr-only" for="hero-search" data-i18n="searchProducts">Search products</label>
-          <input id="hero-search" class="hero__search-input" name="q" type="search" placeholder="What are you looking for today?" data-i18n-attr="placeholder:heroSearchPlaceholder" value="{{ request.GET.q }}">
+          <input id="hero-search" class="hero__search-input" name="search_filter" type="search" placeholder="What are you looking for today?" data-i18n-attr="placeholder:heroSearchPlaceholder" value="{{ request.GET.q }}">
           <button class="btn btn--primary" type="submit" data-i18n="search">Search</button>
         </form>
 
@@ -96,6 +60,7 @@
 
       <div id="product-grid" class="product-grid" aria-live="polite">
         {% for product in products %}
+        {% if product.is_featured %}
           {% with seller=product.seller first_image=product.images.first %}
             {% if seller.is_verified %}
               {% with trust_status="verified" trust_label="Verified" trust_copy="This seller has been verified by Exabay and meets our trust standards." %}
@@ -111,6 +76,7 @@
               {% endwith %}
             {% endif %}
           {% endwith %}
+        {% endif %}
         {% empty %}
           <div class="product-empty">
             <h3 data-i18n="noProductsTitle">No products available</h3>
@@ -180,5 +146,11 @@
   </div>
 
   <script src="{% static 'js/scripts.js' %}"></script>
+
+  {% if scroll_to_products %}
+  <script>
+    document.getElementById('product-grid').scrollIntoView();
+  </script>
+  {% endif %}
 </body>
 </html>

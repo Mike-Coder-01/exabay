@@ -15,4 +15,7 @@ urlpatterns = [
     # path("product/<int:pk>/delete_api/", views.delete_product_api, name="delete_product_api"),
     path("product/<int:pk>/update_api/", views.update_product_api, name="update_product_api"),
     path('search_products_api/', views.search_products_api, name='search_products_api'),
+
+    path('product_filter/', views.product_search_view, name='filter_product'),
+    path("products/<int:pk>/", views.product_detail, name="product_detail"),
 ]

@@ -1,0 +1,172 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ product.name }} | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+{% include 'partials/header_bar.html' %}
+  <main class="product-detail">
+    <a class="product-detail__back" href="/#products">Back to marketplace</a>
+
+    <section class="product-detail__hero">
+      <div class="product-detail__gallery">
+        {% with first_image=product.images.first %}
+          {% if first_image %}
+            <img class="product-detail__image" src="{{ first_image.image.url }}" alt="{{ product.name }}">
+          {% else %}
+            <div class="product-detail__image product-detail__image--placeholder">
+              <span>{{ product.name|first }}</span>
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% if product.images.all %}
+          <div class="product-detail__thumbs" aria-label="Product images">
+            {% for image in product.images.all %}
+              <img class="product-detail__thumb" src="{{ image.image.url }}" alt="{{ product.name }} image {{ forloop.counter }}">
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="product-detail__summary">
+        <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
+        <h1 class="product-detail__title">{{ product.name }}</h1>
+        <p class="product-detail__price">Tsh {{ product.price|floatformat:"0"|intcomma }}</p>
+
+        <div class="product-detail__status-row">
+          {% if product.stock <= 5 %}
+            <span class="stock stock--low">Low Stock</span>
+          {% else %}
+            <span class="stock stock--in">In Stock</span>
+          {% endif %}
+          {% if product.is_featured %}
+            <span class="badge">Featured</span>
+          {% endif %}
+        </div>
+
+        <div class="product-detail__facts">
+          <div>
+            <span>Stock</span>
+            <strong>{{ product.stock }}</strong>
+          </div>
+          <div>
+            <span>Availability</span>
+            <strong>{% if product.is_available %}Available{% else %}Unavailable{% endif %}</strong>
+          </div>
+          <div>
+            <span>Listed</span>
+            <strong>{{ product.created_at|date:"M d, Y" }}</strong>
+          </div>
+        </div>
+
+        <div class="product-detail__actions">
+          <button class="btn btn--primary" type="button">Add to Cart</button>
+          <a class="btn btn--outline" href="/#products">Continue Shopping</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="product-detail__content">
+      <article class="detail-panel detail-panel--wide">
+        <p class="section-heading__eyebrow">Product information</p>
+        <h2>Description</h2>
+        <p>{{ product.description|linebreaksbr }}</p>
+      </article>
+
+      <aside class="detail-panel">
+        <p class="section-heading__eyebrow">Seller credibility</p>
+        <h2>{{ product.seller.business_name|default:product.seller.user.username }}</h2>
+        <p class="detail-panel__muted">{{ product.seller.user.get_full_name|default:product.seller.user.username }}</p>
+
+        {% if product.seller.is_verified %}
+          <span class="status-badge status-badge--verified">OK Verified</span>
+          <p class="detail-panel__copy">This seller has been verified by Exabay and meets our trust standards.</p>
+        {% elif product.seller.is_profile_complete %}
+          <span class="status-badge status-badge--pending">! Pending</span>
+          <p class="detail-panel__copy">This seller has submitted required trust information and is waiting for Exabay review.</p>
+        {% else %}
+          <span class="status-badge status-badge--unverified">X Unverified</span>
+          <p class="detail-panel__copy">This seller has not completed Exabay's verification checks yet.</p>
+        {% endif %}
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Total products</span>
+            <strong>{{ product.seller.product_set.count }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Completed orders</span>
+            <strong>248</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Rating</span>
+            <strong>4.8 stars</strong>
+          </div>
+        </div>
+      </aside>
+
+      <article class="detail-panel detail-panel--wide">
+        <p class="section-heading__eyebrow">Specifications</p>
+        <h2>Product details</h2>
+        {% if product.specs.all %}
+          <dl class="spec-list">
+            {% for spec in product.specs.all %}
+              <div class="spec-list__item">
+                <dt>{{ spec.key }}</dt>
+                <dd>{{ spec.value }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+        {% else %}
+          <p class="detail-panel__muted">No extra specifications have been added for this product yet.</p>
+        {% endif %}
+      </article>
+
+      <aside class="detail-panel">
+        <p class="section-heading__eyebrow">Verification documents</p>
+        <h2>Seller documents</h2>
+        <div class="documents-list">
+          <div class="document-item">
+            <div>
+              <div class="document-item__name">Business License</div>
+              <div class="document-item__status">{% if product.seller.license_document %}On file - Submitted{% else %}Not submitted - Missing{% endif %}</div>
+            </div>
+            {% if product.seller.license_document %}
+              <a class="btn btn--outline" href="{{ product.seller.license_document.url }}" target="_blank" rel="noopener">View Document</a>
+            {% endif %}
+          </div>
+          <div class="document-item">
+            <div>
+              <div class="document-item__name">Tax Clearance Document</div>
+              <div class="document-item__status">{% if product.seller.tax_clearance_document %}On file - Submitted{% else %}Not submitted - Missing{% endif %}</div>
+            </div>
+            {% if product.seller.tax_clearance_document %}
+              <a class="btn btn--outline" href="{{ product.seller.tax_clearance_document.url }}" target="_blank" rel="noopener">View Document</a>
+            {% endif %}
+          </div>
+          <div class="document-item">
+            <div>
+              <div class="document-item__name">ID / TIN Verification</div>
+              <div class="document-item__status">{% if product.seller.tin_number %}TIN on file - Submitted{% else %}Not submitted - Missing{% endif %}</div>
+            </div>
+          </div>
+          <div class="document-item">
+            <div>
+              <div class="document-item__name">Store Registration</div>
+              <div class="document-item__status">{% if product.seller.business_name %}Business profile on file - Submitted{% else %}Not submitted - Missing{% endif %}</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

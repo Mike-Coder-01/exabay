@@ -47,10 +47,12 @@ const translations = {
     businessLicense: "Business License",
     idVerification: "ID Verification",
     storeRegistration: "Store Registration",
+    taxClearance: "Tax Clearance Document",
     noProductsTitle: "No products available",
     noProductsCopy: "Please check back soon for trusted marketplace listings.",
     submitted: "Submitted",
     missing: "Missing",
+    unavailable: "Unavailable",
     trustCopyVerified: "This seller has been verified by Exabay and meets our trust standards.",
     trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exabay review.",
     trustCopyUnverified: "This seller has not completed Exabay's verification checks yet."
@@ -103,10 +105,12 @@ const translations = {
     businessLicense: "Leseni ya Biashara",
     idVerification: "Uthibitisho wa Kitambulisho",
     storeRegistration: "Usajili wa Duka",
+    taxClearance: "Nyaraka ya Ulipaji Kodi",
     noProductsTitle: "Hakuna bidhaa zilizopo",
     noProductsCopy: "Tafadhali rudi tena hivi karibuni kwa matangazo ya soko la kuaminika.",
     submitted: "Imewasilishwa",
     missing: "Haipo",
+    unavailable: "Haipatikani",
     trustCopyVerified: "Muuzaji huyu amethibitishwa na Exabay na anakidhi viwango vyetu vya uaminifu.",
     trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exabay.",
     trustCopyUnverified: "Muuzaji huyu bado hajakamilisha ukaguzi wa uthibitisho wa Exabay."
@@ -114,8 +118,8 @@ const translations = {
 };
 
 const modal = document.querySelector("#seller-modal");
-const modalDialog = modal.querySelector(".modal__dialog");
-const closeTriggers = modal.querySelectorAll("[data-modal-close]");
+const modalDialog = modal ? modal.querySelector(".modal__dialog") : null;
+const closeTriggers = modal ? modal.querySelectorAll("[data-modal-close]") : [];
 const languageToggle = document.querySelector("#language-toggle");
 const productGrid = document.querySelector("#product-grid");
 let currentLanguage = "en";
@@ -164,6 +168,8 @@ function applyStaticTranslations() {
     });
   });
 
+  if (!languageToggle) return;
+
   languageToggle.setAttribute("aria-label", t("switchLanguage"));
   languageToggle.setAttribute("aria-pressed", String(currentLanguage === "sw"));
   languageToggle.querySelector(".language-toggle__option--sw").classList.toggle("is-active", currentLanguage === "sw");
@@ -190,22 +196,33 @@ function getDocumentsFromCard(card) {
     {
       label: t("businessLicense"),
       file: card.dataset.licenseDocument,
-      status: translateDocumentStatus(card.dataset.licenseStatus)
+      status: translateDocumentStatus(card.dataset.licenseStatus),
+      url: card.dataset.licenseUrl
+    },
+    {
+      label: t("taxClearance"),
+      file: card.dataset.taxDocument,
+      status: translateDocumentStatus(card.dataset.taxStatus),
+      url: card.dataset.taxUrl
     },
     {
       label: t("idVerification"),
       file: card.dataset.idDocument,
-      status: translateDocumentStatus(card.dataset.idStatus)
+      status: translateDocumentStatus(card.dataset.idStatus),
+      url: ""
     },
     {
       label: t("storeRegistration"),
       file: card.dataset.storeDocument,
-      status: translateDocumentStatus(card.dataset.storeStatus)
+      status: translateDocumentStatus(card.dataset.storeStatus),
+      url: ""
     }
   ];
 }
 
 function renderSellerModal(card) {
+  if (!modal) return;
+
   const statusKey = card.dataset.trustStatus || "unverified";
   const status = statusMeta[statusKey];
 
@@ -218,15 +235,21 @@ function renderSellerModal(card) {
   const trustCopy = getTrustCopy(statusKey, card.dataset.trustCopy);
   document.querySelector("#modal-status-copy").textContent = trustCopy;
 
-  document.querySelector("#documents-list").innerHTML = getDocumentsFromCard(card).map((documentItem) => `
-    <div class="document-item">
-      <div>
-        <div class="document-item__name">${documentItem.label}</div>
-        <div class="document-item__status">${documentItem.file} - ${documentItem.status}</div>
+  document.querySelector("#documents-list").innerHTML = getDocumentsFromCard(card).map((documentItem) => {
+    const action = documentItem.url
+      ? `<a class="btn btn--outline" href="${documentItem.url}" target="_blank" rel="noopener">${t("viewDocument")}</a>`
+      : `<button class="btn btn--outline" type="button" disabled>${t("unavailable")}</button>`;
+
+    return `
+      <div class="document-item">
+        <div>
+          <div class="document-item__name">${documentItem.label}</div>
+          <div class="document-item__status">${documentItem.file} - ${documentItem.status}</div>
+        </div>
+        ${action}
       </div>
-      <button class="btn btn--outline" type="button">${t("viewDocument")}</button>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
   document.querySelector("#metric-products").textContent = formatNumber(card.dataset.totalProducts);
   document.querySelector("#metric-orders").textContent = formatNumber(card.dataset.completedOrders);
@@ -235,6 +258,8 @@ function renderSellerModal(card) {
 }
 
 function openSellerModal(card) {
+  if (!modal || !modalDialog) return;
+
   activeCard = card;
   lastFocusedElement = document.activeElement;
   renderSellerModal(card);
@@ -246,6 +271,8 @@ function openSellerModal(card) {
 }
 
 function closeSellerModal() {
+  if (!modal) return;
+
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-lock");
@@ -261,36 +288,40 @@ function setLanguage(language) {
   applyStaticTranslations();
   applyCardTranslations();
 
-  if (modal.classList.contains("is-open") && activeCard) {
+  if (modal && modal.classList.contains("is-open") && activeCard) {
     renderSellerModal(activeCard);
   }
 }
 
-productGrid.addEventListener("click", (event) => {
-  const trigger = event.target.closest("[data-seller-trigger]");
-  if (!trigger) return;
+if (productGrid) {
+  productGrid.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-seller-trigger]");
+    if (!trigger) return;
 
-  const card = trigger.closest(".product-card");
-  if (card) {
-    openSellerModal(card);
-  }
-});
+    const card = trigger.closest(".product-card");
+    if (card) {
+      openSellerModal(card);
+    }
+  });
 
-productGrid.querySelectorAll(".product-card").forEach((card) => {
-  card.addEventListener("pointerenter", () => card.classList.add("is-hovered"));
-  card.addEventListener("pointerleave", () => card.classList.remove("is-hovered"));
-});
+  productGrid.querySelectorAll(".product-card").forEach((card) => {
+    card.addEventListener("pointerenter", () => card.classList.add("is-hovered"));
+    card.addEventListener("pointerleave", () => card.classList.remove("is-hovered"));
+  });
+}
 
 closeTriggers.forEach((trigger) => {
   trigger.addEventListener("click", closeSellerModal);
 });
 
-languageToggle.addEventListener("click", () => {
-  setLanguage(currentLanguage === "en" ? "sw" : "en");
-});
+if (languageToggle) {
+  languageToggle.addEventListener("click", () => {
+    setLanguage(currentLanguage === "en" ? "sw" : "en");
+  });
+}
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && modal.classList.contains("is-open")) {
+  if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
     closeSellerModal();
   }
 });

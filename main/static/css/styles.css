@@ -827,3 +827,222 @@ body.modal-lock {
     flex-direction: column;
   }
 }
+
+
+
+
+
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.product-detail {
+  width: min(100% - 32px, var(--container));
+  margin: 26px auto 64px;
+}
+
+.product-detail__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  margin-bottom: 16px;
+  color: var(--color-primary);
+  font-weight: 850;
+}
+
+.product-detail__hero {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(380px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.product-detail__gallery,
+.product-detail__summary,
+.detail-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.product-detail__gallery {
+  padding: 14px;
+  max-width: 500px;
+}
+
+.product-detail__image {
+  width: 100%;
+  height: 320px;
+  /* height: clamp(300px, 42vw, 430px); */
+  border-radius: var(--radius-card);
+  background: #f8fafc;
+  object-fit: contain;
+  display: block;
+}
+
+.product-detail__image--placeholder {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.12), rgba(20, 184, 166, 0.18));
+  color: var(--color-primary);
+  font-size: clamp(4rem, 12vw, 8rem);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.product-detail__thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-detail__thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  object-fit: cover;
+  display: block;
+}
+
+.product-detail__summary {
+  padding: clamp(20px, 4vw, 34px);
+}
+
+.product-detail__title {
+  margin: 14px 0 10px;
+  color: var(--color-primary-dark);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.product-detail__price {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 900;
+}
+
+.product-detail__status-row,
+.product-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.product-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.product-detail__facts div {
+  padding: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: #f8fafc;
+}
+
+.product-detail__facts span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.product-detail__facts strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-primary-dark);
+}
+
+.product-detail__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.detail-panel {
+  padding: 22px;
+}
+
+.detail-panel--wide {
+  min-width: 0;
+}
+
+.detail-panel h2 {
+  margin: 0 0 12px;
+  color: var(--color-primary-dark);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.detail-panel p {
+  margin: 0;
+}
+
+.detail-panel__muted,
+.detail-panel__copy {
+  color: var(--color-muted);
+}
+
+.detail-panel__copy {
+  margin-top: 12px;
+}
+
+.detail-panel__metrics {
+  grid-template-columns: 1fr;
+}
+
+.spec-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.spec-list__item {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.35fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: #f8fafc;
+}
+
+.spec-list dt {
+  color: var(--color-muted);
+  font-weight: 800;
+}
+
+.spec-list dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+  .product-detail__hero,
+  .product-detail__content {
+    grid-template-columns: 1fr;
+  }
+
+.product-detail__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .product-detail__thumbs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+.spec-list__item {
+    grid-template-columns: 1fr;
+  }

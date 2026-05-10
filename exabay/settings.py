@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'products',
     'orders',
     'main',
+    'django_filters',
 
     # Social login apps config
     'allauth',

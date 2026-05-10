@@ -1,0 +1,36 @@
+<header class="site-header">
+    <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:navLabel">
+      <a class="nav__logo" href="/" aria-label="Exabay homepage">Exabay</a>
+
+      <form class="nav__search" role="search" method="get" action="{% url 'products:filter_product' %}">
+        <label class="sr-only" for="site-search" data-i18n="searchProducts">Search Exabay products</label>
+        <input id="site-search" class="nav__search-input" name="search_filter" type="search" placeholder="Search trusted products, brands, sellers" data-i18n-attr="placeholder:navSearchPlaceholder" value="{{ request.GET.q }}">
+        <button class="nav__search-button" type="submit" aria-label="Search" data-i18n-attr="aria-label:search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
+          </svg>
+        </button>
+      </form>
+
+      <div class="nav__actions">
+        <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch language to Swahili" aria-pressed="false">
+          <span class="language-toggle__option language-toggle__option--sw">SW</span>
+          <span class="language-toggle__option language-toggle__option--en is-active">EN</span>
+        </button>
+
+        <button class="icon-button" type="button" aria-label="View cart" data-i18n-attr="aria-label:viewCart">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6h15l-1.8 8.4a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.6L5 3H2"/>
+            <circle cx="9" cy="20" r="1.5"/>
+            <circle cx="18" cy="20" r="1.5"/>
+          </svg>
+        </button>
+        <button class="icon-button" type="button" aria-label="Open profile" data-i18n-attr="aria-label:openProfile">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 21a8 8 0 0 0-16 0"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>

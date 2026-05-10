@@ -10,7 +10,9 @@ from users.models import SellerProfile
 from .models import Product, ProductImage, Category
 from django.contrib import messages
 from django.db import models as db_models
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When, Value, IntegerField, Q, F
+from .filters import ProductFilter
+from django.urls import reverse
 
 
 
@@ -530,4 +532,47 @@ def search_products_api(request):
         'total_count': paginator.count,
         'current_page': page_obj.number,
         'total_pages': paginator.num_pages,
+    })
+
+
+def product_search_view(request):
+    if request.method == 'GET':
+        query = request.GET.get('search_filter')
+        if query:
+            queryset = Product.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            ).annotate(
+                search_rank= Case(
+                    When(name__iexact=query, then=Value(1)),
+                    When(name__istartswith=query, then=Value(2)),
+                    When(name__icontains=query, then=Value(3)),
+                    When(description__icontains=query, then=Value(4)),
+                    default=Value(0),
+                    output_field=IntegerField()
+                )
+            ).order_by('search_rank', '-id')
+
+        redirect(reverse('main:home') + '#product-grid')
+
+        context = {
+            'products': queryset,
+            'scroll_to_products': True
+        }
+            
+    return render(request, 'main/index.html', context)
+
+from django.shortcuts import get_object_or_404, render
+from products.models import Product
+
+def product_detail(request, pk):
+    product = get_object_or_404(
+        Product.objects
+        .select_related("seller__user", "category")
+        .prefetch_related("images", "specs"),
+        pk=pk,
+        is_available=True
+    )
+
+    return render(request, "main/product_detail.html", {
+        "product": product
     })

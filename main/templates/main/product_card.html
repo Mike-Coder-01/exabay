@@ -1,3 +1,4 @@
+{% load humanize %}
 <article
   class="product-card"
   data-seller-name="{{ seller.user.get_full_name|default:seller.user.username }}"
@@ -10,6 +11,11 @@
   data-rating="4.8"
   data-license-document="{% if seller.license_document %}On file{% else %}Not submitted{% endif %}"
   data-license-status="{% if seller.license_document %}Submitted{% else %}Missing{% endif %}"
+  data-license-url="{% if seller.license_document %}{{ seller.license_document.url }}{% endif %}"
+  data-tax-document="{% if seller.tax_clearance_document %}On file{% else %}Not submitted{% endif %}"
+  data-tax-status="{% if seller.tax_clearance_document %}Submitted{% else %}Missing{% endif %}"
+  data-tax-url="{% if seller.tax_clearance_document %}{{ seller.tax_clearance_document.url }}{% endif %}"
+  
   data-id-document="{% if seller.tin_number %}TIN on file{% else %}Not submitted{% endif %}"
   data-id-status="{% if seller.tin_number %}Submitted{% else %}Missing{% endif %}"
   data-store-document="{% if seller.business_name %}Business profile on file{% else %}Not submitted{% endif %}"
@@ -29,7 +35,7 @@
   <div class="product-card__body">
     <h3 class="product-card__name">{{ product.name }}</h3>
     <div class="product-card__price-row">
-      <span class="product-card__price">${{ product.price }}</span>
+      <span class="product-card__price">Tsh {{ product.price|floatformat:"0"|intcomma }}</span> 
       {% if product.stock <= 5 %}
         <span class="stock stock--low" data-stock-key="lowStock">Low Stock</span>
       {% else %}
@@ -55,7 +61,8 @@
 
     <div class="product-card__actions">
       <button class="btn btn--primary" type="button" data-card-i18n="addToCart">Add to Cart</button>
-      <button class="btn btn--secondary" type="button" data-card-i18n="viewDetails">View Details</button>
+      <!-- <button class="btn btn--secondary" type="button" data-card-i18n="viewDetails">View Details</button> -->
+      <a class="btn btn--secondary" href="{% url 'products:product_detail' product.pk %}" data-card-i18n="viewDetails">View Details</a>
     </div>
   </div>
 </article>

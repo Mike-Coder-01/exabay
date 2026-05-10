@@ -14,3 +14,4 @@ def home(request):
 # products = Product.objects.filter(is_available=True)\
 #     .select_related('seller__user', 'category')\
 #     .prefetch_related('images')
+

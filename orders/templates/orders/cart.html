@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+{% include 'partials/header_bar.html' %}
+  <main class="cart-page" data-cart-page>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" data-csrf-token>
+    <section class="cart-hero" aria-labelledby="cart-title">
+      <div>
+        <p class="cart-hero__eyebrow">Secure marketplace cart</p>
+        <h1 id="cart-title" class="cart-hero__title">Your shopping cart</h1>
+        <p class="cart-hero__copy">Review seller details, quantities, and totals before moving to mobile money checkout.</p>
+      </div>
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">OK</span>
+        <div>
+          <strong>Trust-protected checkout</strong>
+          <span>Seller verification remains visible throughout your order journey.</span>
+        </div>
+      </div>
+    </section>
+
+    {% if cart and cart.items.all %}
+      <section class="cart-layout" aria-label="Cart details">
+        <div class="cart-items" aria-label="Cart items">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Marketplace order</p>
+              <h2>Items in your cart</h2>
+            </div>
+            <span class="cart-items__count" data-cart-count>{{ cart.items.all|length }} item{{ cart.items.all|length|pluralize }}</span>
+          </div>
+
+          <section class="vendor-group" aria-label="Cart products by marketplace sellers">
+              {% for item in cart_items %}
+                {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
+                  <article
+                    class="cart-item"
+                    data-cart-item
+                    data-price="{{ product.price }}"
+                    data-quantity="{{ item.quantity }}"
+                    data-update-url="{% url 'orders:cart_update_item' item.pk %}"
+                    data-remove-url="{% url 'orders:cart_remove_item' item.pk %}"
+                  >
+                    <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
+                      {% if first_image %}
+                        <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                      {% else %}
+                        <span>{{ product.name|first }}</span>
+                      {% endif %}
+                    </a>
+
+                    <div class="cart-item__info">
+                      <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
+                      <p class="cart-item__seller">Seller: <strong>{{ seller.business_name|default:seller.user.username }}</strong></p>
+                      <div class="cart-item__meta">
+                        <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
+                        {% if seller.is_verified %}
+                          <span class="status-badge status-badge--verified">OK Verified</span>
+                        {% elif seller.is_profile_complete %}
+                          <span class="status-badge status-badge--pending">! Pending</span>
+                        {% else %}
+                          <span class="status-badge status-badge--unverified">X Unverified</span>
+                        {% endif %}
+                        {% if product.stock <= 5 %}
+                          <span class="stock stock--low">Low Stock</span>
+                        {% else %}
+                          <span class="stock stock--in">In Stock</span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="cart-item__price">
+                      <span>Price</span>
+                      <strong>$<span data-cart-price>{{ product.price }}</span></strong>
+                    </div>
+
+                    <div class="quantity-control" aria-label="Quantity controls">
+                      <button class="quantity-control__button" type="button" data-cart-decrease aria-label="Decrease quantity">-</button>
+                      <label class="sr-only" for="qty-{{ item.pk }}">Quantity</label>
+                      <input id="qty-{{ item.pk }}" class="quantity-control__input" type="number" min="1" max="{{ product.stock }}" value="{{ item.quantity }}" data-cart-quantity>
+                      <button class="quantity-control__button" type="button" data-cart-increase aria-label="Increase quantity">+</button>
+                    </div>
+
+                    <div class="cart-item__subtotal">
+                      <span>Subtotal</span>
+                      <strong>$<span data-cart-subtotal>0.00</span></strong>
+                    </div>
+
+                    <button class="cart-item__remove" type="button" data-cart-remove aria-label="Remove {{ product.name }}">
+                      Remove
+                    </button>
+                  </article>
+                {% endwith %}
+              {% endfor %}
+            </section>
+        </div>
+
+        <aside class="cart-summary" aria-labelledby="cart-summary-title">
+          <p class="section-heading__eyebrow">Order summary</p>
+          <h2 id="cart-summary-title">Cart total</h2>
+
+          <dl class="cart-summary__lines">
+            <div>
+              <dt>Items subtotal</dt>
+              <dd>$<span data-cart-total>0.00</span></dd>
+            </div>
+            <div>
+              <dt>Delivery</dt>
+              <dd>Calculated at checkout</dd>
+            </div>
+            <div>
+              <dt>Trust protection</dt>
+              <dd>Included</dd>
+            </div>
+          </dl>
+
+          <div class="cart-summary__total">
+            <span>Total</span>
+            <strong>$<span data-cart-grand-total>0.00</span></strong>
+          </div>
+
+      
+          <form method="post" action="{% url 'orders:checkout' %}">
+            {% csrf_token %}
+            <button class="btn btn--primary cart-summary__checkout" type="submit">
+              Proceed to Checkout
+            </button>
+          </form>
+
+
+          <div class="mobile-money-note">
+            <strong>Mobile money supported</strong>
+            <span>Pay securely with M-Pesa, Tigo Pesa, Airtel Money, or card options during checkout.</span>
+          </div>
+        </aside>
+      </section>
+    {% else %}
+      <section class="cart-empty" aria-labelledby="empty-cart-title">
+        <div class="cart-empty__icon">0</div>
+        <h2 id="empty-cart-title">Your cart is empty</h2>
+        <p>Start exploring trusted products from verified sellers across Exabay.</p>
+        <a class="btn btn--primary" href="/#products">Continue Shopping</a>
+      </section>
+    {% endif %}
+  </main>
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

@@ -18,13 +18,13 @@
           <span class="language-toggle__option language-toggle__option--en is-active">EN</span>
         </button>
 
-        <button class="icon-button" type="button" aria-label="View cart" data-i18n-attr="aria-label:viewCart">
+        <a class="icon-button" href="{% url 'orders:cart' %}" aria-label="View cart" data-i18n-attr="aria-label:viewCart">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6 6h15l-1.8 8.4a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.6L5 3H2"/>
             <circle cx="9" cy="20" r="1.5"/>
             <circle cx="18" cy="20" r="1.5"/>
           </svg>
-        </button>
+        </a>
         <button class="icon-button" type="button" aria-label="Open profile" data-i18n-attr="aria-label:openProfile">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 21a8 8 0 0 0-16 0"/>

@@ -28,6 +28,11 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
+    @property
+    def subtotal(self):
+        return self.price * self.quantity
+
+
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
     
@@ -67,8 +72,9 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
+    
     def get_total(self):
-        return sum(item.product.price * item.quantity for item in self.items.all())
+        return self.product.price * self.quantity
     
 
 class Payment(models.Model):

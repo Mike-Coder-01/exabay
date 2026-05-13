@@ -122,6 +122,7 @@ const modalDialog = modal ? modal.querySelector(".modal__dialog") : null;
 const closeTriggers = modal ? modal.querySelectorAll("[data-modal-close]") : [];
 const languageToggle = document.querySelector("#language-toggle");
 const productGrid = document.querySelector("#product-grid");
+const cartPage = document.querySelector("[data-cart-page]");
 let currentLanguage = "en";
 let activeCard = null;
 let lastFocusedElement = null;
@@ -320,6 +321,101 @@ if (languageToggle) {
   });
 }
 
+function parseMoney(value) {
+  return Number.parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+}
+
+function formatMoney(value) {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function updateCartTotals() {
+  if (!cartPage) return;
+
+  let itemCount = 0;
+  let cartTotal = 0;
+
+  cartPage.querySelectorAll("[data-cart-item]").forEach((item) => {
+    const price = parseMoney(item.dataset.price);
+    const quantityInput = item.querySelector("[data-cart-quantity]");
+    const quantity = Math.max(1, Number.parseInt(quantityInput.value, 10) || 1);
+    const subtotal = price * quantity;
+
+    item.dataset.quantity = String(quantity);
+    quantityInput.value = String(quantity);
+    item.querySelector("[data-cart-subtotal]").textContent = formatMoney(subtotal);
+
+    itemCount += quantity;
+    cartTotal += subtotal;
+  });
+
+  cartPage.querySelectorAll("[data-cart-total], [data-cart-grand-total]").forEach((element) => {
+    element.textContent = formatMoney(cartTotal);
+  });
+
+  const countElement = cartPage.querySelector("[data-cart-count]");
+  if (countElement) {
+    countElement.textContent = `${itemCount} item${itemCount === 1 ? "" : "s"}`;
+  }
+}
+
+function queueCartAjax(item, action) {
+  const url = action === "remove" ? item.dataset.removeUrl : item.dataset.updateUrl;
+  item.dataset.pendingAction = action;
+  item.dataset.pendingUrl = url || "";
+}
+
+function initializeCartPage() {
+  if (!cartPage) return;
+
+  cartPage.addEventListener("click", (event) => {
+    const item = event.target.closest("[data-cart-item]");
+    if (!item) return;
+
+    const input = item.querySelector("[data-cart-quantity]");
+    const max = Number.parseInt(input.getAttribute("max"), 10) || Infinity;
+    const currentValue = Number.parseInt(input.value, 10) || 1;
+
+    if (event.target.closest("[data-cart-increase]")) {
+      input.value = String(Math.min(max, currentValue + 1));
+      queueCartAjax(item, "update");
+      updateCartTotals();
+    }
+
+    if (event.target.closest("[data-cart-decrease]")) {
+      input.value = String(Math.max(1, currentValue - 1));
+      queueCartAjax(item, "update");
+      updateCartTotals();
+    }
+
+    if (event.target.closest("[data-cart-remove]")) {
+      queueCartAjax(item, "remove");
+      item.classList.add("is-removing");
+      window.setTimeout(() => {
+        item.remove();
+        updateCartTotals();
+      }, 160);
+    }
+  });
+
+  cartPage.addEventListener("change", (event) => {
+    if (!event.target.matches("[data-cart-quantity]")) return;
+
+    const input = event.target;
+    const item = input.closest("[data-cart-item]");
+    const max = Number.parseInt(input.getAttribute("max"), 10) || Infinity;
+    const value = Number.parseInt(input.value, 10) || 1;
+    input.value = String(Math.min(max, Math.max(1, value)));
+    queueCartAjax(item, "update");
+    updateCartTotals();
+  });
+
+  updateCartTotals();
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
     closeSellerModal();
@@ -327,3 +423,16 @@ document.addEventListener("keydown", (event) => {
 });
 
 setLanguage("en");
+initializeCartPage();
+
+
+fetch(item.dataset.updateUrl, {
+  method: "POST",
+  headers: {
+    "X-CSRFToken": csrfToken,
+    "X-Requested-With": "XMLHttpRequest"
+  },
+  body: new URLSearchParams({
+    quantity: input.value
+  })
+});

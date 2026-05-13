@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order #{{ order.id }} | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="order-title">
+      <div>
+        <p class="cart-hero__eyebrow">Payment confirmed</p>
+        <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
+        <p class="cart-hero__copy">
+          Your simulated mobile money payment was successful. Below is your trusted marketplace order summary.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">OK</span>
+        <div>
+          <strong>Checkout completed</strong>
+          <span>Seller trust and payment records are attached to this order.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Order details">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Order items</p>
+            <h2>Purchased products</h2>
+          </div>
+          <span class="cart-items__count">
+            {{ order.items.count }} item{{ order.items.count|pluralize }}
+          </span>
+        </div>
+
+        <section class="vendor-group" aria-label="Purchased products">
+          {% for item in order.items.all %}
+            {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
+              <article class="cart-item">
+                <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
+                  {% if first_image %}
+                    <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                  {% else %}
+                    <span>{{ product.name|first }}</span>
+                  {% endif %}
+                </a>
+
+                <div class="cart-item__info">
+                  <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">
+                    {{ product.name }}
+                  </a>
+                  <p class="cart-item__seller">
+                    Seller: <strong>{{ seller.business_name|default:seller.user.username }}</strong>
+                  </p>
+
+                  <div class="cart-item__meta">
+                    <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
+
+                    {% if seller.is_verified %}
+                      <span class="status-badge status-badge--verified">OK Verified</span>
+                    {% elif seller.is_profile_complete %}
+                      <span class="status-badge status-badge--pending">! Pending</span>
+                    {% else %}
+                      <span class="status-badge status-badge--unverified">X Unverified</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="cart-item__price">
+                  <span>Unit price</span>
+                  <strong>${{ item.price }}</strong>
+                </div>
+
+                <div class="cart-item__price">
+                  <span>Quantity</span>
+                  <strong>{{ item.quantity }}</strong>
+                </div>
+
+                <div class="cart-item__subtotal">
+                  <span>Subtotal</span>
+                  <strong>${{ item.subtotal }}</strong>
+                </div>
+              </article>
+            {% endwith %}
+          {% empty %}
+            <div class="cart-empty">
+              <h2>No order items found</h2>
+              <p>This order does not have any products attached.</p>
+            </div>
+          {% endfor %}
+        </section>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="order-summary-title">
+        <p class="section-heading__eyebrow">Receipt</p>
+        <h2 id="order-summary-title">Order summary</h2>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Status</dt>
+            <dd>{{ order.status|title }}</dd>
+          </div>
+          <div>
+            <dt>Payment method</dt>
+            <dd>{{ order.payment.method|title }}</dd>
+          </div>
+          <div>
+            <dt>Payment status</dt>
+            <dd>{{ order.payment.status|title }}</dd>
+          </div>
+          <div>
+            <dt>Transaction ID</dt>
+            <dd>{{ order.payment.transaction_id|truncatechars:18 }}</dd>
+          </div>
+        </dl>
+
+        <div class="cart-summary__total">
+          <span>Total paid</span>
+          <strong>${{ order.total_amount }}</strong>
+        </div>
+
+        <a class="btn btn--primary cart-summary__checkout" href="/">
+          Continue Shopping
+        </a>
+
+        <div class="mobile-money-note">
+          <strong>Mobile money simulation</strong>
+          <span>
+            This payment was simulated for development. No real money was charged.
+          </span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

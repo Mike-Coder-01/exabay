@@ -416,6 +416,35 @@ function initializeCartPage() {
   updateCartTotals();
 }
 
+
+function initializeAuthRoleForms() {
+  document.querySelectorAll("[data-auth-role-form]").forEach((form) => {
+    const roleInputs = form.querySelectorAll('input[name="role"]');
+    const sellerFields = form.querySelector("[data-seller-fields]");
+
+    function syncRoleState() {
+      const selectedRole = form.querySelector('input[name="role"]:checked')?.value || "buyer";
+
+      roleInputs.forEach((input) => {
+        const card = input.closest(".auth-role__card");
+        if (card) {
+          card.classList.toggle("is-selected", input.checked);
+        }
+      });
+
+      if (sellerFields) {
+        sellerFields.classList.toggle("is-hidden", selectedRole !== "seller");
+      }
+    }
+
+    roleInputs.forEach((input) => {
+      input.addEventListener("change", syncRoleState);
+    });
+
+    syncRoleState();
+  });
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
     closeSellerModal();
@@ -424,6 +453,7 @@ document.addEventListener("keydown", (event) => {
 
 setLanguage("en");
 initializeCartPage();
+initializeAuthRoleForms();
 
 
 fetch(item.dataset.updateUrl, {

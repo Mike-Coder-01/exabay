@@ -1,0 +1,112 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="auth-page">
+    <section class="auth-shell" aria-labelledby="register-title">
+      <div class="auth-hero-panel">
+        <p class="auth-hero-panel__eyebrow">Join Exabay</p>
+        <h1 id="register-title">Start with the right marketplace role</h1>
+        <p>Create a buyer account for trusted shopping, or continue as a seller and complete business verification.</p>
+        <div class="auth-trust-strip">
+          <span class="trust-card__icon">OK</span>
+          <span>Seller onboarding protects buyers and helps credible businesses stand out.</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-card__header">
+          <p class="section-heading__eyebrow">Registration</p>
+          <h2>Create your account</h2>
+          <p>Google can verify identity quickly, but Exabay still asks for marketplace profile details after login.</p>
+        </div>
+
+        <a class="btn btn--outline auth-social-button" href="{% provider_login_url 'google' process='login' %}">
+          Continue with Google
+        </a>
+
+        <div class="auth-divider"><span>or register with email</span></div>
+
+        <form class="auth-form" method="post" data-auth-role-form novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="auth-alert" role="alert">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <fieldset class="auth-role" aria-label="Choose account role">
+            <legend>Choose how you want to continue</legend>
+            <label class="auth-role__card">
+              <input type="radio" name="role" value="buyer" {% if form.role.value != "seller" %}checked{% endif %}>
+              <span>
+                <strong>Continue as Buyer</strong>
+                <small>Shop from sellers with visible trust signals.</small>
+              </span>
+            </label>
+            <label class="auth-role__card">
+              <input type="radio" name="role" value="seller" {% if form.role.value == "seller" %}checked{% endif %}>
+              <span>
+                <strong>Continue as Seller</strong>
+                <small>Sell products after business verification.</small>
+              </span>
+            </label>
+            {{ form.role.errors }}
+          </fieldset>
+
+          <div class="auth-form__grid">
+            <label class="auth-field" for="{{ form.username.id_for_label }}">
+              <span>Username</span>
+              {{ form.username }}
+              {{ form.username.errors }}
+            </label>
+
+            <label class="auth-field" for="{{ form.email.id_for_label }}">
+              <span>Email</span>
+              {{ form.email }}
+              {{ form.email.errors }}
+            </label>
+          </div>
+
+          <label class="auth-field" for="{{ form.phone_number.id_for_label }}">
+            <span>Phone number <small>Optional</small></span>
+            {{ form.phone_number }}
+            {{ form.phone_number.errors }}
+          </label>
+
+          <div class="auth-form__grid">
+            <label class="auth-field" for="{{ form.password1.id_for_label }}">
+              <span>Password</span>
+              {{ form.password1 }}
+              {{ form.password1.errors }}
+            </label>
+
+            <label class="auth-field" for="{{ form.password2.id_for_label }}">
+              <span>Confirm password</span>
+              {{ form.password2 }}
+              {{ form.password2.errors }}
+            </label>
+          </div>
+
+          <button class="btn btn--primary auth-submit" type="submit">Create account</button>
+        </form>
+
+        <p class="auth-switch">
+          Already have an account?
+          <a href="{% url 'users:login' %}">Login</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

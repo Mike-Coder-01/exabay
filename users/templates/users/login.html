@@ -1,0 +1,73 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="auth-page">
+    <section class="auth-shell" aria-labelledby="login-title">
+      <div class="auth-hero-panel">
+        <p class="auth-hero-panel__eyebrow">Trust-first marketplace</p>
+        <h1 id="login-title">Welcome back to Exabay</h1>
+        <p>Sign in to continue shopping from verified sellers, manage your cart, and access trusted marketplace orders.</p>
+        <div class="auth-trust-strip">
+          <span class="trust-card__icon">OK</span>
+          <span>Seller verification and secure checkout stay visible across your journey.</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-card__header">
+          <p class="section-heading__eyebrow">Account access</p>
+          <h2>Login</h2>
+          <p>Use your Exabay account or continue with Google.</p>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="auth-alert" role="alert">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <a class="btn btn--outline auth-social-button" href="{% provider_login_url 'google' process='login' %}">
+          Continue with Google
+        </a>
+
+        <div class="auth-divider"><span>or</span></div>
+
+        <form class="auth-form" method="post" novalidate>
+          {% csrf_token %}
+
+          <label class="auth-field" for="{{ form.username.id_for_label }}">
+            <span>{{ form.username.label }}</span>
+            {{ form.username }}
+            {{ form.username.errors }}
+          </label>
+
+          <label class="auth-field" for="{{ form.password.id_for_label }}">
+            <span>Password</span>
+            {{ form.password }}
+            {{ form.password.errors }}
+          </label>
+
+          <button class="btn btn--primary auth-submit" type="submit">Login</button>
+        </form>
+
+        <p class="auth-switch">
+          New to Exabay?
+          <a href="{% url 'users:register' %}">Create an account</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

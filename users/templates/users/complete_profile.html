@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Profile | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="auth-page">
+    <section class="auth-shell auth-shell--wide" aria-labelledby="profile-title">
+      <div class="auth-hero-panel">
+        <p class="auth-hero-panel__eyebrow">Marketplace onboarding</p>
+        <h1 id="profile-title">Complete your Exabay profile</h1>
+        <p>Google confirms who you are. Exabay still needs buyer or seller details to keep the marketplace trusted.</p>
+        <div class="auth-trust-strip">
+          <span class="trust-card__icon">OK</span>
+          <span>Seller documents are used for verification and are not exposed as sensitive previews.</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-card__header">
+          <p class="section-heading__eyebrow">Profile setup</p>
+          <h2>Choose your role</h2>
+          <p>Buyer profiles are quick. Seller profiles require business information before seller tools unlock.</p>
+        </div>
+
+        <form class="auth-form" method="post" enctype="multipart/form-data" data-auth-role-form novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="auth-alert" role="alert">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <fieldset class="auth-role" aria-label="Choose account role">
+            <legend>Continue as</legend>
+            <label class="auth-role__card">
+              <input type="radio" name="role" value="buyer" {% if form.role.value != "seller" %}checked{% endif %}>
+              <span>
+                <strong>Buyer</strong>
+                <small>Complete your phone number and start shopping.</small>
+              </span>
+            </label>
+            <label class="auth-role__card">
+              <input type="radio" name="role" value="seller" {% if form.role.value == "seller" %}checked{% endif %}>
+              <span>
+                <strong>Seller</strong>
+                <small>Submit business details for Exabay verification.</small>
+              </span>
+            </label>
+            {{ form.role.errors }}
+          </fieldset>
+
+          <section class="onboarding-section">
+            <div class="onboarding-section__header">
+              <h3>Buyer details</h3>
+              <span class="badge">Required</span>
+            </div>
+            <label class="auth-field" for="{{ form.phone_number.id_for_label }}">
+              <span>Phone number</span>
+              {{ form.phone_number }}
+              {{ form.phone_number.errors }}
+            </label>
+          </section>
+
+          <section class="onboarding-section" data-seller-fields>
+            <div class="onboarding-section__header">
+              <h3>Seller verification</h3>
+              <span class="status-badge status-badge--pending">Pending review</span>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.business_name.id_for_label }}">
+                <span>Business name</span>
+                {{ form.business_name }}
+                {{ form.business_name.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ form.tin_number.id_for_label }}">
+                <span>TIN number</span>
+                {{ form.tin_number }}
+                {{ form.tin_number.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.license_document.id_for_label }}">
+                <span>Business license document</span>
+                {{ form.license_document }}
+                {{ form.license_document.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ form.license_expiry_date.id_for_label }}">
+                <span>License expiry date</span>
+                {{ form.license_expiry_date }}
+                {{ form.license_expiry_date.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.vat_number.id_for_label }}">
+                <span>VAT number <small>Optional</small></span>
+                {{ form.vat_number }}
+                {{ form.vat_number.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ form.vrn_number.id_for_label }}">
+                <span>VRN number <small>Optional</small></span>
+                {{ form.vrn_number }}
+                {{ form.vrn_number.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ form.tax_clearance_document.id_for_label }}">
+              <span>Tax clearance document <small>Optional</small></span>
+              {{ form.tax_clearance_document }}
+              {{ form.tax_clearance_document.errors }}
+            </label>
+          </section>
+
+          <button class="btn btn--primary auth-submit" type="submit">Save and continue</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en" data-language="en">
 <head>
@@ -78,7 +79,7 @@
 
                     <div class="cart-item__price">
                       <span>Price</span>
-                      <strong>$<span data-cart-price>{{ product.price }}</span></strong>
+                      <strong>Tsh<span data-cart-price>{{ product.price|floatformat:"0"|intcomma }}</span></strong>
                     </div>
 
                     <div class="quantity-control" aria-label="Quantity controls">
@@ -90,7 +91,7 @@
 
                     <div class="cart-item__subtotal">
                       <span>Subtotal</span>
-                      <strong>$<span data-cart-subtotal>0.00</span></strong>
+                      <strong>Tsh<span data-cart-subtotal>0.00</span></strong>
                     </div>
 
                     <button class="cart-item__remove" type="button" data-cart-remove aria-label="Remove {{ product.name }}">
@@ -109,7 +110,7 @@
           <dl class="cart-summary__lines">
             <div>
               <dt>Items subtotal</dt>
-              <dd>$<span data-cart-total>0.00</span></dd>
+              <dd>Tsh<span data-cart-total>0.00</span></dd>
             </div>
             <div>
               <dt>Delivery</dt>
@@ -123,7 +124,7 @@
 
           <div class="cart-summary__total">
             <span>Total</span>
-            <strong>$<span data-cart-grand-total>0.00</span></strong>
+            <strong>Tsh<span data-cart-grand-total>0.00</span></strong>
           </div>
 
       

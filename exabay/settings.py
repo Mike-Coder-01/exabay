@@ -174,3 +174,8 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+ACCOUNT_ADAPTER = "users.adapters.ExabayAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "users.adapters.ExabaySocialAccountAdapter"
+LOGIN_URL = "users:login"
+SELLER_DASHBOARD_URL_NAME = "products:sellerDashboard"  

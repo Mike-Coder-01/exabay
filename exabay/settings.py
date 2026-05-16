@@ -145,24 +145,24 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
+# Static files configuration
 STATIC_URL = '/static/'
-
-# Directory where Django will collect static files to
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Directories where Django looks for source static files
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Use WhiteNoise for static file serving in production
-if not DEBUG:
-    # Use the simpler storage backend if you have issues with Manifest storage
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-    # Alternative if the above works:
-    # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# FIXED: Removed duplicate MEDIA settings
+# Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# In production, use WhiteNoise for media too (temporary fix)
+if not DEBUG:
+    # Add media to static files collection
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'media'))
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Also ensure media files are served via the same URL
+    # This makes /media/ URLs work by serving from staticfiles
+
 
 # SOCIAL LOGIN CONFIGURATIONS
 SITE_ID = 1

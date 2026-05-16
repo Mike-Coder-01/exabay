@@ -144,59 +144,81 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================================
     // DELETE PRODUCT
     // ========================================
+    // document.querySelectorAll('.delete-product-btn').forEach(btn => {
+    //     console.log('Delete button found:', btn.dataset.productId);
+
+    //     window.location.href = `/product/<int:${btn.dataset.productId}>/delete/`
+        
+    //     btn.addEventListener('click', async function() {
+    //         const productId = this.dataset.productId;
+    //         const productName = this.dataset.productName;
+            
+    //         if (!productId || productId === 'None') {
+    //             showToast('Cannot delete demo products', 'error');
+    //             return;
+    //         }
+            
+    //         if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+    //             return;
+    //         }
+            
+    //         const row = this.closest('tr');
+    //         this.disabled = true;
+            
+    //         try {
+    //             const response = await fetch(`/products/product/${productId}/delete_api/`, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'X-CSRFToken': getCSRFToken(),
+    //                 }
+    //             });
+                
+    //             const data = await response.json();
+    //             console.log('Delete response:', data);
+                
+    //             if (response.ok) {
+    //                 showToast(data.message || 'Product deleted!', 'success');
+    //                 row.style.opacity = '0';
+    //                 row.style.transition = 'opacity 0.3s';
+    //                 setTimeout(() => {
+    //                     row.remove();
+    //                     const remainingRows = document.querySelectorAll('.data-table__body .data-table__row').length;
+    //                     if (remainingRows <= 1) {
+    //                         location.reload();
+    //                     }
+    //                 }, 300);
+    //             } else {
+    //                 showToast(data.error || 'Failed to delete product', 'error');
+    //             }
+    //         } catch (error) {
+    //             console.error('Error:', error);
+    //             showToast('Network error occurred', 'error');
+    //         } finally {
+    //             this.disabled = false;
+    //         }
+    //     });
+    // });
+
+    // ========================================
+    // DELETE PRODUCT - Redirect to delete page
+    // ========================================
     document.querySelectorAll('.delete-product-btn').forEach(btn => {
         console.log('Delete button found:', btn.dataset.productId);
         
-        btn.addEventListener('click', async function() {
+        btn.addEventListener('click', function() {
             const productId = this.dataset.productId;
-            const productName = this.dataset.productName;
             
             if (!productId || productId === 'None') {
-                showToast('Cannot delete demo products', 'error');
+                alert('Cannot delete demo products');
                 return;
             }
             
-            if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
-                return;
-            }
-            
-            const row = this.closest('tr');
-            this.disabled = true;
-            
-            try {
-                const response = await fetch(`/products/product/${productId}/delete_api/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCSRFToken(),
-                    }
-                });
-                
-                const data = await response.json();
-                console.log('Delete response:', data);
-                
-                if (response.ok) {
-                    showToast(data.message || 'Product deleted!', 'success');
-                    row.style.opacity = '0';
-                    row.style.transition = 'opacity 0.3s';
-                    setTimeout(() => {
-                        row.remove();
-                        const remainingRows = document.querySelectorAll('.data-table__body .data-table__row').length;
-                        if (remainingRows <= 1) {
-                            location.reload();
-                        }
-                    }, 300);
-                } else {
-                    showToast(data.error || 'Failed to delete product', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Network error occurred', 'error');
-            } finally {
-                this.disabled = false;
-            }
+            // Redirect to delete confirmation page
+            window.location.href = `/products/product/${productId}/delete/`;
         });
     });
 
+    
     // ========================================
     // REMOVE FEATURED FROM SLOTS
     // ========================================

@@ -445,6 +445,25 @@ function initializeAuthRoleForms() {
   });
 }
 
+function initializeFooterNewsletter() {
+  document.querySelectorAll("[data-footer-newsletter]").forEach((form) => {
+    const input = form.querySelector('input[type="email"]');
+    const status = form.querySelector("[data-footer-newsletter-status]");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        return;
+      }
+
+      status.textContent = "Thanks. You are on the Exabay updates list.";
+      form.reset();
+    });
+  });
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && modal && modal.classList.contains("is-open")) {
     closeSellerModal();
@@ -454,6 +473,7 @@ document.addEventListener("keydown", (event) => {
 setLanguage("en");
 initializeCartPage();
 initializeAuthRoleForms();
+initializeFooterNewsletter();
 
 
 fetch(item.dataset.updateUrl, {

@@ -1,0 +1,83 @@
+<footer class="site-footer" role="contentinfo">
+  <section class="site-footer__inner">
+    <div class="site-footer__brand">
+      <a class="site-footer__logo" href="/" aria-label="Exabay homepage">Exabay</a>
+      <p>Buy from verified sellers with confidence. Exabay helps shoppers discover products while keeping seller credibility visible.</p>
+
+      <div class="site-footer__trust" aria-label="Marketplace trust highlights">
+        <span class="status-badge status-badge--verified">OK Verified sellers</span>
+        <span class="badge">Secure checkout</span>
+        <span class="stock stock--in">Buyer protection</span>
+      </div>
+    </div>
+
+    <form class="site-footer__newsletter" data-footer-newsletter>
+      <div>
+        <p class="section-heading__eyebrow">Marketplace updates</p>
+        <h2>Get trusted deals and seller updates</h2>
+        <p>Receive product drops, buyer protection updates, and seller verification news.</p>
+      </div>
+      <div class="site-footer__newsletter-row">
+        <label class="sr-only" for="footer-email">Email address</label>
+        <input id="footer-email" type="email" name="email" placeholder="Enter your email" required>
+        <button class="btn btn--primary" type="submit">Subscribe</button>
+      </div>
+      <p class="site-footer__form-status" data-footer-newsletter-status aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="site-footer__links" aria-label="Footer links">
+    <nav class="site-footer__group" aria-label="Shop">
+      <h3>Shop</h3>
+      <a href="/#products">All Products</a>
+      <a href="/#products">Categories</a>
+      <a href="/#products">Featured Products</a>
+      <a href="/#products">New Arrivals</a>
+    </nav>
+
+    <nav class="site-footer__group" aria-label="Sell on Exabay">
+      <h3>Sell on Exabay</h3>
+      <a href="{% url 'users:register'  %}">Become a Seller</a>
+      <a href="{% url 'users:complete_profile' %}">Seller Verification</a>
+      <a href="{% url 'users:complete_profile' %}">Complete Seller Profile</a>
+      <a href="#">Seller Guidelines</a>
+    </nav>
+
+    <nav class="site-footer__group" aria-label="Customer support">
+      <h3>Customer Support</h3>
+      <a href="#">Help Center</a>
+      <a href="#">Track Order</a>
+      <a href="#">Returns and Refunds</a>
+      <a href="tel:+255612350807">Contact Support</a>
+    </nav>
+
+    <nav class="site-footer__group" aria-label="Trust and legal">
+      <h3>Trust and Legal</h3>
+      <a href="#">Buyer Protection</a>
+      <a href="#">Seller Verification Policy</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Report a Seller</a>
+    </nav>
+
+    <div class="site-footer__group">
+      <h3>Payments</h3>
+      <div class="site-footer__payments" aria-label="Supported payment methods">
+        <span>M-Pesa</span>
+        <span>Tigo Pesa</span>
+        <span>Airtel Money</span>
+        <span>Cards</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="site-footer__bottom">
+    <p>&copy; 2026 Exabay. All rights reserved.</p>
+    <div class="site-footer__social" aria-label="Social links">
+      <a href="tel:+255612350807">Call now</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Instagram</a>
+      <a href="#">X</a>
+    </div>
+  </section>
+</footer>

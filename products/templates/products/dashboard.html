@@ -57,6 +57,12 @@
               <span class="nav__text">Settings</span>
             </a>
           </li>
+          <li class="nav__item-wrapper">
+            <a class="nav__item" href="{% url 'users:logout' %}">
+              <span class="nav__icon"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></span>
+              <span class="nav__text">Logout</span>
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>
@@ -414,7 +420,6 @@
       </main>
     </div>
 </div>
-
 <style>
     @keyframes spin {
         from { transform: rotate(0deg); }

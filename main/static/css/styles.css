@@ -1602,6 +1602,190 @@ a {
   display: none;
 }
 
+.site-footer {
+  margin-top: 72px;
+  border-top: 1px solid var(--color-border);
+  background: #ffffff;
+}
+
+.site-footer__inner,
+.site-footer__links,
+.site-footer__bottom {
+  width: min(100% - 32px, var(--container));
+  margin: 0 auto;
+}
+
+.site-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(320px, 1fr);
+  gap: 24px;
+  padding: 34px 0 26px;
+}
+
+.site-footer__brand,
+.site-footer__newsletter {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: #f8fafc;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.site-footer__brand {
+  padding: 22px;
+}
+
+.site-footer__logo {
+  display: inline-block;
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  background: linear-gradient(120deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.site-footer__brand p {
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: var(--color-muted);
+}
+
+.site-footer__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.site-footer__newsletter {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  background:
+    linear-gradient(120deg, rgba(30, 58, 138, 0.06), rgba(20, 184, 166, 0.1)),
+    #ffffff;
+}
+
+.site-footer__newsletter h2 {
+  margin: 0;
+  color: var(--color-primary-dark);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  letter-spacing: 0;
+}
+
+.site-footer__newsletter p {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+}
+
+.site-footer__newsletter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.site-footer__newsletter-row input {
+  min-height: 46px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 0 16px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.site-footer__newsletter-row input:focus {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.14);
+}
+
+.site-footer__form-status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--color-success);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.site-footer__links {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 1.1fr 1.1fr 1fr;
+  gap: 18px;
+  padding: 24px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.site-footer__group {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.site-footer__group h3 {
+  margin: 0 0 3px;
+  color: var(--color-primary-dark);
+  font-size: 0.96rem;
+  letter-spacing: 0;
+}
+
+.site-footer__group a {
+  color: var(--color-muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.site-footer__group a:hover {
+  color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+.site-footer__payments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.site-footer__payments span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: #f8fafc;
+  color: var(--color-primary-dark);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.site-footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.site-footer__bottom p {
+  margin: 0;
+}
+
+.site-footer__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-footer__social a {
+  color: var(--color-primary);
+  font-weight: 850;
+}
+
 body.modal-lock {
   overflow: hidden;
 }
@@ -1623,7 +1807,8 @@ body.modal-lock {
   .product-detail__content,
   .cart-layout,
   .auth-shell,
-  .auth-shell--wide {
+  .auth-shell--wide,
+  .site-footer__inner {
     grid-template-columns: 1fr;
   }
 
@@ -1748,6 +1933,14 @@ body.modal-lock {
   .auth-role {
     grid-template-columns: 1fr;
   }
+
+  .site-footer__links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-footer__newsletter-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1800,5 +1993,14 @@ body.modal-lock {
 
   .cart-item__remove {
     justify-self: start;
+  }
+
+  .site-footer__links {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer__bottom {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

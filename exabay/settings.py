@@ -102,24 +102,11 @@ WSGI_APPLICATION = 'exabay.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# if DEBUG:
-#     DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
+# FIXED: Single database configuration
+# Use environment variable for database URL, fallback to SQLite for local development
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://postgres:postgres@localhost:5432/mysite',
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
         conn_max_age=600
     )
 }
@@ -158,8 +145,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 
 # Directory where Django will collect static files to
@@ -170,10 +155,12 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Use WhiteNoise for static file serving in production
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Use the simpler storage backend if you have issues with Manifest storage
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+    # Alternative if the above works:
+    # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# FIXED: Removed duplicate MEDIA settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -203,4 +190,4 @@ SOCIALACCOUNT_PROVIDERS = {
 ACCOUNT_ADAPTER = "users.adapters.ExabayAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "users.adapters.ExabaySocialAccountAdapter"
 LOGIN_URL = "users:login"
-SELLER_DASHBOARD_URL_NAME = "products:sellerDashboard"  
+SELLER_DASHBOARD_URL_NAME = "products:sellerDashboard"

@@ -18,7 +18,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, True)  # default type casting
+    DEBUG=(bool, False)  # default type casting
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -162,15 +162,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 
-# Production static files configuration
+# Directory where Django will collect static files to
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Directories where Django looks for source static files
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Use WhiteNoise for static file serving in production
 if not DEBUG:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Your source static files
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-else:
-    # Development - serve from static folder directly
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

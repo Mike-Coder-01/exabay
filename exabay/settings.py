@@ -18,7 +18,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, False)  # default type casting
+    DEBUG=(bool, True)  # default type casting
 )
 
 environ.Env.read_env(BASE_DIR / ".env")

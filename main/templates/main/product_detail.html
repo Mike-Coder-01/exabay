@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ product.name }} | Exabay</title>
+  <title>{{ product.name }} | Exxabay</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
@@ -92,13 +92,13 @@
 
         {% if product.seller.is_verified %}
           <span class="status-badge status-badge--verified">OK Verified</span>
-          <p class="detail-panel__copy">This seller has been verified by Exabay and meets our trust standards.</p>
+          <p class="detail-panel__copy">This seller has been verified by Exxabay and meets our trust standards.</p>
         {% elif product.seller.is_profile_complete %}
           <span class="status-badge status-badge--pending">! Pending</span>
-          <p class="detail-panel__copy">This seller has submitted required trust information and is waiting for Exabay review.</p>
+          <p class="detail-panel__copy">This seller has submitted required trust information and is waiting for Exxabay review.</p>
         {% else %}
           <span class="status-badge status-badge--unverified">X Unverified</span>
-          <p class="detail-panel__copy">This seller has not completed Exabay's verification checks yet.</p>
+          <p class="detail-panel__copy">This seller has not completed Exxabay's verification checks yet.</p>
         {% endif %}
 
         <div class="metrics-grid detail-panel__metrics">

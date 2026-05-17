@@ -1,9 +1,9 @@
 <header class="site-header">
     <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:navLabel">
-      <a class="nav__logo" href="/" aria-label="Exabay homepage">Exabay</a>
+      <a class="nav__logo" href="/" aria-label="Exabay homepage">Exxabay</a>
 
       <form class="nav__search" role="search" method="get" action="{% url 'products:filter_product' %}">
-        <label class="sr-only" for="site-search" data-i18n="searchProducts">Search Exabay products</label>
+        <label class="sr-only" for="site-search" data-i18n="searchProducts">Search Exxabay products</label>
         <input id="site-search" class="nav__search-input" name="search_filter" type="search" placeholder="Search trusted products, brands, sellers" data-i18n-attr="placeholder:navSearchPlaceholder" value="{{ request.GET.q }}">
         <button class="nav__search-button" type="submit" aria-label="Search" data-i18n-attr="aria-label:search">
           <svg viewBox="0 0 24 24" aria-hidden="true">

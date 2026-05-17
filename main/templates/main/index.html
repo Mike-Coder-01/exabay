@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exabay | Trusted Marketplace</title>
+  <title>Exxabay | Trusted Marketplace</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
@@ -24,9 +24,9 @@
 
         <div class="hero__categories" aria-label="Popular categories" data-i18n-attr="aria-label:popularCategories">
           <a class="category-pill" href="#products" data-i18n="catElectronics">Electronics</a>
-          <a class="category-pill" href="#products" data-i18n="catHome">Home</a>
+          <!-- <a class="category-pill" href="#products" data-i18n="catHome">Home</a>
           <a class="category-pill" href="#products" data-i18n="catFashion">Fashion</a>
-          <a class="category-pill" href="#products" data-i18n="catBeauty">Beauty</a>
+          <a class="category-pill" href="#products" data-i18n="catBeauty">Beauty</a> -->
         </div>
       </div>
 
@@ -63,15 +63,15 @@
         {% if product.is_featured %}
           {% with seller=product.seller first_image=product.images.first %}
             {% if seller.is_verified %}
-              {% with trust_status="verified" trust_label="Verified" trust_copy="This seller has been verified by Exabay and meets our trust standards." %}
+              {% with trust_status="verified" trust_label="Verified" trust_copy="This seller has been verified by Exxabay and meets our trust standards." %}
                 {% include "main/product_card.html" %}
               {% endwith %}
             {% elif seller.is_profile_complete %}
-              {% with trust_status="pending" trust_label="Pending" trust_copy="This seller has submitted the required trust profile information and is waiting for Exabay review." %}
+              {% with trust_status="pending" trust_label="Pending" trust_copy="This seller has submitted the required trust profile information and is waiting for Exxabay review." %}
                 {% include "main/product_card.html" %}
               {% endwith %}
             {% else %}
-              {% with trust_status="unverified" trust_label="Unverified" trust_copy="This seller has not completed Exabay's verification checks yet." %}
+              {% with trust_status="unverified" trust_label="Unverified" trust_copy="This seller has not completed Exxabay's verification checks yet." %}
                 {% include "main/product_card.html" %}
               {% endwith %}
             {% endif %}

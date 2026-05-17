@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Login failed</h1>
+
+    <p>
+      We could not complete your social login. The request may have been cancelled
+      or the provider could not verify your account.
+    </p>
+
+    {% if auth_error %}
+      <p class="auth-error">
+        {{ auth_error }}
+      </p>
+    {% endif %}
+
+    <div class="auth-links">
+      <a href="{% url 'account_login' %}" class="btn btn-primary">
+        Try again
+      </a>
+      <a href="/" class="btn btn-secondary">
+        Go home
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

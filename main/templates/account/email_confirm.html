@@ -1,0 +1,24 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    {% if confirmation %}
+      <h1>Confirm email</h1>
+      <p>Please confirm that {{ confirmation.email_address.email }} belongs to you.</p>
+
+      <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Confirm email</button>
+      </form>
+    {% else %}
+      <h1>Invalid confirmation link</h1>
+      <p>This email confirmation link is invalid or expired.</p>
+
+      <a href="{% url 'account_email' %}" class="btn btn-primary">
+        Manage email addresses
+      </a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

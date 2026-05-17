@@ -1,0 +1,32 @@
+{% extends "main/base.html" %}
+{% load socialaccount %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Create account</h1>
+    <p>Join Exabay and start buying or selling.</p>
+
+    <form method="post" action="{% url 'account_signup' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary">Sign up</button>
+    </form>
+
+    <div class="auth-divider">or</div>
+
+    <a href="{% provider_login_url 'google' %}" class="btn btn-google">
+      Sign up with Google
+    </a>
+
+    <div class="auth-links">
+      <a href="{% url 'account_login' %}">Already have an account? Login</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Continue with {{ provider.name }}</h1>
+
+    <p>
+      You are about to sign in to Exabay using your {{ provider.name }} account.
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if process == "connect" %}
+        <button type="submit" class="btn btn-primary">
+          Connect {{ provider.name }}
+        </button>
+      {% else %}
+        <button type="submit" class="btn btn-primary">
+          Continue
+        </button>
+      {% endif %}
+    </form>
+
+    <div class="auth-links">
+      <a href="{% url 'account_login' %}">Back to login</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

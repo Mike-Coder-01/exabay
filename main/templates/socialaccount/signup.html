@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Complete your signup</h1>
+
+    <p>
+      You are signing up to Exabay using your {{ account.get_provider.name }} account.
+      Please confirm the details below.
+    </p>
+
+    <form method="post" action="{% url 'socialaccount_signup' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+
+      {% if redirect_field_value %}
+        <input
+          type="hidden"
+          name="{{ redirect_field_name }}"
+          value="{{ redirect_field_value }}"
+        >
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary">
+        Create account
+      </button>
+    </form>
+
+    <div class="auth-links">
+      <a href="{% url 'account_login' %}">Back to login</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

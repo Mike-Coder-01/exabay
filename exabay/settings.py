@@ -172,7 +172,7 @@ AWS_QUERYSTRING_AUTH = False
 AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
 
 if not DEBUG:
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
 STORAGES = {
     "default": {

@@ -69,35 +69,46 @@ def logout_view(request):
     return redirect("main:home")
 
 
-def subscribe (request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        if Subscriber.objects.filter(subscriber_email=email).exists():
-            return JsonResponse (
-                {'error': f'{email} already subscribed'}, status=400
-            )
-        
-        subscriber = Subscriber.objects.create(
-            subscriber_email = email
-        )
+def subscribe(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
 
-        send_custom_email(
-            user_email=request.user.email,
-            username=request.user.username,
-            subject="You're subscribed! Stay updated with Exxabay",
-            body="""You’re officially subscribed to Exxabay updates 🎉
+    email = request.POST.get('email')
 
-                        We’ll keep you informed about:
+    # FIX 1: validate input
+    if not email:
+        return JsonResponse({'error': 'Email is required'}, status=400)
 
-                        Hot deals and discounts
-                        Trending products
-                        New sellers and marketplace updates
+    # optional: normalize
+    email = email.strip().lower()
 
-                        Thanks for being part of Exxabay."""
-        )
-
+    # already exists check
+    if Subscriber.objects.filter(subscriber_email=email).exists():
         return JsonResponse(
-            {'message': 'Thanks. You are on the Exxabay updates list.'}, status=200
+            {'error': f'{email} already subscribed'},
+            status=400
         )
-        
-    return render (request, 'main/index.html')
+
+    subscriber = Subscriber.objects.create(
+        subscriber_email=email
+    )
+
+    # FIX 2: use correct email (NOT request.user)
+    send_custom_email(
+        user_email=email,
+        username="Subscriber",
+        subject="You're subscribed! Stay updated with Exxabay",
+        body="""You’re officially subscribed to Exxabay updates 🎉
+
+            We’ll keep you informed about:
+            - Hot deals and discounts
+            - Trending products
+            - New sellers and marketplace updates
+
+            Thanks for being part of Exxabay."""
+            )
+
+    return JsonResponse(
+        {'message': 'Thanks. You are on the Exxabay updates list.'},
+        status=200
+    )

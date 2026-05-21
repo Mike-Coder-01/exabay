@@ -1,6 +1,5 @@
 from decimal import Decimal
 import uuid
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -8,14 +7,12 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
-
 from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem, Payment
 
 
 def orderView(request):
     return render(request, "orders/orders.html")
-
 
 @login_required
 def cart_view(request):
@@ -32,7 +29,6 @@ def cart_view(request):
         "cart": cart,
         "cart_items": cart_items,
     })
-
 
 
 @login_required
@@ -62,7 +58,6 @@ def add_to_cart(request, product_id):
 
     messages.success(request, "Product added to cart.")
     return redirect("orders:cart")
-
 
 
 @login_required
@@ -208,9 +203,6 @@ def checkout(request):
     return redirect("orders:order_detail", order_id=order.id)
 
 
-
-from django.shortcuts import get_object_or_404
-
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(
@@ -229,12 +221,3 @@ def order_detail(request, order_id):
     return render(request, "orders/order_detail.html", {
         "order": order
     })
-
-
-
-
-
-
-
-
-

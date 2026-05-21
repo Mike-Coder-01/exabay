@@ -16,6 +16,7 @@ from django.urls import reverse
 
 
 
+
 DEFAULT_DASHBOARD_PRODUCTS = [
     {
         "id": None,
@@ -561,8 +562,6 @@ def product_search_view(request):
             
     return render(request, 'main/index.html', context)
 
-from django.shortcuts import get_object_or_404, render
-from products.models import Product
 
 def product_detail(request, pk):
     product = get_object_or_404(

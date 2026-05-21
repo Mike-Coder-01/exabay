@@ -39,3 +39,10 @@ class SellerProfile(models.Model):
             self.license_document,
             self.license_expiry_date
         ])
+    
+
+class Subscriber (models.Model):
+    subscriber_email = models.EmailField(unique=True, null=True, blank=True)
+
+    def __str__(self):
+        return self.subscriber_email

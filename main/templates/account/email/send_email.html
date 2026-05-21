@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f4f4f4;
+            padding:20px;
+        }
+
+        .container{
+            max-width:600px;
+            margin:auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+        }
+
+        .footer{
+            margin-top:30px;
+            color:gray;
+            font-size:14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h2>Hello {{ username }},</h2>
+
+        <p>
+            {{ body }}
+        </p>
+
+        <div class="footer">
+            <p>Best regards,</p>
+            <p><strong>Exxabay Team</strong></p>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -450,7 +450,7 @@ function initializeFooterNewsletter() {
     const input = form.querySelector('input[type="email"]');
     const status = form.querySelector("[data-footer-newsletter-status]");
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       if (!input.checkValidity()) {
@@ -458,8 +458,35 @@ function initializeFooterNewsletter() {
         return;
       }
 
-      status.textContent = "Thanks. You are on the Exabay updates list.";
-      form.reset();
+      const formData = new FormData(form);
+      const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]")?.value;
+
+      try {
+        const response = await fetch("/users/subscribe/", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": csrfToken,
+          },
+        })
+        .then(response => response.json())
+        .then((data) => {
+          if(data.error) {
+            status.textContent = data.error
+            form.reset();
+            return;
+          }
+
+          if(data.message) {
+            status.textContent = data.message
+            form.reset();
+            return;
+          }
+        })
+
+      } catch (error) {
+        status.textContent = "Sorry, we could not subscribe you right now.";
+      }
     });
   });
 }

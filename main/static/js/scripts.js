@@ -473,7 +473,6 @@ function initializeFooterNewsletter() {
         .then((data) => {
           if(data.error) {
             status.textContent = data.error
-            form.reset();
             return;
           }
 

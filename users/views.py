@@ -74,7 +74,7 @@ def subscribe(request):
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
     email = request.POST.get('email')
-
+    print("EMAIL RECEIVED:", request.POST.get("email"))
     # FIX 1: validate input
     if not email:
         return JsonResponse({'error': 'Email is required'}, status=400)
@@ -93,10 +93,9 @@ def subscribe(request):
         subscriber_email=email
     )
 
-    # FIX 2: use correct email (NOT request.user)
     send_custom_email(
         user_email=email,
-        username="Subscriber",
+        username= request.user.username if request.user else email,
         subject="You're subscribed! Stay updated with Exxabay",
         body="""You’re officially subscribed to Exxabay updates 🎉
 

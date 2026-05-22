@@ -445,12 +445,16 @@ function initializeAuthRoleForms() {
   });
 }
 
+
 function initializeFooterNewsletter() {
   document.querySelectorAll("[data-footer-newsletter]").forEach((form) => {
     const input = form.querySelector('input[type="email"]');
     const status = form.querySelector("[data-footer-newsletter-status]");
+    const button = form.querySelector('button[type="submit"]');
+    const spinner = button.querySelector(".spinner");
+    const buttonText = button.querySelector(".btn-text");
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       if (!input.checkValidity()) {
@@ -458,8 +462,44 @@ function initializeFooterNewsletter() {
         return;
       }
 
-      status.textContent = "Thanks. You are on the Exabay updates list.";
-      form.reset();
+      const formData = new FormData(form);
+
+      const csrfToken = document.cookie
+        .split("; ")
+        .find(row => row.startsWith("csrftoken="))
+        ?.split("=")[1];
+
+      // show spinner (NO CSS needed)
+      button.disabled = true;
+      spinner.style.display = "inline-flex";
+      buttonText.textContent = "Subscribing...";
+      status.textContent = "";
+
+      try {
+        const response = await fetch("/users/subscribe/", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": csrfToken,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          status.textContent = data.error;
+        } else if (data.message) {
+          status.textContent = data.message;
+          form.reset();
+        }
+
+      } catch (error) {
+        status.textContent = "Sorry, we could not subscribe you right now.";
+      } finally {
+        button.disabled = false;
+        spinner.style.display = "none";
+        buttonText.textContent = "Subscribe";
+      }
     });
   });
 }

@@ -1,0 +1,564 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="shortcut icon" href="{% static 'images/favicon-v2.png' %}" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Control Panel | Exxabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="admin-panel-title">
+      <div>
+        <p class="cart-hero__eyebrow">Exabay control panel</p>
+        <h1 id="admin-panel-title" class="cart-hero__title">Marketplace oversight</h1>
+        <p class="cart-hero__copy">Review seller verification, monitor paid orders, follow up with sellers and buyers, and keep fulfillment safe.</p>
+      </div>
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">OK</span>
+        <div>
+          <strong>Admin trust operations</strong>
+          <span>Verification decisions and follow-up messages are recorded for accountability.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Admin dashboard">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Admin workspace</p>
+            <h2>Choose a control area</h2>
+          </div>
+          <span class="cart-items__count">{% if panel == "sellers" %}Seller verification{% elif panel == "orders" %}Order follow-up{% else %}All controls{% endif %}</span>
+        </div>
+
+        <div class="product-detail__actions" aria-label="Admin panel filters">
+          <a class="btn {% if panel == 'all' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel=all&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}">All</a>
+          <a class="btn {% if panel == 'sellers' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel=sellers&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}">Seller verification</a>
+          <a class="btn {% if panel == 'orders' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel=orders&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}">Order follow-up</a>
+        </div>
+
+        <form class="auth-form" method="get" aria-label="Date range filter">
+          <input type="hidden" name="panel" value="{{ panel }}">
+          <input type="hidden" name="seller_status" value="{{ seller_status }}">
+          <input type="hidden" name="status" value="{{ status }}">
+          <div class="auth-form__grid">
+            <label class="auth-field">
+              <span>From date</span>
+              <input class="auth-field__input" type="date" name="date_from" value="{{ date_from }}">
+            </label>
+            <label class="auth-field">
+              <span>To date</span>
+              <input class="auth-field__input" type="date" name="date_to" value="{{ date_to }}">
+            </label>
+          </div>
+          <div class="product-detail__actions">
+            <button class="btn btn--primary" type="submit">Apply date filter</button>
+            <a class="btn btn--outline" href="?panel={{ panel }}&seller_status={{ seller_status }}&status={{ status }}">Clear dates</a>
+          </div>
+        </form>
+
+        {% if panel == "all" or panel == "sellers" %}
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Seller verification</p>
+            <h2>New and reviewed sellers</h2>
+          </div>
+          <span class="cart-items__count">{{ seller_summary.pending_sellers }} pending</span>
+        </div>
+
+        <div class="product-detail__actions" aria-label="Seller filters">
+          <a class="btn {% if seller_status == 'pending' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel={{ panel }}&seller_status=pending&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}">Pending</a>
+          <a class="btn {% if seller_status == 'verified' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel={{ panel }}&seller_status=verified&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}">Verified</a>
+          <a class="btn {% if seller_status == 'rejected' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel={{ panel }}&seller_status=rejected&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}">Rejected</a>
+          <a class="btn {% if seller_status == 'all' %}btn--primary{% else %}btn--outline{% endif %}" href="?panel={{ panel }}&seller_status=all&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}">All sellers</a>
+        </div>
+
+        <section class="vendor-group" aria-label="Seller review queue">
+          {% for seller in sellers %}
+            <article class="detail-panel">
+              <div class="cart-items__header">
+                <div>
+                  <p class="section-heading__eyebrow">Seller review</p>
+                  <h2>{{ seller.business_name|default:seller.user.username }}</h2>
+                  <p class="detail-panel__muted">Owner: {{ seller.user.get_full_name|default:seller.user.username }}</p>
+                </div>
+                <div class="cart-item__meta">
+                  {% if seller.is_verified %}
+                    <span class="status-badge status-badge--verified">OK Verified</span>
+                  {% elif seller.verification_review.status == "rejected" %}
+                    <span class="status-badge status-badge--unverified">X Rejected</span>
+                  {% else %}
+                    <span class="status-badge status-badge--pending">! Pending review</span>
+                  {% endif %}
+                  {% if seller.is_profile_complete %}
+                    <span class="badge">Profile complete</span>
+                  {% else %}
+                    <span class="badge">Missing information</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>1. Business identity</h3>
+                  <span class="badge">Review details</span>
+                </div>
+                <div class="metrics-grid">
+                  <div class="metric">
+                    <span class="metric__label">TIN number</span>
+                    <strong>{{ seller.tin_number|default:"N/A" }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">VAT</span>
+                    <strong>{{ seller.vat_number|default:"N/A" }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">VRN</span>
+                    <strong>{{ seller.vrn_number|default:"N/A" }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">License expiry</span>
+                    <strong>{{ seller.license_expiry_date|default:"N/A" }}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>2. Verification documents</h3>
+                  <span class="badge">Sensitive previews hidden</span>
+                </div>
+                <div class="documents-list">
+                  <div class="document-item">
+                    <div>
+                      <div class="document-item__name">Business license</div>
+                      <div class="document-item__status">{% if seller.license_document %}On file{% else %}Missing{% endif %}</div>
+                    </div>
+                    {% if seller.license_document %}
+                      <a class="btn btn--outline" href="{{ seller.license_document.url }}" target="_blank" rel="noopener">View Document</a>
+                    {% endif %}
+                  </div>
+                  <div class="document-item">
+                    <div>
+                      <div class="document-item__name">Tax clearance document</div>
+                      <div class="document-item__status">{% if seller.tax_clearance_document %}On file{% else %}Not submitted{% endif %}</div>
+                    </div>
+                    {% if seller.tax_clearance_document %}
+                      <a class="btn btn--outline" href="{{ seller.tax_clearance_document.url }}" target="_blank" rel="noopener">View Document</a>
+                    {% endif %}
+                  </div>
+                </div>
+              </section>
+
+              {% if seller.verification_review.reason %}
+                <div class="mobile-money-note">
+                  <strong>Latest review note</strong>
+                  <span>{{ seller.verification_review.reason }}</span>
+                </div>
+              {% endif %}
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>3. Admin decision</h3>
+                  {% if seller.is_verified %}
+                    <span class="status-badge status-badge--verified">Already verified</span>
+                  {% else %}
+                    <span class="status-badge status-badge--pending">Action required</span>
+                  {% endif %}
+                </div>
+                {% if seller.is_verified %}
+                  <button class="btn btn--primary" type="button" disabled>Already verified</button>
+                  <form class="auth-form" method="post" action="{% url 'control_panel:unverify_seller' seller.id %}">
+                    {% csrf_token %}
+                    <label class="auth-field">
+                      <span>Unverify reason</span>
+                      <textarea class="auth-field__input" name="reason" rows="3" placeholder="Explain why verified status is being removed" required>Your Exabay seller verification has been removed. Please review your business profile and documents.</textarea>
+                    </label>
+                    <button class="btn btn--outline" type="submit">Unverify seller</button>
+                  </form>
+                {% else %}
+                  <form class="auth-form" method="post" action="{% url 'control_panel:verify_seller' seller.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="reason" value="Your seller profile has already been verified by Exabay. You can now sell with verified trust status.">
+                    <button class="btn btn--primary" type="submit">Verify seller</button>
+                  </form>
+                {% endif %}
+
+                <form class="auth-form" method="post" action="{% url 'control_panel:reject_seller' seller.id %}">
+                  {% csrf_token %}
+                  <label class="auth-field">
+                    <span>Reject reason</span>
+                    <textarea class="auth-field__input" name="reason" rows="3" placeholder="Explain what must be corrected" required></textarea>
+                  </label>
+                  <button class="btn btn--outline" type="submit">Reject seller</button>
+                </form>
+              </section>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>4. Contact seller</h3>
+                  <span class="badge">Follow up</span>
+                </div>
+                <div class="product-detail__actions">
+                  {% if seller.user.email %}
+                    <a class="btn btn--outline" href="mailto:{{ seller.user.email }}">Email seller</a>
+                  {% endif %}
+                  {% if seller.user.phone_number %}
+                    <a class="btn btn--outline" href="tel:{{ seller.user.phone_number }}">Call seller</a>
+                  {% endif %}
+                </div>
+                <form class="auth-form" method="post" action="{% url 'control_panel:contact_user' seller.user.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="notification_type" value="seller_message">
+                  <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                  <label class="auth-field">
+                    <span>Message subject</span>
+                    <input class="auth-field__input" type="text" name="subject" placeholder="Subject" required>
+                  </label>
+                  <label class="auth-field">
+                    <span>Message</span>
+                    <textarea class="auth-field__input" name="message" rows="3" placeholder="Write verification feedback or follow-up instructions" required></textarea>
+                  </label>
+                  <button class="btn btn--outline" type="submit">Send seller message</button>
+                </form>
+              </section>
+            </article>
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="no-sellers-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="no-sellers-title">No sellers in this filter</h2>
+              <p>Seller registrations and verification reviews will appear here.</p>
+            </section>
+          {% endfor %}
+        </section>
+
+        {% if sellers.has_other_pages %}
+          <div class="product-detail__actions" aria-label="Seller pagination">
+            {% if sellers.has_previous %}
+              <a class="btn btn--outline" href="?panel={{ panel }}&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&seller_page={{ sellers.previous_page_number }}&order_page={{ orders.number }}">Previous sellers</a>
+            {% endif %}
+            <span class="badge">Seller page {{ sellers.number }} of {{ sellers.paginator.num_pages }}</span>
+            {% if sellers.has_next %}
+              <a class="btn btn--outline" href="?panel={{ panel }}&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&seller_page={{ sellers.next_page_number }}&order_page={{ orders.number }}">Next sellers</a>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% endif %}
+
+        {% if panel == "all" or panel == "orders" %}
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Order operations</p>
+            <h2>Paid, pending, and completed orders</h2>
+          </div>
+          <span class="cart-items__count">{{ order_summary.total_orders }} order{{ order_summary.total_orders|pluralize }}</span>
+        </div>
+
+        <div class="product-detail__actions" aria-label="Order filters">
+          {% for value, label in order_status_filters %}
+            <a class="btn {% if status == value %}btn--primary{% else %}btn--outline{% endif %}" href="?panel={{ panel }}&status={{ value }}&seller_status={{ seller_status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}">{{ label }}</a>
+          {% endfor %}
+        </div>
+
+        <form class="auth-form" method="get" aria-label="Search order by ID">
+          <input type="hidden" name="panel" value="orders">
+          <input type="hidden" name="seller_status" value="{{ seller_status }}">
+          <input type="hidden" name="status" value="{{ status }}">
+          <input type="hidden" name="date_from" value="{{ date_from }}">
+          <input type="hidden" name="date_to" value="{{ date_to }}">
+          <label class="auth-field">
+            <span>Search by order ID</span>
+            <input class="auth-field__input" type="search" name="order_q" value="{{ order_q }}" placeholder="Enter order ID, e.g. 1024">
+          </label>
+          <div class="product-detail__actions">
+            <button class="btn btn--primary" type="submit">Search order</button>
+            <a class="btn btn--outline" href="?panel=orders&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}">Clear search</a>
+          </div>
+        </form>
+
+        <section class="vendor-group" aria-label="Marketplace orders">
+          {% for order in orders %}
+            <article class="detail-panel">
+              <div class="cart-items__header">
+                <div>
+                  <p class="section-heading__eyebrow">Order follow-up</p>
+                  <h2>Order #{{ order.id }}</h2>
+                  <p class="detail-panel__muted">Buyer: {{ order.user.get_full_name|default:order.user.username }}</p>
+                </div>
+                <div class="cart-item__meta">
+                  {% if order.status == "completed" %}
+                    <span class="status-badge status-badge--verified">OK Completed</span>
+                  {% elif order.status == "cancelled" or order.status == "refunded" %}
+                    <span class="status-badge status-badge--unverified">X {{ order.status|title }}</span>
+                  {% else %}
+                    <span class="status-badge status-badge--pending">! {{ order.status|title }}</span>
+                  {% endif %}
+                  {% if order.user.email %}
+                    <a class="btn btn--outline" href="mailto:{{ order.user.email }}">Email buyer</a>
+                  {% endif %}
+                  {% if order.user.phone_number %}
+                    <a class="btn btn--outline" href="tel:{{ order.user.phone_number }}">Call buyer</a>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="metrics-grid">
+                <div class="metric">
+                  <span class="metric__label">Order total</span>
+                  <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Items</span>
+                  <strong>{{ order.items.count }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Current status</span>
+                  <strong>{{ order.status|title }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Placed</span>
+                  <strong>{{ order.created_at|date:"M d, Y H:i" }}</strong>
+                </div>
+              </div>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>1. Products in this order</h3>
+                  <span class="badge">Seller follow-up</span>
+                </div>
+                <div class="documents-list">
+                  {% for item in order.items.all %}
+                    {% with first_image=item.product.images.first %}
+                    <div class="document-item">
+                      <a class="cart-item__media" href="{% url 'products:product_detail' item.product.pk %}">
+                        {% if first_image %}
+                          <img src="{{ first_image.image.url }}" alt="{{ item.product.name }}" loading="lazy">
+                        {% else %}
+                          <span>{{ item.product.name|first }}</span>
+                        {% endif %}
+                      </a>
+                      <div>
+                        <div class="document-item__name">{{ item.product.name }}</div>
+                        <div class="document-item__status">
+                          Seller: {{ item.product.seller.business_name|default:item.product.seller.user.username }} -
+                          Qty {{ item.quantity }} -
+                          Tsh{{ item.price|floatformat:"0"|intcomma }}
+                        </div>
+                      </div>
+                      {% if item.product.seller.user.email %}
+                        <a class="btn btn--outline" href="mailto:{{ item.product.seller.user.email }}">Email seller</a>
+                      {% endif %}
+                      {% if item.product.seller.user.phone_number %}
+                        <a class="btn btn--outline" href="tel:{{ item.product.seller.user.phone_number }}">Call seller</a>
+                      {% endif %}
+                    </div>
+                    {% endwith %}
+                  {% endfor %}
+                </div>
+              </section>
+
+              {% if order.status == "paid" or order.status == "processing" %}
+                <section class="onboarding-section">
+                  <div class="onboarding-section__header">
+                    <h3>2. Call seller for fulfillment</h3>
+                    <span class="status-badge status-badge--pending">Paid order follow-up</span>
+                  </div>
+                  <div class="documents-list">
+                    {% for item in order.items.all %}
+                      <div class="document-item">
+                        <div>
+                          <div class="document-item__name">{{ item.product.seller.business_name|default:item.product.seller.user.username }}</div>
+                          <div class="document-item__status">{{ item.product.name }} - Qty {{ item.quantity }}</div>
+                        </div>
+                        {% if item.product.seller.user.phone_number %}
+                          <a class="btn btn--primary" href="tel:{{ item.product.seller.user.phone_number }}">Call seller</a>
+                        {% else %}
+                          <span class="badge">No phone number</span>
+                        {% endif %}
+                        {% if item.product.seller.user.email %}
+                          <a class="btn btn--outline" href="mailto:{{ item.product.seller.user.email }}">Email seller</a>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </section>
+
+                <section class="onboarding-section">
+                  <div class="onboarding-section__header">
+                    <h3>3. Call buyer for delivery confirmation</h3>
+                    <span class="status-badge status-badge--pending">Buyer follow-up</span>
+                  </div>
+                  <div class="documents-list">
+                    <div class="document-item">
+                      <div>
+                        <div class="document-item__name">{{ order.user.get_full_name|default:order.user.username }}</div>
+                        <div class="document-item__status">Order #{{ order.id }} - placed {{ order.created_at|date:"M d, Y H:i" }}</div>
+                      </div>
+                      {% if order.user.phone_number %}
+                        <a class="btn btn--primary" href="tel:{{ order.user.phone_number }}">Call buyer</a>
+                      {% else %}
+                        <span class="badge">No phone number</span>
+                      {% endif %}
+                      {% if order.user.email %}
+                        <a class="btn btn--outline" href="mailto:{{ order.user.email }}">Email buyer</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </section>
+              {% endif %}
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>4. Update order status</h3>
+                  <span class="badge">Fulfillment tracking</span>
+                </div>
+                <form class="auth-form" method="post" action="{% url 'control_panel:update_order_status' order.id %}">
+                  {% csrf_token %}
+                  <label class="auth-field">
+                    <span>Order status</span>
+                    <select class="auth-field__input" name="status">
+                      {% for value, label in order_status_actions %}
+                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <button class="btn btn--primary" type="submit">Update status</button>
+                </form>
+              </section>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>5. Message buyer</h3>
+                  <span class="badge">Delivery follow-up</span>
+                </div>
+                <form class="auth-form" method="post" action="{% url 'control_panel:contact_user' order.user.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="notification_type" value="buyer_message">
+                  <input type="hidden" name="order_id" value="{{ order.id }}">
+                  <label class="auth-field">
+                    <span>Message subject</span>
+                    <input class="auth-field__input" type="text" name="subject" value="Follow-up for Exabay order #{{ order.id }}" required>
+                  </label>
+                  <label class="auth-field">
+                    <span>Message buyer</span>
+                    <textarea class="auth-field__input" name="message" rows="3" placeholder="Write delivery, safety, or order follow-up message" required></textarea>
+                  </label>
+                  <button class="btn btn--outline" type="submit">Send buyer message</button>
+                </form>
+              </section>
+            </article>
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="no-orders-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="no-orders-title">No orders in this filter</h2>
+              <p>Paid, pending, processing, and completed orders will appear here.</p>
+            </section>
+          {% endfor %}
+        </section>
+
+        {% if orders.has_other_pages %}
+          <div class="product-detail__actions" aria-label="Order pagination">
+            {% if orders.has_previous %}
+              <a class="btn btn--outline" href="?panel={{ panel }}&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}&seller_page={{ sellers.number }}&order_page={{ orders.previous_page_number }}">Previous orders</a>
+            {% endif %}
+            <span class="badge">Order page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+            {% if orders.has_next %}
+              <a class="btn btn--outline" href="?panel={{ panel }}&seller_status={{ seller_status }}&status={{ status }}&date_from={{ date_from }}&date_to={{ date_to }}&order_q={{ order_q }}&seller_page={{ sellers.number }}&order_page={{ orders.next_page_number }}">Next orders</a>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="admin-summary-title">
+        <p class="section-heading__eyebrow">Marketplace summary</p>
+        <h2 id="admin-summary-title">Admin snapshot</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Total sellers</span>
+            <strong>{{ seller_summary.total_sellers }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Pending sellers</span>
+            <strong>{{ seller_summary.pending_sellers }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Verified sellers</span>
+            <strong>{{ seller_summary.verified_sellers }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Rejected sellers</span>
+            <strong>{{ seller_summary.rejected_sellers }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Paid orders</span>
+            <strong>{{ order_summary.paid_orders }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Completed orders</span>
+            <strong>{{ order_summary.completed_orders }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Units sold</span>
+            <strong>{{ sold_summary.units_sold }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Revenue</span>
+            <strong>Tsh{{ order_summary.total_revenue|floatformat:"0"|intcomma }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Pending orders</dt>
+            <dd>{{ order_summary.pending_orders }}</dd>
+          </div>
+          <div>
+            <dt>Processing orders</dt>
+            <dd>{{ order_summary.processing_orders }}</dd>
+          </div>
+          <div>
+            <dt>Line item value</dt>
+            <dd>Tsh{{ sold_summary.marketplace_line_total|floatformat:"0"|intcomma }}</dd>
+          </div>
+        </dl>
+
+        <div class="mobile-money-note">
+          <strong>Operational note</strong>
+          <span>Use paid and processing filters to follow up until each product safely reaches the buyer.</span>
+        </div>
+
+        <div class="documents-list">
+          {% for notification in recent_notifications %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">{{ notification.subject }}</div>
+                <div class="document-item__status">To {{ notification.recipient.username }} - {{ notification.created_at|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">No notifications yet</div>
+                <div class="document-item__status">Admin messages will be listed here.</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

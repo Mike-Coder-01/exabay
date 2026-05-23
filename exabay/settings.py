@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
 
     "users.apps.UsersConfig",
+    "control_panel",
     "products",
     "orders",
     "main",

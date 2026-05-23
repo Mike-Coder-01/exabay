@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.shortcuts import redirect, render
@@ -37,14 +37,26 @@ def register_view(request):
         return redirect(auth_success_redirect(request.user))
 
     form = RegistrationForm(request.POST or None)
+
     if request.method == "POST" and form.is_valid():
-        user = form.save()
+
+        # Create user first
+        form.save()
+
+        # Authenticate newly created user
+        user = authenticate(
+            request,
+            username=form.cleaned_data["username"],
+            password=form.cleaned_data["password1"]
+        )
+
+        # Log them in
         login(request, user)
+
         messages.success(request, "Your Exxabay account has been created.")
         return redirect(auth_success_redirect(user))
 
     return render(request, "users/register.html", {"form": form})
-
 
 @login_required
 def complete_profile_view(request):

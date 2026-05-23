@@ -5,10 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem, Payment
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
+from users.decorators import seller_onboarding_required
+
+
 
 
 def orderView(request):
@@ -220,4 +223,84 @@ def order_detail(request, order_id):
 
     return render(request, "orders/order_detail.html", {
         "order": order
+    })
+
+
+@seller_onboarding_required
+def seller_orders(request):
+    seller = request.user.sellerprofile
+    status = request.GET.get("status", "all")
+
+    line_total = ExpressionWrapper(
+        F("quantity") * F("price"),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    seller_items = (
+        OrderItem.objects
+        .filter(product__seller=seller)
+        .select_related(
+            "order",
+            "order__user",
+            "product",
+            "product__category",
+            "product__seller",
+        )
+        .prefetch_related("product__images")
+        .annotate(line_total=line_total)
+        .order_by("-order_id", "-id")
+    )
+
+    if status != "all":
+        seller_items = seller_items.filter(order__status=status)
+
+    base_items = OrderItem.objects.filter(product__seller=seller)
+
+    paid_statuses = ["paid", "processing"]
+    pending_statuses = ["pending", "paid", "processing"]
+    completed_statuses = ["completed"]
+
+    summary = base_items.aggregate(
+        total_revenue=Sum(line_total),
+        total_units=Sum("quantity"),
+        total_orders=Count("order", distinct=True),
+        pending_orders=Count(
+            "order",
+            filter=Q(order__status__in=pending_statuses),
+            distinct=True,
+        ),
+        paid_orders=Count(
+            "order",
+            filter=Q(order__status__in=paid_statuses),
+            distinct=True,
+        ),
+        completed_orders=Count(
+            "order",
+            filter=Q(order__status__in=completed_statuses),
+            distinct=True,
+        ),
+    )
+
+    summary["total_revenue"] = summary["total_revenue"] or Decimal("0.00")
+    summary["total_units"] = summary["total_units"] or 0
+    summary["total_orders"] = summary["total_orders"] or 0
+    summary["pending_orders"] = summary["pending_orders"] or 0
+    summary["paid_orders"] = summary["paid_orders"] or 0
+    summary["completed_orders"] = summary["completed_orders"] or 0
+
+    status_filters = [
+        ("all", "All orders"),
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("processing", "Processing"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    return render(request, "orders/seller_orders.html", {
+        "seller": seller,
+        "order_items": seller_items,
+        "summary": summary,
+        "status": status,
+        "status_filters": status_filters,
     })

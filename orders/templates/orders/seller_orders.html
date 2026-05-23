@@ -1,0 +1,176 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="shortcut icon" href="{% static 'images/favicon-v2.png' %}" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Orders | Exxabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="seller-orders-title">
+      <div>
+        <p class="cart-hero__eyebrow">Seller order center</p>
+        <h1 id="seller-orders-title" class="cart-hero__title">Orders sold on Exabay</h1>
+        <p class="cart-hero__copy">Track paid orders, pending fulfillment, buyer details, product history, and seller revenue from one trust-focused workspace.</p>
+      </div>
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">OK</span>
+        <div>
+          <strong>{{ seller.business_name|default:seller.user.username }}</strong>
+          <span>{% if seller.is_verified %}Verified seller profile{% else %}Seller verification in progress{% endif %}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Seller order summary and history">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Order history</p>
+            <h2>Sold products</h2>
+          </div>
+          <span class="cart-items__count">{{ summary.total_orders }} order{{ summary.total_orders|pluralize }}</span>
+        </div>
+
+        <div class="product-detail__actions" aria-label="Order filters">
+          {% for value, label in status_filters %}
+            <a class="btn {% if status == value %}btn--primary{% else %}btn--outline{% endif %}" href="?status={{ value }}">{{ label }}</a>
+          {% endfor %}
+        </div>
+
+        <section class="vendor-group" aria-label="Seller order items">
+          {% for item in order_items %}
+            {% with product=item.product first_image=item.product.images.first order=item.order %}
+              <article class="cart-item">
+                <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
+                  {% if first_image %}
+                    <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                  {% else %}
+                    <span>{{ product.name|first }}</span>
+                  {% endif %}
+                </a>
+
+                <div class="cart-item__info">
+                  <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
+                  <p class="cart-item__seller">Buyer: <strong>{{ order.user.get_full_name|default:order.user.username }}</strong></p>
+                  <div class="cart-item__meta">
+                    <span class="badge">Order #{{ order.id }}</span>
+                    <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
+                    {% if order.status == "completed" %}
+                      <span class="status-badge status-badge--verified">OK Completed</span>
+                    {% elif order.status == "cancelled" or order.status == "refunded" %}
+                      <span class="status-badge status-badge--unverified">X {{ order.status|title }}</span>
+                    {% elif order.status == "pending" %}
+                      <span class="status-badge status-badge--pending">! Pending</span>
+                    {% else %}
+                      <span class="status-badge status-badge--pending">! {{ order.status|title }}</span>
+                    {% endif %}
+                  </div>
+                  {% if order.status == "paid" or order.status == "processing" %}
+                    <div class="cart-item__meta">
+                      {% if order.user.email %}
+                        <a class="btn btn--outline" href="mailto:{{ order.user.email }}">Email buyer</a>
+                      {% endif %}
+                      {% if order.user.phone_number %}
+                        <a class="btn btn--outline" href="tel:{{ order.user.phone_number }}">Call {{ order.user.phone_number }}</a>
+                      {% else %}
+                        <span class="badge">No phone number</span>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="cart-item__price">
+                  <span>Unit price</span>
+                  <strong>Tsh{{ item.price|floatformat:"0"|intcomma }}</strong>
+                </div>
+
+                <div class="cart-item__price">
+                  <span>Quantity</span>
+                  <strong>{{ item.quantity }}</strong>
+                </div>
+
+                <div class="cart-item__subtotal">
+                  <span>Seller subtotal</span>
+                  <strong>Tsh {{ item.line_total|floatformat:"0"|intcomma }}</strong>
+                </div>
+              </article>
+            {% endwith %}
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="no-seller-orders-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="no-seller-orders-title">No seller orders yet</h2>
+              <p>Orders for your products will appear here after buyers complete checkout.</p>
+            </section>
+          {% endfor %}
+        </section>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="seller-summary-title">
+        <p class="section-heading__eyebrow">Seller summary</p>
+        <h2 id="seller-summary-title">Order performance</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Total revenue</span>
+            <strong>Tsh{{ summary.total_revenue|floatformat:"0"|intcomma }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Unique orders</span>
+            <strong>{{ summary.total_orders }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Units sold</span>
+            <strong>{{ summary.total_units }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Pending / active</span>
+            <strong>{{ summary.pending_orders }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Paid orders</span>
+            <strong>{{ summary.paid_orders }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Completed</span>
+            <strong>{{ summary.completed_orders }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Seller status</dt>
+            <dd>{% if seller.is_verified %}Verified{% else %}Pending review{% endif %}</dd>
+          </div>
+          <div>
+            <dt>Fulfillment focus</dt>
+            <dd>Paid and pending orders</dd>
+          </div>
+          <div>
+            <dt>Payment mode</dt>
+            <dd>Mobile money simulation</dd>
+          </div>
+        </dl>
+
+        <a class="btn btn--primary cart-summary__checkout" href="?status=paid">View paid orders</a>
+        <a class="btn btn--outline cart-summary__checkout" href="?status=all">View all history</a>
+
+        <div class="mobile-money-note">
+          <strong>Seller payout note</strong>
+          <span>Revenue shown here is based on completed simulated checkout records. Real settlement rules can be added later.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

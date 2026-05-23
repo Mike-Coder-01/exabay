@@ -104,11 +104,12 @@
             </span>
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </button>
-
+          {% if seller.is_verified %}
           <a class="btn btn--primary" href="{% url 'products:add_product' %}">
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
             <span>Add Product</span>
           </a>
+          {% endif %}
         </div>
       </header>
 

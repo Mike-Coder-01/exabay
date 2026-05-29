@@ -1,0 +1,421 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Analytics | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="seller-analytics-title">
+      <div>
+        <p class="cart-hero__eyebrow">Seller analytics</p>
+        <h1 id="seller-analytics-title" class="cart-hero__title">Business performance center</h1>
+        <p class="cart-hero__copy">
+          Understand revenue, order health, buyer behavior, inventory risk, and top-performing products from one seller workspace.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong>{{ seller.business_name|default:seller.user.username }}</strong>
+          <span>{% if seller.is_verified %}Verified seller analytics{% else %}Analytics visible while verification is in progress{% endif %}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Seller analytics dashboard">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Performance overview</p>
+            <h2>Business analysis</h2>
+          </div>
+          <span class="cart-items__count">{{ summary.total_orders }} order{{ summary.total_orders|pluralize }}</span>
+        </div>
+
+        <form class="auth-form" method="get" aria-label="Analytics date filter">
+          <div class="auth-form__grid">
+            <label class="auth-field">
+              <span>From date</span>
+              <input class="auth-field__input" type="date" name="date_from" value="{{ date_from }}">
+            </label>
+
+            <label class="auth-field">
+              <span>To date</span>
+              <input class="auth-field__input" type="date" name="date_to" value="{{ date_to }}">
+            </label>
+          </div>
+
+          <div class="product-detail__actions">
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-filter" aria-hidden="true"></i>
+              <span>Apply filter</span>
+            </button>
+            <a class="btn btn--outline" href="{% url 'orders:seller_analytics' %}">
+              <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+              <span>Clear</span>
+            </a>
+          </div>
+        </form>
+
+        <section class="section" aria-labelledby="analytics-kpis">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="analytics-kpis">Key business metrics</h2>
+              <p class="section__description">Revenue and order health for the selected period.</p>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--primary" aria-hidden="true">
+                  <i class="fa-solid fa-sack-dollar"></i>
+                </span>
+                <span class="badge badge--neutral">Revenue</span>
+              </div>
+              <p class="metric-card__value">Tsh {{ summary.gross_revenue|floatformat:"0"|intcomma }}</p>
+              <h3 class="metric-card__label">Gross Revenue</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--success" aria-hidden="true">
+                  <i class="fa-solid fa-receipt"></i>
+                </span>
+                <span class="badge badge--success">Orders</span>
+              </div>
+              <p class="metric-card__value">{{ summary.revenue_orders }}</p>
+              <h3 class="metric-card__label">Paid / Active Orders</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--warning" aria-hidden="true">
+                  <i class="fa-solid fa-chart-pie"></i>
+                </span>
+                <span class="badge badge--warning">AOV</span>
+              </div>
+              <p class="metric-card__value">Tsh {{ summary.average_order_value|floatformat:"0"|intcomma }}</p>
+              <h3 class="metric-card__label">Average Order Value</h3>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-card__top">
+                <span class="metric-card__icon metric-card__icon--danger" aria-hidden="true">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </span>
+                <span class="badge badge--danger">Risk</span>
+              </div>
+              <p class="metric-card__value">{{ summary.cancellation_rate }}%</p>
+              <h3 class="metric-card__label">Cancellation Rate</h3>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="order-health">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="order-health">Order health</h2>
+              <p class="section__description">Track paid orders, fulfillment progress, and completion performance.</p>
+            </div>
+          </div>
+
+          <article class="detail-panel">
+            <div class="metrics-grid detail-panel__metrics">
+              <div class="metric">
+                <span class="metric__label">Pending</span>
+                <strong>{{ summary.pending_orders }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Paid</span>
+                <strong>{{ summary.paid_orders }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Processing</span>
+                <strong>{{ summary.processing_orders }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Completed</span>
+                <strong>{{ summary.completed_orders }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Completed rate</span>
+                <strong>{{ summary.completion_rate }}%</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Units sold</span>
+                <strong>{{ summary.total_units }}</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" aria-labelledby="sales-trend">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="sales-trend">Recent sales trend</h2>
+              <p class="section__description">Last available sales days in the selected period.</p>
+            </div>
+          </div>
+
+          <article class="panel">
+            <div class="documents-list">
+              {% for row in daily_sales %}
+                <div class="document-item">
+                  <div>
+                    <div class="document-item__name">{{ row.day|date:"M d, Y" }}</div>
+                    <div class="document-item__status">
+                      {{ row.order_count }} order{{ row.order_count|pluralize }} -
+                      {{ row.units_sold }} unit{{ row.units_sold|pluralize }} -
+                      Tsh {{ row.revenue|floatformat:"0"|intcomma }}
+                    </div>
+                  </div>
+                  <progress class="progress" max="100" value="{{ row.progress }}">{{ row.progress }}%</progress>
+                </div>
+              {% empty %}
+                <div class="document-item">
+                  <div>
+                    <div class="document-item__name">No sales trend yet</div>
+                    <div class="document-item__status">Paid, processing, and completed sales will appear here.</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </article>
+        </section>
+
+        <section class="section" aria-labelledby="top-products">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="top-products">Top products</h2>
+              <p class="section__description">Best-performing products by revenue.</p>
+            </div>
+          </div>
+
+          <article class="panel table-shell">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead class="data-table__head">
+                  <tr class="data-table__row">
+                    <th class="data-table__cell" scope="col">Product</th>
+                    <th class="data-table__cell" scope="col">Category</th>
+                    <th class="data-table__cell" scope="col">Orders</th>
+                    <th class="data-table__cell" scope="col">Units</th>
+                    <th class="data-table__cell" scope="col">Revenue</th>
+                    <th class="data-table__cell" scope="col">Stock</th>
+                  </tr>
+                </thead>
+                <tbody class="data-table__body">
+                  {% for product in top_products %}
+                    <tr class="data-table__row">
+                      <td class="data-table__cell">
+                        <div class="table-item">
+                          <strong class="table-item__title">{{ product.product__name }}</strong>
+                          <progress class="progress" max="100" value="{{ product.progress }}">{{ product.progress }}%</progress>
+                        </div>
+                      </td>
+                      <td class="data-table__cell">{{ product.product__category__name|default:"Uncategorized" }}</td>
+                      <td class="data-table__cell">{{ product.order_count }}</td>
+                      <td class="data-table__cell">{{ product.units_sold }}</td>
+                      <td class="data-table__cell">Tsh {{ product.revenue|floatformat:"0"|intcomma }}</td>
+                      <td class="data-table__cell">
+                        {% if product.product__stock == 0 %}
+                          <span class="badge badge--danger">Out of stock</span>
+                        {% elif product.product__stock <= 5 %}
+                          <span class="badge badge--warning">{{ product.product__stock }} left</span>
+                        {% else %}
+                          <span class="badge badge--success">{{ product.product__stock }} left</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr class="data-table__row">
+                      <td class="data-table__cell" colspan="6">No paid product performance data yet.</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" aria-labelledby="action-queue">
+          <div class="section__header">
+            <div>
+              <h2 class="section__title" id="action-queue">Action queue</h2>
+              <p class="section__description">Orders that need seller attention first.</p>
+            </div>
+          </div>
+
+          <article class="panel">
+            <div class="documents-list">
+              {% for item in action_items %}
+                {% with order=item.order product=item.product buyer=item.order.user first_image=item.product.images.first %}
+                  <div class="document-item">
+                    <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
+                      {% if first_image %}
+                        <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                      {% else %}
+                        <span>{{ product.name|first }}</span>
+                      {% endif %}
+                    </a>
+
+                    <div>
+                      <div class="document-item__name">Order #{{ order.id }} - {{ product.name }}</div>
+                      <div class="document-item__status">
+                        {{ order.status|title }} -
+                        {{ buyer.get_full_name|default:buyer.username }} -
+                        {{ order.created_at|date:"M d, Y H:i" }}
+                      </div>
+                    </div>
+
+                    {% if buyer.phone_number %}
+                      <a class="btn btn--primary" href="tel:{{ buyer.phone_number }}">
+                        <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                        <span>Call buyer</span>
+                      </a>
+                    {% endif %}
+                  </div>
+                {% endwith %}
+              {% empty %}
+                <div class="document-item">
+                  <div>
+                    <div class="document-item__name">No urgent orders</div>
+                    <div class="document-item__status">Pending, paid, and processing orders will appear here.</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="analytics-summary-title">
+        <p class="section-heading__eyebrow">Business snapshot</p>
+        <h2 id="analytics-summary-title">Seller health</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Products</span>
+            <strong>{{ inventory_summary.total_products }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Active products</span>
+            <strong>{{ inventory_summary.active_products }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Low stock</span>
+            <strong>{{ inventory_summary.low_stock_products }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Out of stock</span>
+            <strong>{{ inventory_summary.out_of_stock_products }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Featured</span>
+            <strong>{{ inventory_summary.featured_products }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Inventory value</span>
+            <strong>Tsh {{ inventory_summary.inventory_value|floatformat:"0"|intcomma }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Unique buyers</span>
+            <strong>{{ summary.unique_buyers }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Repeat buyers</span>
+            <strong>{{ repeat_buyers }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Seller status</dt>
+            <dd>{% if seller.is_verified %}Verified{% else %}Pending review{% endif %}</dd>
+          </div>
+          <div>
+            <dt>Completion rate</dt>
+            <dd>{{ summary.completion_rate }}%</dd>
+          </div>
+          <div>
+            <dt>Cancelled orders</dt>
+            <dd>{{ summary.cancelled_orders }}</dd>
+          </div>
+        </dl>
+
+        <a class="btn btn--primary cart-summary__checkout" href="{% url 'orders:seller_orders' %}?status=paid">
+          <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+          <span>Review paid orders</span>
+        </a>
+
+        <a class="btn btn--outline cart-summary__checkout" href="{% url 'orders:seller_orders' %}">
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+          <span>Open orders</span>
+        </a>
+
+        <div class="mobile-money-note">
+          <strong>Analysis note</strong>
+          <span>Revenue uses paid, processing, and completed seller order lines. Pending and cancelled orders are shown for operational awareness.</span>
+        </div>
+
+        <div class="documents-list">
+          {% for category in category_performance %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">{{ category.product__category__name|default:"Uncategorized" }}</div>
+                <div class="document-item__status">
+                  {{ category.units_sold }} unit{{ category.units_sold|pluralize }} -
+                  Tsh {{ category.revenue|floatformat:"0"|intcomma }}
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">No category data yet</div>
+                <div class="document-item__status">Category performance appears after paid sales.</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="documents-list">
+          {% for row in status_breakdown %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">{{ row.order__status|title|default:"Unknown" }}</div>
+                <div class="document-item__status">
+                  {{ row.order_count }} order{{ row.order_count|pluralize }} -
+                  {{ row.units_sold }} unit{{ row.units_sold|pluralize }}
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="document-item">
+              <div>
+                <div class="document-item__name">No status data</div>
+                <div class="document-item__status">Order status breakdown will appear here.</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

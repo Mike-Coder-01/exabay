@@ -1,5 +1,5 @@
 from django.db import models
-
+from decimal import Decimal
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -30,6 +30,12 @@ class Product(models.Model):
         # Only enforce on creation
         if self._state.adding and not self.seller.is_verified:
             raise ValueError("Seller is not verified and cannot create products.")
+        super().save(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        # Only when creating new product (Add 10%)
+        if not self.pk:
+            self.price = Decimal(self.price) * Decimal("1.10")
         super().save(*args, **kwargs)
 
 

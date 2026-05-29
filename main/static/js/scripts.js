@@ -332,6 +332,44 @@ function formatMoney(value) {
   });
 }
 
+function getCsrfToken() {
+  return document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
+}
+
+async function syncCart(item) {
+  const action = item.dataset.pendingAction;
+  const url = item.dataset.pendingUrl;
+
+  if (!url) return;
+
+  const quantityInput = item.querySelector("[data-cart-quantity]");
+
+  const payload = {
+    action,
+    quantity: Number.parseInt(quantityInput?.value, 10) || 1,
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error("Cart update failed");
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function updateCartTotals() {
   if (!cartPage) return;
 
@@ -340,30 +378,47 @@ function updateCartTotals() {
 
   cartPage.querySelectorAll("[data-cart-item]").forEach((item) => {
     const price = parseMoney(item.dataset.price);
+
     const quantityInput = item.querySelector("[data-cart-quantity]");
-    const quantity = Math.max(1, Number.parseInt(quantityInput.value, 10) || 1);
+
+    const quantity = Math.max(
+      1,
+      Number.parseInt(quantityInput.value, 10) || 1
+    );
+
     const subtotal = price * quantity;
 
     item.dataset.quantity = String(quantity);
+
     quantityInput.value = String(quantity);
-    item.querySelector("[data-cart-subtotal]").textContent = formatMoney(subtotal);
+
+    item.querySelector("[data-cart-subtotal]").textContent =
+      formatMoney(subtotal);
 
     itemCount += quantity;
     cartTotal += subtotal;
   });
 
-  cartPage.querySelectorAll("[data-cart-total], [data-cart-grand-total]").forEach((element) => {
-    element.textContent = formatMoney(cartTotal);
-  });
+  cartPage
+    .querySelectorAll("[data-cart-total], [data-cart-grand-total]")
+    .forEach((element) => {
+      element.textContent = formatMoney(cartTotal);
+    });
 
   const countElement = cartPage.querySelector("[data-cart-count]");
+
   if (countElement) {
-    countElement.textContent = `${itemCount} item${itemCount === 1 ? "" : "s"}`;
+    countElement.textContent =
+      `${itemCount} item${itemCount === 1 ? "" : "s"}`;
   }
 }
 
 function queueCartAjax(item, action) {
-  const url = action === "remove" ? item.dataset.removeUrl : item.dataset.updateUrl;
+  const url =
+    action === "remove"
+      ? item.dataset.removeUrl
+      : item.dataset.updateUrl;
+
   item.dataset.pendingAction = action;
   item.dataset.pendingUrl = url || "";
 }
@@ -371,29 +426,56 @@ function queueCartAjax(item, action) {
 function initializeCartPage() {
   if (!cartPage) return;
 
-  cartPage.addEventListener("click", (event) => {
+  cartPage.addEventListener("click", async (event) => {
     const item = event.target.closest("[data-cart-item]");
+
     if (!item) return;
 
     const input = item.querySelector("[data-cart-quantity]");
-    const max = Number.parseInt(input.getAttribute("max"), 10) || Infinity;
-    const currentValue = Number.parseInt(input.value, 10) || 1;
 
+    const max =
+      Number.parseInt(input.getAttribute("max"), 10) || Infinity;
+
+    const currentValue =
+      Number.parseInt(input.value, 10) || 1;
+
+    // Increase quantity
     if (event.target.closest("[data-cart-increase]")) {
-      input.value = String(Math.min(max, currentValue + 1));
+
+      input.value = String(
+        Math.min(max, currentValue + 1)
+      );
+
       queueCartAjax(item, "update");
+
+      await syncCart(item);
+
       updateCartTotals();
     }
 
+    // Decrease quantity
     if (event.target.closest("[data-cart-decrease]")) {
-      input.value = String(Math.max(1, currentValue - 1));
+
+      input.value = String(
+        Math.max(1, currentValue - 1)
+      );
+
       queueCartAjax(item, "update");
+
+      await syncCart(item);
+
       updateCartTotals();
     }
 
+    // Remove item
     if (event.target.closest("[data-cart-remove]")) {
+
       queueCartAjax(item, "remove");
+
+      await syncCart(item);
+
       item.classList.add("is-removing");
+
       window.setTimeout(() => {
         item.remove();
         updateCartTotals();
@@ -401,21 +483,33 @@ function initializeCartPage() {
     }
   });
 
-  cartPage.addEventListener("change", (event) => {
+  cartPage.addEventListener("change", async (event) => {
+
     if (!event.target.matches("[data-cart-quantity]")) return;
 
     const input = event.target;
+
     const item = input.closest("[data-cart-item]");
-    const max = Number.parseInt(input.getAttribute("max"), 10) || Infinity;
-    const value = Number.parseInt(input.value, 10) || 1;
-    input.value = String(Math.min(max, Math.max(1, value)));
+
+    const max =
+      Number.parseInt(input.getAttribute("max"), 10) || Infinity;
+
+    const value =
+      Number.parseInt(input.value, 10) || 1;
+
+    input.value = String(
+      Math.min(max, Math.max(1, value))
+    );
+
     queueCartAjax(item, "update");
+
+    await syncCart(item);
+
     updateCartTotals();
   });
 
   updateCartTotals();
 }
-
 
 function initializeAuthRoleForms() {
   document.querySelectorAll("[data-auth-role-form]").forEach((form) => {

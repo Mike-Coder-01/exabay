@@ -1,0 +1,365 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %} My Account | Exxabay {% endblock %}
+{% block content %}
+
+  {% include 'partials/header_bar.html' %}
+
+  {% if messages %}
+    {% for message in messages %}
+      {% if forloop.last %}
+        <div style="
+          padding:14px 18px;
+          margin:15px auto;
+          width:min(100% - 32px, 1180px);
+          border-radius:10px;
+          font-size:15px;
+          font-weight:500;
+          line-height:1.5;
+          border:1px solid;
+          {% if message.tags == 'success' %}
+            background:#ecfdf3; color:#027a48; border-color:#abefc6;
+          {% elif message.tags == 'error' %}
+            background:#fef3f2; color:#b42318; border-color:#fecdca;
+          {% elif message.tags == 'warning' %}
+            background:#fffaeb; color:#b54708; border-color:#fedf89;
+          {% elif message.tags == 'info' %}
+            background:#eff8ff; color:#175cd3; border-color:#b2ddff;
+          {% else %}
+            background:#f4f4f5; color:#27272a; border-color:#d4d4d8;
+          {% endif %}
+        ">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  <main class="cart-page">
+
+    <!-- ── Hero ───────────────────────────────────────────────────────────────  -->
+    <div class="cart-hero">
+      <div>
+        <p class="cart-hero__eyebrow">Buyer account</p>
+        <h1 class="cart-hero__title">
+          Welcome, {{ request.user.first_name|default:request.user.username }}
+        </h1>
+        <p class="cart-hero__copy">
+          Manage your orders, update your details, and track your trusted marketplace activity.
+        </p>
+      </div>
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">OK</span>
+        <div>
+          <strong>Trust-protected account</strong>
+          <span>Your purchases are secured by Exxabay's seller verification system.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- {# ── Stats row — reusing metric + metrics-grid from modal CSS ─────────── #} -->
+    <div class="metrics-grid" style="margin-top:24px;">
+      <div class="metric">
+        <span class="metric__label">Total orders</span>
+        <strong>{{ orders.count }}</strong>
+      </div>
+      <div class="metric">
+        <span class="metric__label">Completed</span>
+        <strong>{{ orders_paid.count }}</strong>
+      </div>
+      <div class="metric">
+        <span class="metric__label">Pending payment</span>
+        <strong>{{ orders_pending.count }}</strong>
+      </div>
+    </div>
+
+    <div class="cart-layout" style="margin-top:22px;">
+
+      <!-- {# ══════════════════════════════════════════════════════════════════════
+         LEFT — orders + edit account + contact + seller CTA
+         ══════════════════════════════════════════════════════════════════════ #} -->
+      <div style="display:grid; gap:22px;">
+
+        <!-- {# ── Pending payments — action required ─────────────────────────── #} -->
+        {% if orders_pending %}
+          <section class="cart-items" aria-labelledby="pending-title">
+            <div class="cart-items__header">
+              <div>
+                <p class="section-heading__eyebrow">Action required</p>
+                <h2 id="pending-title">Pending payments</h2>
+              </div>
+              <span class="cart-items__count">{{ orders_pending.count }} pending</span>
+            </div>
+
+            <div class="vendor-group">
+              {% for order in orders_pending %}
+                <div class="cart-item" style="grid-template-columns: minmax(0,1fr) auto auto;">
+                  <div>
+                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">
+                      Order #{{ order.id }}
+                    </a>
+                    <p class="cart-item__seller">
+                      {{ order.created_at|date:"d M Y" }} &middot;
+                      {{ order.items.count }} item{{ order.items.count|pluralize }}
+                    </p>
+                    <div class="cart-item__meta">
+                      <span class="status-badge status-badge--pending">! Pending</span>
+                    </div>
+                  </div>
+                  <div class="cart-item__subtotal">
+                    <span>Total</span>
+                    <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
+                  </div>
+                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--primary" style="font-size:0.85rem; min-height:36px;">
+                    Pay now →
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        <!-- {# ── All orders ─────────────────────────────────────────────────── #} -->
+        <section class="cart-items" aria-labelledby="orders-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Order history</p>
+              <h2 id="orders-title">All orders</h2>
+            </div>
+            <span class="cart-items__count">{{ orders.count }} total</span>
+          </div>
+
+          {% if orders %}
+            <div class="vendor-group">
+              {% for order in orders %}
+                <div class="cart-item" style="grid-template-columns: minmax(0,1fr) auto auto auto;">
+                  <div>
+                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">
+                      Order #{{ order.id }}
+                    </a>
+                    <p class="cart-item__seller">
+                      {{ order.created_at|date:"d M Y" }} &middot;
+                      {{ order.items.count }} item{{ order.items.count|pluralize }}
+                    </p>
+                  </div>
+
+                  <div>
+                    {% if order.status == "paid" %}
+                      <span class="status-badge status-badge--verified">OK Paid</span>
+                    {% elif order.status == "pending" %}
+                      <span class="status-badge status-badge--pending">! Pending</span>
+                    {% elif order.status == "shipped" %}
+                      <span class="status-badge status-badge--pending">⟶ Shipped</span>
+                    {% elif order.status == "delivered" %}
+                      <span class="status-badge status-badge--verified">OK Delivered</span>
+                    {% else %}
+                      <span class="status-badge status-badge--unverified">X Cancelled</span>
+                    {% endif %}
+                  </div>
+
+                  <div class="cart-item__subtotal">
+                    <span>Total</span>
+                    <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
+                  </div>
+
+                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--outline" style="font-size:0.82rem; min-height:34px;">
+                    View
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+
+          {% else %}
+            <div class="cart-empty" style="margin-top:0; border:0; box-shadow:none;">
+              <div class="cart-empty__icon">0</div>
+              <h2>No orders yet</h2>
+              <p>You haven't placed any orders. Explore trusted sellers and start shopping.</p>
+              <a class="btn btn--primary" href="/">Browse products</a>
+            </div>
+          {% endif %}
+        </section>
+
+        <!-- {# ── Edit account ───────────────────────────────────────────────── #} -->
+        <section class="cart-items" id="account" aria-labelledby="account-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Personal details</p>
+              <h2 id="account-title">Edit account</h2>
+            </div>
+          </div>
+
+          <form method="post" action="{% url 'users:edit_profile' %}" class="auth-form" style="padding:4px 0;">
+            {% csrf_token %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field">
+                First name
+                <input class="auth-field__input" type="text" name="first_name"
+                  value="{{ request.user.first_name }}" placeholder="First name">
+              </label>
+              <label class="auth-field">
+                Last name
+                <input class="auth-field__input" type="text" name="last_name"
+                  value="{{ request.user.last_name }}" placeholder="Last name">
+              </label>
+            </div>
+
+            <label class="auth-field">
+              Email address
+              <input class="auth-field__input" type="email" name="email"
+                value="{{ request.user.email }}" placeholder="Email address">
+            </label>
+
+            <label class="auth-field">
+              Phone number
+              <input class="auth-field__input" type="tel" name="phone_number"
+                value="{{ request.user.phone_number }}" placeholder="e.g. 0712345678">
+            </label>
+
+            <label class="auth-field">
+              Username
+              <input class="auth-field__input" type="text" name="username"
+                value="{{ request.user.username }}" placeholder="Username">
+            </label>
+
+            <!-- {# Password change #} -->
+            <div class="onboarding-section">
+              <div class="onboarding-section__header">
+                <h3>Change password</h3>
+              </div>
+              <div class="auth-form__grid">
+                <label class="auth-field">
+                  New password
+                  <input class="auth-field__input" type="password" name="new_password1"
+                    placeholder="New password" autocomplete="new-password">
+                </label>
+                <label class="auth-field">
+                  Confirm password
+                  <input class="auth-field__input" type="password" name="new_password2"
+                    placeholder="Confirm new password" autocomplete="new-password">
+                </label>
+              </div>
+              <p style="margin:0; color:var(--color-muted); font-size:0.86rem;">
+                Leave blank to keep your current password.
+              </p>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="btn btn--primary" type="submit">Save changes</button>
+              <button class="btn btn--outline" type="reset">Cancel</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- {# ── Become a seller CTA ────────────────────────────────────────── #} -->
+        <section class="cart-hero" id="seller" aria-labelledby="seller-title" style="align-items:flex-start; flex-direction:column; gap:18px;">
+          <div>
+            <p class="cart-hero__eyebrow">Grow with Exxabay</p>
+            <h2 id="seller-title" class="cart-hero__title" style="font-size:clamp(1.6rem,3vw,2.5rem);">
+              Start selling on Exxabay
+            </h2>
+            <p class="cart-hero__copy">
+              Join thousands of verified sellers. List your products, reach trusted buyers, and grow your business on Tanzania's trust-first marketplace.
+            </p>
+            <div class="hero__categories">
+              <span class="category-pill">✓ Verified listings</span>
+              <span class="category-pill">✓ Mobile money payouts</span>
+              <span class="category-pill">✓ Seller dashboard</span>
+              <span class="category-pill">✓ Free to register</span>
+            </div>
+          </div>
+          <a href="{% url 'users:complete_profile' %}" class="btn btn--outline"
+            style="border-color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.14); color:#fff; font-size:1rem; min-height:48px; padding:0 28px;">
+            Become a seller →
+          </a>
+        </section>
+
+      </div> 
+      <!-- {# end left column #} -->
+
+      <!-- {# ══════════════════════════════════════════════════════════════════════
+         RIGHT — profile card + contact support
+         ══════════════════════════════════════════════════════════════════════ #} -->
+      <aside>
+        {# Profile card — reusing cart-summary #}
+        <div class="cart-summary" style="text-align:center; margin-bottom:22px;">
+          <div class="trust-card__icon"
+            style="width:64px; height:64px; font-size:1.6rem; margin:0 auto 14px; background:linear-gradient(120deg,var(--color-primary),var(--color-secondary)); color:#fff;">
+            {{ request.user.first_name|first|upper|default:request.user.username|first|upper }}
+          </div>
+          <h2 style="margin:0; color:var(--color-primary-dark); font-size:1.15rem; letter-spacing:0;">
+            {{ request.user.get_full_name|default:request.user.username }}
+          </h2>
+          <p style="margin:6px 0 0; color:var(--color-muted); font-size:0.88rem;">
+            {{ request.user.email }}
+          </p>
+          <p style="margin:4px 0 0; color:var(--color-muted); font-size:0.82rem;">
+            Member since {{ request.user.date_joined|date:"M Y" }}
+          </p>
+
+          <dl class="cart-summary__lines" style="margin-top:18px; text-align:left;">
+            <div>
+              <dt>Phone</dt>
+              <dd>{{ request.user.phone_number|default:"—" }}</dd>
+            </div>
+            <div>
+              <dt>Username</dt>
+              <dd>{{ request.user.username }}</dd>
+            </div>
+            <div>
+              <dt>Orders</dt>
+              <dd>{{ orders.count }}</dd>
+            </div>
+          </dl>
+
+          <a href="{% url 'users:logout' %}" class="btn btn--outline cart-summary__checkout"
+            style="color:var(--color-danger); border-color:var(--color-danger); margin-top:16px;">
+            Sign out
+          </a>
+        </div>
+
+        <!-- {# Contact support — reusing mobile-money-note + trust-card #} -->
+        <div class="cart-summary" id="contact">
+          <p class="section-heading__eyebrow">We are here for you</p>
+          <h2 style="margin:0 0 16px; color:var(--color-primary-dark); font-size:1.25rem; letter-spacing:0;">
+            Talk to Exxabay
+          </h2>
+
+          <div class="trust-card" style="margin-bottom:14px;">
+            <span class="trust-card__icon">☎</span>
+            <div>
+              <strong>Call us directly</strong>
+              <span>Mon–Sat, 8am–6pm EAT</span>
+              <a href="tel:+255612350807" class="btn btn--primary"
+                style="margin-top:10px; width:100%; font-size:0.9rem;">
+                +255 612 350 807
+              </a>
+            </div>
+          </div>
+
+          <div class="mobile-money-note" style="margin-bottom:10px;">
+            <strong>WhatsApp support</strong>
+            <span>Faster responses for order issues.</span>
+            <a href="https://wa.me/255757280637" class="btn btn--outline"
+              style="margin-top:10px; width:100%; font-size:0.88rem;">
+              Open WhatsApp
+            </a>
+          </div>
+
+          <div class="mobile-money-note">
+            <strong>Email support</strong>
+            <span>support@exxabay.com</span>
+            <a href="mailto:support@exxabay.com" class="btn btn--outline"
+              style="margin-top:10px; width:100%; font-size:0.88rem;">
+              Send email
+            </a>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+    <!-- {# end cart-layout #} -->
+  </main>
+
+  {% include 'partials/footer.html' %}
+  <script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}

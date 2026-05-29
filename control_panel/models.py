@@ -121,3 +121,68 @@ class AdminNotification(models.Model):
 
     def __str__(self):
         return self.subject
+
+
+class SellerPayout(models.Model):
+    STATUS_PREVIEWED = "previewed"
+    STATUS_AUTHORIZED = "authorized"
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_SUCCESS = "success"
+    STATUS_FAILED = "failed"
+    STATUS_REVERSED = "reversed"
+    STATUS_REFUNDED = "refunded"
+
+    STATUS_CHOICES = (
+        (STATUS_PREVIEWED, "Previewed"),
+        (STATUS_AUTHORIZED, "Authorized"),
+        (STATUS_PENDING, "Pending"),
+        (STATUS_PROCESSING, "Processing"),
+        (STATUS_SUCCESS, "Success"),
+        (STATUS_FAILED, "Failed"),
+        (STATUS_REVERSED, "Reversed"),
+        (STATUS_REFUNDED, "Refunded"),
+    )
+
+    seller = models.ForeignKey(
+        "users.SellerProfile",
+        on_delete=models.PROTECT,
+        related_name="payouts",
+    )
+    order_items = models.ManyToManyField(
+        "orders.OrderItem",
+        related_name="seller_payouts",
+        blank=True,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="seller_payouts_created",
+    )
+    gross_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10)
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default="TZS")
+    phone_number = models.CharField(max_length=20)
+    account_name = models.CharField(max_length=255, blank=True)
+    order_reference = models.CharField(max_length=20, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PREVIEWED)
+    channel_provider = models.CharField(max_length=100, blank=True)
+    clickpesa_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    clickpesa_total_deducted = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    preview_response = models.JSONField(blank=True, null=True)
+    gateway_response = models.JSONField(blank=True, null=True)
+    failure_reason = models.TextField(blank=True)
+    initiated_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.seller} payout {self.order_reference}"

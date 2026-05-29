@@ -1,0 +1,390 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %} Seller Payouts | Exxabay {% endblock %}
+{% block content %}
+
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="payout-title">
+      <div>
+        <p class="cart-hero__eyebrow">Admin payouts</p>
+        <h1 id="payout-title" class="cart-hero__title">Seller payout center</h1>
+        <p class="cart-hero__copy">
+          Review completed seller earnings, preview provider mobile money fees, and confirm payouts only after fulfillment is safe.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong>Superuser payout control</strong>
+          <span>Every preview and confirmed payout is recorded for audit history.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Seller payout dashboard">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Payable sellers</p>
+            <h2>Completed order earnings</h2>
+          </div>
+          <span class="cart-items__count">Eligible status: {{ eligible_statuses|title }}</span>
+        </div>
+
+        {% if messages %}
+          <div class="documents-list">
+            {% for message in messages %}
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">{{ message }}</div>
+                  <div class="document-item__status">Payout notification</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if preview_payout %}
+          <article class="detail-panel" aria-labelledby="preview-title">
+            <div class="cart-items__header">
+              <div>
+                <p class="section-heading__eyebrow">Provider preview</p>
+                <h2 id="preview-title">Confirm payout before sending funds</h2>
+                <p class="detail-panel__muted">
+                  Reference {{ preview_payout.order_reference }} for {{ preview_payout.seller.business_name|default:preview_payout.seller.user.username }}.
+                </p>
+              </div>
+              <span class="status-badge status-badge--pending">Previewed</span>
+            </div>
+
+            <div class="metrics-grid detail-panel__metrics">
+              <div class="metric">
+                <span class="metric__label">Gross sales</span>
+                <strong>Tsh {{ preview_payout.gross_amount|floatformat:"0"|intcomma }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Exxabay commission</span>
+                <strong>Tsh {{ preview_payout.commission_amount|floatformat:"0"|intcomma }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Seller amount</span>
+                <strong>Tsh {{ preview_payout.amount|floatformat:"0"|intcomma }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Provider fee</span>
+                <strong>Tsh {{ preview_payout.clickpesa_fee|floatformat:"0"|intcomma }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Total deducted</span>
+                <strong>Tsh {{ preview_payout.clickpesa_total_deducted|floatformat:"0"|intcomma }}</strong>
+              </div>
+              <div class="metric">
+                <span class="metric__label">Receiver</span>
+                <strong>{{ preview_payout.phone_number }}</strong>
+              </div>
+            </div>
+
+            <div class="mobile-money-note">
+              <strong>Final confirmation required</strong>
+              <span>Clicking confirm will initiate the real provider mobile money payout to the seller wallet.</span>
+            </div>
+
+            <div class="product-detail__actions">
+              <form method="post" action="{% url 'control_panel:confirm_seller_payout' preview_payout.id %}">
+                {% csrf_token %}
+                <button class="btn btn--primary" type="submit">
+                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                  <span>Confirm and send payout</span>
+                </button>
+              </form>
+
+              <a class="btn btn--outline" href="{% url 'control_panel:seller_payouts' %}">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                <span>Cancel preview</span>
+              </a>
+            </div>
+          </article>
+        {% endif %}
+
+        <section class="vendor-group" aria-label="Seller payout rows">
+          {% for row in seller_rows %}
+            {% with seller=row.seller summary=row.summary %}
+              <article class="detail-panel">
+                <div class="cart-items__header">
+                  <div>
+                    <p class="section-heading__eyebrow">Verified seller</p>
+                    <h2>{{ seller.business_name|default:seller.user.username }}</h2>
+                    <p class="detail-panel__muted">
+                      Account: {{ row.account_name }} - Wallet: {{ row.phone_number|default:"Missing payout phone" }}
+                    </p>
+                  </div>
+                  {% if row.can_preview %}
+                    <span class="status-badge status-badge--verified">Ready for payout</span>
+                  {% else %}
+                    <span class="status-badge status-badge--pending">Not payable</span>
+                  {% endif %}
+                </div>
+
+                <div class="metrics-grid detail-panel__metrics">
+                  <div class="metric">
+                    <span class="metric__label">Gross sales</span>
+                    <strong>Tsh {{ summary.gross_amount|floatformat:"0"|intcomma }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Exabay commission</span>
+                    <strong>Tsh {{ summary.commission_amount|floatformat:"0"|intcomma }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Seller payout</span>
+                    <strong>Tsh {{ summary.amount|floatformat:"0"|intcomma }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Completed orders</span>
+                    <strong>{{ summary.order_count }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Order items</span>
+                    <strong>{{ summary.item_count }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Units sold</span>
+                    <strong>{{ summary.unit_count }}</strong>
+                  </div>
+                </div>
+
+                <section class="onboarding-section">
+                  <div class="onboarding-section__header">
+                    <h3>Payout destination</h3>
+                    <span class="badge">Mobile money</span>
+                  </div>
+                  <div class="documents-list">
+                    <div class="document-item">
+                      <div>
+                        <div class="document-item__name">{{ row.account_name }}</div>
+                        <div class="document-item__status">
+                          {% if row.settings %}
+                            {{ row.settings.get_mobile_money_provider_display }} - {{ row.phone_number|default:"No payout phone" }}
+                          {% else %}
+                            Seller settings missing - {{ row.phone_number|default:"No payout phone" }}
+                          {% endif %}
+                        </div>
+                      </div>
+                      {% if seller.user.email %}
+                        <a class="btn btn--outline" href="mailto:{{ seller.user.email }}">
+                          <i class="fa-solid fa-envelope" style="margin-right: 5px;"  aria-hidden="true"></i>
+                          <span>Email seller</span>
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </section>
+
+                <div class="product-detail__actions">
+                  {% if row.can_preview %}
+                    <form method="post" action="{% url 'control_panel:preview_seller_payout' seller.id %}">
+                      {% csrf_token %}
+                      <button class="btn btn--primary" type="submit">
+                        <i class="fa-solid fa-eye" style="margin-right: 5px;" aria-hidden="true"></i>
+                        <span>Preview payout</span>
+                      </button>
+                    </form>
+                  {% else %}
+                    <button class="btn btn--primary" type="button" disabled>
+                      <i class="fa-solid fa-lock" style="margin-right: 5px;" aria-hidden="true"></i>
+                      <span>Preview payout</span>
+                    </button>
+                  {% endif %}
+                </div>
+              </article>
+            {% endwith %}
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="no-payable-sellers-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="no-payable-sellers-title">No payable sellers yet</h2>
+              <p>Verified sellers with completed unpaid orders will appear here.</p>
+            </section>
+          {% endfor %}
+        </section>
+
+        {% if seller_rows.has_other_pages %}
+          <div class="product-detail__actions" aria-label="Seller payout pagination">
+            {% if seller_rows.has_previous %}
+              <a class="btn btn--outline" href="?seller_page={{ seller_rows.previous_page_number }}&payout_page={{ payouts.number }}">Previous sellers</a>
+            {% endif %}
+            <span class="badge">Seller page {{ seller_rows.number }} of {{ seller_rows.paginator.num_pages }}</span>
+            {% if seller_rows.has_next %}
+              <a class="btn btn--outline" href="?seller_page={{ seller_rows.next_page_number }}&payout_page={{ payouts.number }}">Next sellers</a>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Payout history</p>
+            <h2>Recent payout records</h2>
+          </div>
+          <span class="cart-items__count">{{ payout_summary.total_payouts }} payout{{ payout_summary.total_payouts|pluralize }}</span>
+        </div>
+
+        <section class="vendor-group" aria-label="Payout history">
+          {% for payout in payouts %}
+            <article class="detail-panel">
+              <div class="cart-items__header">
+                <div>
+                  <p class="section-heading__eyebrow">Reference {{ payout.order_reference }}</p>
+                  <h2>{{ payout.seller.business_name|default:payout.seller.user.username }}</h2>
+                  <p class="detail-panel__muted">
+                    Created {{ payout.created_at|date:"M d, Y H:i" }} by {{ payout.created_by.username|default:"System" }}
+                  </p>
+                </div>
+                {% if payout.status == "success" %}
+                  <span class="status-badge status-badge--verified">Success</span>
+                {% elif payout.status == "failed" or payout.status == "reversed" or payout.status == "refunded" %}
+                  <span class="status-badge status-badge--unverified">{{ payout.get_status_display }}</span>
+                {% else %}
+                  <span class="status-badge status-badge--pending">{{ payout.get_status_display }}</span>
+                {% endif %}
+              </div>
+
+              <div class="metrics-grid detail-panel__metrics">
+                <div class="metric">
+                  <span class="metric__label">Gross sales</span>
+                  <strong>Tsh {{ payout.gross_amount|floatformat:"0"|intcomma }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Commission</span>
+                  <strong>Tsh {{ payout.commission_amount|floatformat:"0"|intcomma }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Amount</span>
+                  <strong>Tsh {{ payout.amount|floatformat:"0"|intcomma }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Fee</span>
+                  <strong>Tsh {{ payout.clickpesa_fee|floatformat:"0"|intcomma }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Wallet</span>
+                  <strong>{{ payout.phone_number }}</strong>
+                </div>
+                <div class="metric">
+                  <span class="metric__label">Items</span>
+                  <strong>{{ payout.order_items.count }}</strong>
+                </div>
+              </div>
+
+              {% if payout.failure_reason %}
+                <div class="mobile-money-note">
+                  <strong>Failure reason</strong>
+                  <span>{{ payout.failure_reason }}</span>
+                </div>
+              {% endif %}
+
+              <div class="product-detail__actions">
+                {% if payout.status != "previewed" %}
+                  <form method="post" action="{% url 'control_panel:refresh_seller_payout_status' payout.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn--outline" type="submit">
+                      <i class="fa-solid fa-arrows-rotate" style="margin-right: 5px;" aria-hidden="true"></i>
+                      <span>Refresh status</span>
+                    </button>
+                  </form>
+                {% endif %}
+                {% if payout.status == "previewed" %}
+                  <a class="btn btn--primary" href="{% url 'control_panel:seller_payouts' %}?preview={{ payout.id }}">
+                    <i class="fa-solid fa-eye" style="margin-right: 5px;" aria-hidden="true"></i>
+                    <span>Review preview</span>
+                  </a>
+                {% endif %}
+              </div>
+            </article>
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="no-payout-history-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="no-payout-history-title">No payout history yet</h2>
+              <p>Previewed and confirmed seller payouts will appear here.</p>
+            </section>
+          {% endfor %}
+        </section>
+
+        {% if payouts.has_other_pages %}
+          <div class="product-detail__actions" aria-label="Payout history pagination">
+            {% if payouts.has_previous %}
+              <a class="btn btn--outline" href="?seller_page={{ seller_rows.number }}&payout_page={{ payouts.previous_page_number }}">Previous payouts</a>
+            {% endif %}
+            <span class="badge">Payout page {{ payouts.number }} of {{ payouts.paginator.num_pages }}</span>
+            {% if payouts.has_next %}
+              <a class="btn btn--outline" href="?seller_page={{ seller_rows.number }}&payout_page={{ payouts.next_page_number }}">Next payouts</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="payout-summary-title">
+        <p class="section-heading__eyebrow">Payout summary</p>
+        <h2 id="payout-summary-title">Merchant balance</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Gateway balance</span>
+            <strong>
+              {% if gateway_balance %}
+                Tsh {{ gateway_balance.balance|floatformat:"0"|intcomma }}
+              {% else %}
+                Unavailable
+              {% endif %}
+            </strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Eligible payable</span>
+            <strong>Tsh {{ total_payable|floatformat:"0"|intcomma }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Successful payouts</span>
+            <strong>Tsh {{ payout_summary.success_amount|floatformat:"0"|intcomma }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">In progress</span>
+            <strong>Tsh {{ payout_summary.processing_amount|floatformat:"0"|intcomma }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Eligible order status</dt>
+            <dd>{{ eligible_statuses|title }}</dd>
+          </div>
+          <div>
+            <dt>Payout channel</dt>
+            <dd>Mobile money</dd>
+          </div>
+          <div>
+            <dt>Admin access</dt>
+            <dd>Superuser only</dd>
+          </div>
+        </dl>
+
+        <a class="btn btn--outline cart-summary__checkout" href="{% url 'control_panel:dashboard' %}">
+          <i class="fa-solid fa-user-shield" style="margin-right: 5px;" aria-hidden="true"></i>
+          <span>Back to control panel</span>
+        </a>
+
+        <div class="mobile-money-note">
+          <strong>Payout safety</strong>
+          <span>Only completed, unpaid seller order items are eligible. Failed or reversed payouts can be retried after status review.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+
+{% endblock %}

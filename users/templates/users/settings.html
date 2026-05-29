@@ -1,0 +1,511 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Settings | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="settings-title">
+      <div>
+        <p class="cart-hero__eyebrow">Seller settings</p>
+        <h1 id="settings-title" class="cart-hero__title">Manage your Exabay account</h1>
+        <p class="cart-hero__copy">
+          Keep your profile, business verification, store preferences, notifications, security, and mobile money payout details up to date.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong>{{ seller.business_name|default:request.user.username }}</strong>
+          <span>{% if seller.is_verified %}Verified seller account{% else %}Verification review required{% endif %}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Seller account settings">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Configuration</p>
+            <h2>Settings center</h2>
+          </div>
+          {% if seller.is_verified %}
+            <span class="status-badge status-badge--verified">
+              <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+              Verified
+            </span>
+          {% else %}
+            <span class="status-badge status-badge--pending">
+              <i class="fa-solid fa-clock" aria-hidden="true"></i>
+              Pending verification
+            </span>
+          {% endif %}
+        </div>
+
+        {% if messages %}
+          <div class="documents-list">
+            {% for message in messages %}
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">{{ message }}</div>
+                  <div class="document-item__status">Settings notification</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <section class="detail-panel" id="account-profile" aria-labelledby="account-profile-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Account profile</p>
+              <h2 id="account-profile-title">Personal information</h2>
+              <p class="detail-panel__muted">This information identifies the seller account owner.</p>
+            </div>
+            <span class="badge">Account</span>
+          </div>
+
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="account">
+
+            {% if account_form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ account_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ account_form.first_name.id_for_label }}">
+                <span>First name</span>
+                {{ account_form.first_name }}
+                {{ account_form.first_name.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ account_form.last_name.id_for_label }}">
+                <span>Last name</span>
+                {{ account_form.last_name }}
+                {{ account_form.last_name.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ account_form.username.id_for_label }}">
+                <span>Username</span>
+                {{ account_form.username }}
+                {{ account_form.username.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ account_form.email.id_for_label }}">
+                <span>Email address</span>
+                {{ account_form.email }}
+                {{ account_form.email.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ account_form.phone_number.id_for_label }}">
+              <span>Phone number</span>
+              {{ account_form.phone_number }}
+              {{ account_form.phone_number.errors }}
+            </label>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+              <span>Save account</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="detail-panel" id="business-verification" aria-labelledby="business-verification-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Business verification</p>
+              <h2 id="business-verification-title">Documents and tax information</h2>
+              <p class="detail-panel__muted">Keep seller trust details accurate for Exabay review.</p>
+            </div>
+            {% if seller.is_profile_complete %}
+              <span class="badge badge--success">Profile complete</span>
+            {% else %}
+              <span class="badge badge--danger">Required documents missing</span>
+            {% endif %}
+          </div>
+
+          <form class="auth-form" method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="verification">
+
+            {% if verification_form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ verification_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ verification_form.business_name.id_for_label }}">
+                <span>Business name</span>
+                {{ verification_form.business_name }}
+                {{ verification_form.business_name.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ verification_form.tin_number.id_for_label }}">
+                <span>TIN number</span>
+                {{ verification_form.tin_number }}
+                {{ verification_form.tin_number.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ verification_form.license_document.id_for_label }}">
+                <span>Business license document</span>
+                {{ verification_form.license_document }}
+                {{ verification_form.license_document.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ verification_form.license_expiry_date.id_for_label }}">
+                <span>License expiry date</span>
+                {{ verification_form.license_expiry_date }}
+                {{ verification_form.license_expiry_date.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ verification_form.vat_number.id_for_label }}">
+                <span>VAT number <small>Optional</small></span>
+                {{ verification_form.vat_number }}
+                {{ verification_form.vat_number.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ verification_form.vrn_number.id_for_label }}">
+                <span>VRN number <small>Optional</small></span>
+                {{ verification_form.vrn_number }}
+                {{ verification_form.vrn_number.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ verification_form.tax_clearance_document.id_for_label }}">
+              <span>Tax clearance document <small>Optional</small></span>
+              {{ verification_form.tax_clearance_document }}
+              {{ verification_form.tax_clearance_document.errors }}
+            </label>
+
+            <div class="documents-list">
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">Current business license</div>
+                  <div class="document-item__status">{% if seller.license_document %}On file{% else %}Missing{% endif %}</div>
+                </div>
+                {% if seller.license_document %}
+                  <a class="btn btn--outline" href="{{ seller.license_document.url }}" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                    <span>View document</span>
+                  </a>
+                {% endif %}
+              </div>
+
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">Current tax clearance</div>
+                  <div class="document-item__status">{% if seller.tax_clearance_document %}On file{% else %}Not submitted{% endif %}</div>
+                </div>
+                {% if seller.tax_clearance_document %}
+                  <a class="btn btn--outline" href="{{ seller.tax_clearance_document.url }}" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                    <span>View document</span>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-file-shield" aria-hidden="true"></i>
+              <span>Save verification</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="detail-panel" id="store-preferences" aria-labelledby="store-preferences-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Store preferences</p>
+              <h2 id="store-preferences-title">Buyer-facing store details</h2>
+              <p class="detail-panel__muted">These details help buyers understand and contact your business.</p>
+            </div>
+            <span class="badge">Store</span>
+          </div>
+
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="store">
+
+            {% if store_form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ store_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ store_form.store_display_name.id_for_label }}">
+                <span>Store display name</span>
+                {{ store_form.store_display_name }}
+                {{ store_form.store_display_name.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ store_form.business_location.id_for_label }}">
+                <span>Business location</span>
+                {{ store_form.business_location }}
+                {{ store_form.business_location.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ store_form.store_description.id_for_label }}">
+              <span>Store description</span>
+              {{ store_form.store_description }}
+              {{ store_form.store_description.errors }}
+            </label>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ store_form.support_email.id_for_label }}">
+                <span>Support email</span>
+                {{ store_form.support_email }}
+                {{ store_form.support_email.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ store_form.support_phone.id_for_label }}">
+                <span>Support phone</span>
+                {{ store_form.support_phone }}
+                {{ store_form.support_phone.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ store_form.default_currency.id_for_label }}">
+                <span>Default currency</span>
+                {{ store_form.default_currency }}
+                {{ store_form.default_currency.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ store_form.low_stock_threshold.id_for_label }}">
+                <span>Low stock alert threshold</span>
+                {{ store_form.low_stock_threshold }}
+                {{ store_form.low_stock_threshold.errors }}
+              </label>
+            </div>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-store" aria-hidden="true"></i>
+              <span>Save store preferences</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="detail-panel" id="notifications" aria-labelledby="notifications-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Notification preferences</p>
+              <h2 id="notifications-title">Seller alerts</h2>
+              <p class="detail-panel__muted">Choose the account updates you want Exabay to send.</p>
+            </div>
+            <span class="badge">Alerts</span>
+          </div>
+
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="notifications">
+
+            <fieldset class="auth-role" aria-label="Notification preferences">
+              <legend>Send notifications for</legend>
+
+              <label class="auth-role__card" for="{{ notification_form.notify_new_orders.id_for_label }}">
+                {{ notification_form.notify_new_orders }}
+                <span>
+                  <strong>New orders</strong>
+                  <small>Receive alerts when buyers place new orders.</small>
+                </span>
+              </label>
+
+              <label class="auth-role__card" for="{{ notification_form.notify_verification_updates.id_for_label }}">
+                {{ notification_form.notify_verification_updates }}
+                <span>
+                  <strong>Verification updates</strong>
+                  <small>Know when admin verifies, rejects, or requests documents.</small>
+                </span>
+              </label>
+
+              <label class="auth-role__card" for="{{ notification_form.notify_low_stock.id_for_label }}">
+                {{ notification_form.notify_low_stock }}
+                <span>
+                  <strong>Low stock alerts</strong>
+                  <small>Get notified when products reach your stock threshold.</small>
+                </span>
+              </label>
+
+              <label class="auth-role__card" for="{{ notification_form.notify_admin_messages.id_for_label }}">
+                {{ notification_form.notify_admin_messages }}
+                <span>
+                  <strong>Admin messages</strong>
+                  <small>Receive marketplace follow-up and support communication.</small>
+                </span>
+              </label>
+            </fieldset>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-bell" aria-hidden="true"></i>
+              <span>Save notifications</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="detail-panel" id="mobile-money" aria-labelledby="mobile-money-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Mobile Money & Payout</p>
+              <h2 id="mobile-money-title">Payment settlement details</h2>
+              <p class="detail-panel__muted">Use the registered mobile money account where seller payouts should be sent.</p>
+            </div>
+            <span class="badge badge--success">Payment active</span>
+          </div>
+
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="mobile_money">
+
+            {% if mobile_money_form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ mobile_money_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ mobile_money_form.mobile_money_provider.id_for_label }}">
+                <span>Mobile money provider</span>
+                {{ mobile_money_form.mobile_money_provider }}
+                {{ mobile_money_form.mobile_money_provider.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ mobile_money_form.payout_phone_number.id_for_label }}">
+                <span>Payout phone number</span>
+                {{ mobile_money_form.payout_phone_number }}
+                {{ mobile_money_form.payout_phone_number.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ mobile_money_form.payout_account_name.id_for_label }}">
+              <span>Account holder name</span>
+              {{ mobile_money_form.payout_account_name }}
+              {{ mobile_money_form.payout_account_name.errors }}
+            </label>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i>
+              <span>Save payout details</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="detail-panel" id="security" aria-labelledby="security-title">
+          <div class="cart-items__header">
+            <div>
+              <p class="section-heading__eyebrow">Security</p>
+              <h2 id="security-title">Change password</h2>
+              <p class="detail-panel__muted">Protect your seller account with a strong password.</p>
+            </div>
+            <span class="badge">Account safety</span>
+          </div>
+
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="security">
+
+            {% if password_form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ password_form.non_field_errors }}</div>
+            {% endif %}
+
+            <label class="auth-field" for="{{ password_form.old_password.id_for_label }}">
+              <span>Current password</span>
+              {{ password_form.old_password }}
+              {{ password_form.old_password.errors }}
+            </label>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ password_form.new_password1.id_for_label }}">
+                <span>New password</span>
+                {{ password_form.new_password1 }}
+                {{ password_form.new_password1.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ password_form.new_password2.id_for_label }}">
+                <span>Confirm new password</span>
+                {{ password_form.new_password2 }}
+                {{ password_form.new_password2.errors }}
+              </label>
+            </div>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+              <span>Update password</span>
+            </button>
+          </form>
+        </section>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="settings-summary-title">
+        <p class="section-heading__eyebrow">Settings summary</p>
+        <h2 id="settings-summary-title">Account health</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">Seller status</span>
+            <strong>{% if seller.is_verified %}Verified{% else %}Pending{% endif %}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Documents</span>
+            <strong>{% if seller.is_profile_complete %}Complete{% else %}Missing{% endif %}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Currency</span>
+            <strong>{{ seller_settings.default_currency }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Payout</span>
+            <strong>{{ seller_settings.get_mobile_money_provider_display }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Store display</dt>
+            <dd>{{ seller_settings.store_display_name|default:seller.business_name|default:request.user.username }}</dd>
+          </div>
+          <div>
+            <dt>Support phone</dt>
+            <dd>{{ seller_settings.support_phone|default:request.user.phone_number|default:"Not provided" }}</dd>
+          </div>
+          <div>
+            <dt>Low stock alert</dt>
+            <dd>{{ seller_settings.low_stock_threshold }} units</dd>
+          </div>
+        </dl>
+
+        <div class="product-detail__actions">
+          <a class="btn btn--outline" href="#account-profile">Account</a>
+          <a class="btn btn--outline" href="#business-verification">Verification</a>
+          <a class="btn btn--outline" href="#store-preferences">Store</a>
+          <a class="btn btn--outline" href="#notifications">Notifications</a>
+          <a class="btn btn--outline" href="#mobile-money">Mobile Money</a>
+          <a class="btn btn--outline" href="#security">Security</a>
+        </div>
+
+        <div class="mobile-money-note">
+          <strong>Trust reminder</strong>
+          <span>Business document changes may require admin review before verified trust status is shown to buyers.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

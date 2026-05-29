@@ -1,21 +1,17 @@
+{% extends 'main/base.html' %}
 {% load static %}
 {% load socialaccount %}
-<!DOCTYPE html>
-<html lang="en" data-language="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | Exabay</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+{% load humanize %}
+{% block title %} Login | Exxabay {% endblock %}
+{% block content %}
+
   {% include 'partials/header_bar.html' %}
 
   <main class="auth-page">
     <section class="auth-shell" aria-labelledby="login-title">
       <div class="auth-hero-panel">
         <p class="auth-hero-panel__eyebrow">Trust-first marketplace</p>
-        <h1 id="login-title">Welcome back to Exabay</h1>
+        <h1 id="login-title">Welcome back to Exxabay</h1>
         <p>Sign in to continue shopping from verified sellers, manage your cart, and access trusted marketplace orders.</p>
         <div class="auth-trust-strip">
           <span class="trust-card__icon">OK</span>
@@ -27,7 +23,7 @@
         <div class="auth-card__header">
           <p class="section-heading__eyebrow">Account access</p>
           <h2>Login</h2>
-          <p>Use your Exabay account or continue with Google.</p>
+          <p>Use your Exxabay account or continue with Google.</p>
         </div>
 
         {% if form.non_field_errors %}
@@ -69,6 +65,5 @@
     </section>
   </main>
   {% include 'partials/footer.html' %}
-  <script src="{% static 'js/script.js' %}"></script>
-</body>
-</html>
+  <script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}

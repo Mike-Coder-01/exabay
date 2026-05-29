@@ -1,15 +1,8 @@
+{% extends 'main/base.html' %}
 {% load static %}
 {% load humanize %}
-<!DOCTYPE html>
-<html lang="en" data-language="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="shortcut icon" href="{% static 'images/favicon-v2.png' %}" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ product.name }} | Exxabay</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+{% block title %} {{ product.name }} | Exxabay {% endblock %}
+{% block content %}
 {% include 'partials/header_bar.html' %}
   <main class="product-detail">
     <a class="product-detail__back" href="/#products">Back to marketplace</a>
@@ -175,5 +168,4 @@
   </main>
 
   <script src="{% static 'js/scripts.js' %}"></script>
-</body>
-</html>
+{% endblock %}

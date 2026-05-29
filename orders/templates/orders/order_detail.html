@@ -10,25 +10,114 @@
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-  {% include 'partials/header_bar.html' %}
-  <main class="cart-page">
-    <section class="cart-hero" aria-labelledby="order-title">
-      <div>
-        <p class="cart-hero__eyebrow">Payment confirmed</p>
-        <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
-        <p class="cart-hero__copy">
-          Your mobile money payment was successful. Below is your trusted marketplace order summary.
-        </p>
-      </div>
 
-      <div class="cart-hero__trust">
-        <span class="trust-card__icon">OK</span>
-        <div>
-          <strong>Checkout completed</strong>
-          <span>Seller trust and payment records are attached to this order.</span>
-        </div>
-      </div>
-    </section>
+  
+
+  <main class="cart-page">
+    {% if messages %}
+    {% for message in messages %}
+      {% if forloop.last %}
+        <div style="
+          padding:14px 18px;
+          margin:15px 0;
+          border-radius:10px;
+          font-size:15px;
+          font-weight:500;
+          line-height:1.5;
+          border:1px solid;
+          {% if message.tags == 'success' %}
+            background:#ecfdf3; color:#027a48; border-color:#abefc6;
+          {% elif message.tags == 'error' %}
+            background:#fef3f2; color:#b42318; border-color:#fecdca;
+          {% elif message.tags == 'warning' %}
+            background:#fffaeb; color:#b54708; border-color:#fedf89;
+          {% elif message.tags == 'info' %}
+            background:#eff8ff; color:#175cd3; border-color:#b2ddff;
+          {% else %}
+            background:#f4f4f5; color:#27272a; border-color:#d4d4d8;
+          {% endif %}
+        ">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+    {# ═══════════════════════════════════════════════════════════════════════ #}
+    {# PAYMENT BANNER — changes based on payment status                       #}
+    {# ═══════════════════════════════════════════════════════════════════════ #}
+
+    {% with status=order.payment.status %}
+
+      {# --- PENDING: show spinner and start polling --- #}
+      {% if status == "pending" %}
+        <section class="cart-hero" aria-labelledby="order-title">
+          <div>
+            <p class="cart-hero__eyebrow">Awaiting payment</p>
+            <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
+            <p class="cart-hero__copy">
+              A payment prompt has been sent to your phone. Please authorise it to complete your order.
+            </p>
+          </div>
+
+          <div id="payment-banner" class="cart-hero__trust" style="background:#fefce8; border-color:#fde047; color:#854d0e;">
+            <div class="payment-banner__spinner"></div>
+            <div>
+              <strong id="payment-banner-heading">Waiting for confirmation</strong>
+              <span id="payment-banner-message">Check your phone for the USSD prompt and enter your PIN.</span>
+            </div>
+          </div>
+
+          <a href="{% url 'orders:cart' %}" id="try-again-link" class="btn btn--primary" style="display:none; margin-top:1rem;">
+            Try Again
+          </a>
+        </section>
+
+        
+      {# --- PAID: confirmed state --- #}
+      {% elif status == "paid" %}
+        <section class="cart-hero" aria-labelledby="order-title">
+          <div>
+            <p class="cart-hero__eyebrow">Payment confirmed</p>
+            <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
+            <p class="cart-hero__copy">
+              Your mobile money payment was successful. Below is your trusted marketplace order summary.
+            </p>
+          </div>
+          <div class="cart-hero__trust">
+            <span class="trust-card__icon">OK</span>
+            <div>
+              <strong>Checkout completed</strong>
+              <span>Seller trust and payment records are attached to this order.</span>
+            </div>
+          </div>
+        </section>
+
+      {# --- FAILED: cancelled state --- #}
+      {% else %}
+        <section class="cart-hero" aria-labelledby="order-title">
+          <div>
+            <p class="cart-hero__eyebrow">Payment failed</p>
+            <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
+            <p class="cart-hero__copy">
+              Your payment was not completed. Your cart has not been affected — you can try again below.
+            </p>
+          </div>
+          <div class="cart-hero__trust" style="background:#fef2f2; border-color:#fca5a5; color:#991b1b;">
+            <span class="trust-card__icon">X</span>
+            <div>
+              <strong>Payment unsuccessful</strong>
+              <span>No money was charged. Please try again or use a different number.</span>
+            </div>
+          </div>
+          <a href="{% url 'orders:cart' %}" class="btn btn--primary" style="margin-top:1rem;">
+            Try Again
+          </a>
+        </section>
+      {% endif %}
+
+    {% endwith %}
+
+    {# ═══════════════════════════════════════════════════════════════════════ #}
+    {# ORDER ITEMS & SUMMARY                                                   #}
+    {# ═══════════════════════════════════════════════════════════════════════ #}
 
     <section class="cart-layout" aria-label="Order details">
       <div class="cart-items">
@@ -141,7 +230,70 @@
       </aside>
     </section>
   </main>
+
   {% include 'partials/footer.html' %}
   <script src="{% static 'js/scripts.js' %}"></script>
+  
+  {% if order.payment.status == "pending" %}
+  <script>
+    const pollUrl  = "{% url 'orders:payment_status' order.id %}";
+    const banner   = document.getElementById("payment-banner");
+    const heading  = document.getElementById("payment-banner-heading");
+    const message  = document.getElementById("payment-banner-message");
+    const tryAgain = document.getElementById("try-again-link");
+
+    const interval = setInterval(async () => {
+      try {
+        const res  = await fetch(pollUrl);
+        const data = await res.json();
+
+        if (data.status === "paid") {
+          clearInterval(interval);
+          location.reload();
+
+        } else if (data.status === "failed") {
+          clearInterval(interval);
+          banner.style.cssText = "background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;";
+          heading.textContent  = "❌ Payment failed";
+          message.textContent  = data.message || "Payment was cancelled or failed. Please try again.";
+          tryAgain.style.display = "inline-block";
+          const spinner = banner.querySelector(".payment-banner__spinner");
+          if (spinner) spinner.style.display = "none";
+        }
+
+      } catch (err) {
+        // Network hiccup — keep polling silently
+      }
+    }, 4000);
+
+    // Stop after 3 minutes
+    setTimeout(() => {
+      clearInterval(interval);
+      const spinner = banner.querySelector(".payment-banner__spinner");
+      if (spinner) spinner.style.display = "none";
+      if (banner.style.background.includes("fefce8")) {
+        banner.style.cssText = "background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;";
+        heading.textContent  = "❌ Payment timed out";
+        message.textContent  = "Payment was cancelled, timed out, or not completed. Please try again.";
+        tryAgain.style.display = "inline-block";
+      }
+    }, 90_000);
+  </script>
+{% endif %}
+  <style>
+    .payment-banner__spinner {
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+
 </body>
 </html>

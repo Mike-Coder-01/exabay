@@ -1,14 +1,8 @@
+{% extends 'products/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="shortcut icon" href="{% static 'images/favicon-v2.png' %}" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Products | Seller Dashboard</title>
-  <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
-</head>
-<body class="dashboard">
+{% block title %} Add Products | Seller Dashboard {% endblock %}
+{% block content %}
+
   <main class="page">
     <section class="page__hero">
       <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
@@ -169,5 +163,4 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="{% static 'products/productsJS/add_products.js' %}"></script>
-</body>
-</html>
+{% endblock %}

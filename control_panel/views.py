@@ -2,11 +2,15 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
@@ -14,7 +18,17 @@ from orders.models import Order, OrderItem
 from users.models import SellerProfile, User
 
 from .forms import ContactUserForm, SellerRejectionForm
-from .models import AdminNotification, SellerVerificationReview
+from .models import AdminNotification, SellerPayout, SellerVerificationReview
+from .payout_services import (
+    create_mobile_money_payout,
+    extract_payout_fee,
+    extract_total_deducted,
+    generate_payout_reference,
+    generate_token,
+    preview_mobile_money_payout,
+    query_payout_status,
+    retrieve_account_balance,
+)
 
 
 ORDER_STATUS_FILTERS = [
@@ -32,6 +46,17 @@ ORDER_STATUS_ACTIONS = [
     ("completed", "Completed"),
     ("cancelled", "Cancelled"),
 ]
+
+PAYOUT_ELIGIBLE_ORDER_STATUSES = ["completed"]
+EXABAY_COMMISSION_RATE = Decimal("10.00")
+PAYOUT_BLOCKING_STATUSES = [
+    SellerPayout.STATUS_AUTHORIZED,
+    SellerPayout.STATUS_PENDING,
+    SellerPayout.STATUS_PROCESSING,
+    SellerPayout.STATUS_SUCCESS,
+]
+
+superuser_required = user_passes_test(lambda user: user.is_authenticated and user.is_superuser)
 
 
 def notify_user(admin_user, recipient, notification_type, subject, message, seller=None, order=None):
@@ -55,6 +80,105 @@ def notify_user(admin_user, recipient, notification_type, subject, message, sell
         )
 
     return notification
+
+
+def normalize_tz_phone(phone_number):
+    if not phone_number:
+        return ""
+
+    digits = "".join(char for char in str(phone_number) if char.isdigit())
+
+    if digits.startswith("255") and len(digits) == 12:
+        return digits
+    if digits.startswith("0") and len(digits) == 10:
+        return f"255{digits[1:]}"
+    if len(digits) == 9:
+        return f"255{digits}"
+
+    return digits
+
+
+def get_seller_settings(seller):
+    try:
+        return seller.settings
+    except Exception:
+        return None
+
+
+def get_seller_payout_phone(seller):
+    seller_settings = get_seller_settings(seller)
+    payout_phone = getattr(seller_settings, "payout_phone_number", "") if seller_settings else ""
+    return normalize_tz_phone(payout_phone or seller.user.phone_number)
+
+
+def get_seller_payout_account_name(seller):
+    seller_settings = get_seller_settings(seller)
+    account_name = getattr(seller_settings, "payout_account_name", "") if seller_settings else ""
+    return account_name or seller.business_name or seller.user.get_full_name() or seller.user.username
+
+
+def seller_payable_items(seller):
+    line_total = ExpressionWrapper(
+        F("quantity") * F("price"),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    return (
+        OrderItem.objects
+        .filter(
+            product__seller=seller,
+            order__status__in=PAYOUT_ELIGIBLE_ORDER_STATUSES,
+        )
+        .exclude(seller_payouts__status__in=PAYOUT_BLOCKING_STATUSES)
+        .select_related("order", "product", "product__seller")
+        .annotate(line_total=line_total)
+    )
+
+
+def seller_payable_summary(seller):
+    items = seller_payable_items(seller)
+    summary = items.aggregate(
+        gross_amount=Sum("line_total"),
+        order_count=Count("order", distinct=True),
+        item_count=Count("id"),
+        unit_count=Sum("quantity"),
+    )
+    summary["gross_amount"] = summary["gross_amount"] or Decimal("0.00")
+    summary["commission_rate"] = EXABAY_COMMISSION_RATE
+    summary["commission_amount"] = (
+        summary["gross_amount"] * EXABAY_COMMISSION_RATE / Decimal("100.00")
+    ).quantize(Decimal("0.01"))
+    summary["amount"] = summary["gross_amount"] - summary["commission_amount"]
+    summary["order_count"] = summary["order_count"] or 0
+    summary["item_count"] = summary["item_count"] or 0
+    summary["unit_count"] = summary["unit_count"] or 0
+    return summary
+
+
+def map_clickpesa_payout_status(status):
+    normalized = (status or "").lower()
+    if normalized == "success":
+        return SellerPayout.STATUS_SUCCESS
+    if normalized == "authorized":
+        return SellerPayout.STATUS_AUTHORIZED
+    if normalized == "processing":
+        return SellerPayout.STATUS_PROCESSING
+    if normalized == "pending":
+        return SellerPayout.STATUS_PENDING
+    if normalized == "failed":
+        return SellerPayout.STATUS_FAILED
+    if normalized == "reversed":
+        return SellerPayout.STATUS_REVERSED
+    if normalized == "refunded":
+        return SellerPayout.STATUS_REFUNDED
+    return SellerPayout.STATUS_PROCESSING
+
+
+def parse_response_json(response):
+    try:
+        return response.json()
+    except Exception:
+        return {"raw": response.text}
 
 
 @staff_member_required
@@ -181,6 +305,295 @@ def admin_dashboard(request):
         "sold_summary": sold_summary,
         "recent_notifications": recent_notifications,
     })
+
+
+@superuser_required
+def seller_payouts(request):
+    preview_id = request.GET.get("preview")
+    seller_page_number = request.GET.get("seller_page", 1)
+    payout_page_number = request.GET.get("payout_page", 1)
+    gateway_balance = None
+
+    token = generate_token()
+    if token:
+        balance_response = retrieve_account_balance(token)
+        if balance_response and balance_response.status_code == 200:
+            balance_payload = parse_response_json(balance_response)
+            if isinstance(balance_payload, list) and balance_payload:
+                gateway_balance = balance_payload[0]
+            elif isinstance(balance_payload, dict):
+                gateway_balance = balance_payload
+
+    sellers_qs = (
+        SellerProfile.objects
+        .filter(is_verified=True)
+        .select_related("user")
+        .order_by("business_name", "user__username")
+    )
+
+    seller_rows = []
+    total_payable = Decimal("0.00")
+
+    for seller in sellers_qs:
+        summary = seller_payable_summary(seller)
+        total_payable += summary["amount"]
+        phone_number = get_seller_payout_phone(seller)
+        seller_rows.append({
+            "seller": seller,
+            "settings": get_seller_settings(seller),
+            "phone_number": phone_number,
+            "account_name": get_seller_payout_account_name(seller),
+            "summary": summary,
+            "can_preview": bool(phone_number and summary["amount"] > 0),
+        })
+
+    seller_paginator = Paginator(seller_rows, 10)
+    seller_rows = seller_paginator.get_page(seller_page_number)
+
+    payouts_qs = (
+        SellerPayout.objects
+        .select_related("seller", "seller__user", "created_by")
+        .prefetch_related("order_items")
+    )
+    payout_paginator = Paginator(payouts_qs, 10)
+    payouts = payout_paginator.get_page(payout_page_number)
+
+    preview_payout = None
+    if preview_id:
+        preview_payout = get_object_or_404(
+            SellerPayout.objects.select_related("seller", "seller__user"),
+            pk=preview_id,
+            status=SellerPayout.STATUS_PREVIEWED,
+        )
+
+    payout_summary = SellerPayout.objects.aggregate(
+        success_amount=Sum("amount", filter=Q(status=SellerPayout.STATUS_SUCCESS)),
+        processing_amount=Sum("amount", filter=Q(status__in=[
+            SellerPayout.STATUS_AUTHORIZED,
+            SellerPayout.STATUS_PENDING,
+            SellerPayout.STATUS_PROCESSING,
+        ])),
+        failed_amount=Sum("amount", filter=Q(status__in=[
+            SellerPayout.STATUS_FAILED,
+            SellerPayout.STATUS_REVERSED,
+            SellerPayout.STATUS_REFUNDED,
+        ])),
+        total_payouts=Count("id"),
+        successful_payouts=Count("id", filter=Q(status=SellerPayout.STATUS_SUCCESS)),
+    )
+    payout_summary["success_amount"] = payout_summary["success_amount"] or Decimal("0.00")
+    payout_summary["processing_amount"] = payout_summary["processing_amount"] or Decimal("0.00")
+    payout_summary["failed_amount"] = payout_summary["failed_amount"] or Decimal("0.00")
+    payout_summary["total_payouts"] = payout_summary["total_payouts"] or 0
+    payout_summary["successful_payouts"] = payout_summary["successful_payouts"] or 0
+
+    return render(request, "control_panel/seller_payouts.html", {
+        "seller_rows": seller_rows,
+        "payouts": payouts,
+        "preview_payout": preview_payout,
+        "gateway_balance": gateway_balance,
+        "total_payable": total_payable,
+        "payout_summary": payout_summary,
+        "eligible_statuses": ", ".join(PAYOUT_ELIGIBLE_ORDER_STATUSES),
+    })
+
+
+@superuser_required
+@require_POST
+def preview_seller_payout(request, seller_id):
+    seller = get_object_or_404(SellerProfile.objects.select_related("user"), pk=seller_id, is_verified=True)
+    phone_number = get_seller_payout_phone(seller)
+    account_name = get_seller_payout_account_name(seller)
+
+    if not phone_number:
+        messages.error(request, "Seller has no payout phone number.")
+        return redirect("control_panel:seller_payouts")
+
+    items = list(seller_payable_items(seller))
+    summary = seller_payable_summary(seller)
+    amount = summary["amount"]
+
+    if not items or amount <= 0:
+        messages.error(request, "This seller has no completed unpaid order items.")
+        return redirect("control_panel:seller_payouts")
+
+    token = generate_token()
+    if not token:
+        messages.error(request, "Could not authenticate with ClickPesa.")
+        return redirect("control_panel:seller_payouts")
+
+    order_reference = generate_payout_reference()
+    response = preview_mobile_money_payout(token, amount, order_reference, phone_number)
+
+    if response is None:
+        messages.error(request, "Could not reach ClickPesa payout preview.")
+        return redirect("control_panel:seller_payouts")
+
+    payload = parse_response_json(response)
+    if response.status_code != 200:
+        messages.error(request, payload.get("message", "Payout preview failed.") if isinstance(payload, dict) else "Payout preview failed.")
+        return redirect("control_panel:seller_payouts")
+
+    payout = SellerPayout.objects.create(
+        seller=seller,
+        created_by=request.user,
+        gross_amount=summary["gross_amount"],
+        commission_rate=summary["commission_rate"],
+        commission_amount=summary["commission_amount"],
+        amount=amount,
+        currency="TZS",
+        phone_number=phone_number,
+        account_name=account_name,
+        order_reference=order_reference,
+        status=SellerPayout.STATUS_PREVIEWED,
+        channel_provider=payload.get("channelProvider", ""),
+        clickpesa_fee=extract_payout_fee(payload),
+        clickpesa_total_deducted=extract_total_deducted(payload),
+        preview_response=payload,
+    )
+    payout.order_items.set(items)
+
+    messages.success(request, "Payout preview is ready. Review it before sending funds.")
+    return redirect(f"{reverse('control_panel:seller_payouts')}?preview={payout.id}")
+
+
+@superuser_required
+@require_POST
+def confirm_seller_payout(request, payout_id):
+    with transaction.atomic():
+        payout = get_object_or_404(
+            SellerPayout.objects
+            .select_for_update()
+            .select_related("seller", "seller__user")
+            .prefetch_related("order_items"),
+            pk=payout_id,
+            status=SellerPayout.STATUS_PREVIEWED,
+        )
+
+        blocking_exists = (
+            OrderItem.objects
+            .filter(
+                pk__in=payout.order_items.values("pk"),
+                seller_payouts__status__in=PAYOUT_BLOCKING_STATUSES,
+            )
+            .exclude(seller_payouts=payout)
+            .exists()
+        )
+
+        if blocking_exists:
+            payout.status = SellerPayout.STATUS_FAILED
+            payout.failure_reason = "One or more order items are already included in another payout."
+            payout.save(update_fields=["status", "failure_reason", "updated_at"])
+            messages.error(request, payout.failure_reason)
+            return redirect("control_panel:seller_payouts")
+
+    token = generate_token()
+    if not token:
+        messages.error(request, "Could not authenticate with ClickPesa.")
+        return redirect("control_panel:seller_payouts")
+
+    response = create_mobile_money_payout(
+        token,
+        payout.amount,
+        payout.order_reference,
+        payout.phone_number,
+    )
+
+    if response is None:
+        payout.status = SellerPayout.STATUS_FAILED
+        payout.failure_reason = "ClickPesa payout create request failed."
+        payout.save(update_fields=["status", "failure_reason", "updated_at"])
+        messages.error(request, payout.failure_reason)
+        return redirect("control_panel:seller_payouts")
+
+    payload = parse_response_json(response)
+    if response.status_code not in (200, 201):
+        payout.status = SellerPayout.STATUS_FAILED
+        payout.failure_reason = payload.get("message", "ClickPesa payout was rejected.") if isinstance(payload, dict) else "ClickPesa payout was rejected."
+        payout.gateway_response = payload
+        payout.save(update_fields=["status", "failure_reason", "gateway_response", "updated_at"])
+        messages.error(request, payout.failure_reason)
+        return redirect("control_panel:seller_payouts")
+
+    clickpesa_status = payload.get("status", "PROCESSING") if isinstance(payload, dict) else "PROCESSING"
+    payout.status = map_clickpesa_payout_status(clickpesa_status)
+    payout.channel_provider = payload.get("channelProvider", payout.channel_provider) if isinstance(payload, dict) else payout.channel_provider
+    payout.clickpesa_fee = extract_payout_fee(payload) if isinstance(payload, dict) else payout.clickpesa_fee
+    payout.clickpesa_total_deducted = extract_total_deducted(payload) if isinstance(payload, dict) else payout.clickpesa_total_deducted
+    payout.gateway_response = payload
+    payout.initiated_at = timezone.now()
+    if payout.status == SellerPayout.STATUS_SUCCESS:
+        payout.completed_at = timezone.now()
+    payout.save(update_fields=[
+        "status",
+        "channel_provider",
+        "clickpesa_fee",
+        "clickpesa_total_deducted",
+        "gateway_response",
+        "initiated_at",
+        "completed_at",
+        "updated_at",
+    ])
+
+    notify_user(
+        request.user,
+        payout.seller.user,
+        AdminNotification.TYPE_SELLER_MESSAGE,
+        "Seller payout initiated",
+        f"Your Exabay payout of Tsh {payout.amount} has been initiated to {payout.phone_number}. Reference: {payout.order_reference}.",
+        seller=payout.seller,
+    )
+
+    messages.success(request, f"Payout sent to ClickPesa. Current status: {payout.get_status_display()}.")
+    return redirect("control_panel:seller_payouts")
+
+
+@superuser_required
+@require_POST
+def refresh_seller_payout_status(request, payout_id):
+    payout = get_object_or_404(
+        SellerPayout.objects.select_related("seller", "seller__user"),
+        pk=payout_id,
+    )
+
+    token = generate_token()
+    if not token:
+        messages.error(request, "Could not authenticate with ClickPesa.")
+        return redirect("control_panel:seller_payouts")
+
+    response = query_payout_status(token, payout.order_reference)
+    if response is None:
+        messages.error(request, "Could not reach ClickPesa payout status endpoint.")
+        return redirect("control_panel:seller_payouts")
+
+    payload = parse_response_json(response)
+    if response.status_code != 200:
+        messages.error(request, payload.get("message", "Could not refresh payout status.") if isinstance(payload, dict) else "Could not refresh payout status.")
+        return redirect("control_panel:seller_payouts")
+
+    record = payload[0] if isinstance(payload, list) and payload else payload
+    clickpesa_status = record.get("status", "") if isinstance(record, dict) else ""
+    payout.status = map_clickpesa_payout_status(clickpesa_status)
+    payout.channel_provider = record.get("channelProvider", payout.channel_provider) if isinstance(record, dict) else payout.channel_provider
+    payout.clickpesa_fee = extract_payout_fee(record) if isinstance(record, dict) else payout.clickpesa_fee
+    payout.clickpesa_total_deducted = extract_total_deducted(record) if isinstance(record, dict) else payout.clickpesa_total_deducted
+    payout.gateway_response = record
+
+    if payout.status == SellerPayout.STATUS_SUCCESS and not payout.completed_at:
+        payout.completed_at = timezone.now()
+
+    payout.save(update_fields=[
+        "status",
+        "channel_provider",
+        "clickpesa_fee",
+        "clickpesa_total_deducted",
+        "gateway_response",
+        "completed_at",
+        "updated_at",
+    ])
+
+    messages.success(request, f"Payout status refreshed: {payout.get_status_display()}.")
+    return redirect("control_panel:seller_payouts")
 
 
 @staff_member_required

@@ -1,14 +1,9 @@
+{% extends 'main/base.html' %}
 {% load static %}
 {% load socialaccount %}
-<!DOCTYPE html>
-<html lang="en" data-language="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account | Exabay</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+{% block title %} Create Account | Exxabay {% endblock %}
+{% block content %}
+
   {% include 'partials/header_bar.html' %}
 
   <main class="auth-page">
@@ -27,7 +22,7 @@
         <div class="auth-card__header">
           <p class="section-heading__eyebrow">Registration</p>
           <h2>Create your account</h2>
-          <p>Google can verify identity quickly, but Exabay still asks for marketplace profile details after login.</p>
+          <p>Google can verify identity quickly, but Exxabay still asks for marketplace profile details after login.</p>
         </div>
 
         <a class="btn btn--outline auth-social-button" href="{% provider_login_url 'google' process='login' %}">
@@ -77,7 +72,7 @@
           </div>
 
           <label class="auth-field" for="{{ form.phone_number.id_for_label }}">
-            <span>Phone number <small>Optional</small></span>
+            <span>Phone number</span>
             {{ form.phone_number }}
             {{ form.phone_number.errors }}
           </label>
@@ -107,6 +102,6 @@
     </section>
   </main>
   {% include 'partials/footer.html' %}
-  <script src="{% static 'js/script.js' %}"></script>
-</body>
-</html>
+  <script src="{% static 'js/scripts.js' %}"></script>
+
+{% endblock %}

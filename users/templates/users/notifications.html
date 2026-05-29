@@ -1,0 +1,245 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications | Exabay</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="notifications-title">
+      <div>
+        <p class="cart-hero__eyebrow">Notification center</p>
+        <h1 id="notifications-title" class="cart-hero__title">Your Exabay updates</h1>
+        <p class="cart-hero__copy">
+          Review seller verification updates, order follow-ups, admin messages, and buyer communication from one inbox.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-bell" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong>{{ unread_count }} unread</strong>
+          <span>Important marketplace updates stay visible until you mark them as read.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Notification inbox">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow">Inbox</p>
+            <h2>Messages and alerts</h2>
+          </div>
+          <span class="cart-items__count">{{ all_count }} notification{{ all_count|pluralize }}</span>
+        </div>
+
+        {% if messages %}
+          <div class="documents-list">
+            {% for message in messages %}
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">{{ message }}</div>
+                  <div class="document-item__status">Notification update</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="product-detail__actions" aria-label="Notification filters">
+          <a class="btn {% if status == 'all' %}btn--primary{% else %}btn--outline{% endif %}" href="?status=all">
+            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+            <span>All {{ all_count }}</span>
+          </a>
+          <a class="btn {% if status == 'unread' %}btn--primary{% else %}btn--outline{% endif %}" href="?status=unread">
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+            <span>Unread {{ unread_count }}</span>
+          </a>
+          <a class="btn {% if status == 'read' %}btn--primary{% else %}btn--outline{% endif %}" href="?status=read">
+            <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
+            <span>Read {{ read_count }}</span>
+          </a>
+
+          {% if unread_count %}
+            <form method="post" action="{% url 'users:mark_all_notifications_read' %}">
+              {% csrf_token %}
+              <button class="btn btn--outline" type="submit">
+                <i class="fa-solid fa-check-double" aria-hidden="true"></i>
+                <span>Mark all read</span>
+              </button>
+            </form>
+          {% endif %}
+        </div>
+
+        <section class="vendor-group" aria-label="Notifications">
+          {% for notification in notifications %}
+            <article class="detail-panel">
+              <div class="cart-items__header">
+                <div>
+                  <p class="section-heading__eyebrow">{{ notification.get_notification_type_display }}</p>
+                  <h2>{{ notification.subject }}</h2>
+                  <p class="detail-panel__muted">
+                    {{ notification.created_at|date:"M d, Y H:i" }}
+                    {% if notification.sender %}
+                      - From {{ notification.sender.get_full_name|default:notification.sender.username }}
+                    {% endif %}
+                  </p>
+                </div>
+
+                {% if notification.is_read %}
+                  <span class="status-badge status-badge--verified">
+                    <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
+                    Read
+                  </span>
+                {% else %}
+                  <span class="status-badge status-badge--pending">
+                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                    Unread
+                  </span>
+                {% endif %}
+              </div>
+
+              <section class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>Message</h3>
+                  <span class="badge">{{ notification.get_notification_type_display }}</span>
+                </div>
+                <p class="detail-panel__copy">{{ notification.message }}</p>
+              </section>
+
+              {% if notification.related_seller or notification.related_order %}
+                <section class="onboarding-section">
+                  <div class="onboarding-section__header">
+                    <h3>Related record</h3>
+                    <span class="badge">Context</span>
+                  </div>
+                  <div class="metrics-grid detail-panel__metrics">
+                    {% if notification.related_seller %}
+                      <div class="metric">
+                        <span class="metric__label">Seller</span>
+                        <strong>{{ notification.related_seller.business_name|default:notification.related_seller.user.username }}</strong>
+                      </div>
+                    {% endif %}
+
+                    {% if notification.related_order %}
+                      <div class="metric">
+                        <span class="metric__label">Order</span>
+                        <strong>#{{ notification.related_order.id }}</strong>
+                      </div>
+                      <div class="metric">
+                        <span class="metric__label">Order status</span>
+                        <strong>{{ notification.related_order.status|title }}</strong>
+                      </div>
+                    {% endif %}
+                  </div>
+                </section>
+              {% endif %}
+
+              <div class="product-detail__actions">
+                {% if not notification.is_read %}
+                  <form method="post" action="{% url 'users:mark_notification_read' notification.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn--primary" type="submit">
+                      <i class="fa-solid fa-check" aria-hidden="true"></i>
+                      <span>Mark as read</span>
+                    </button>
+                  </form>
+                {% endif %}
+
+                {% if notification.related_order %}
+                  <span class="badge">Order #{{ notification.related_order.id }}</span>
+                {% endif %}
+              </div>
+            </article>
+          {% empty %}
+            <section class="cart-empty" aria-labelledby="empty-notifications-title">
+              <div class="cart-empty__icon">0</div>
+              <h2 id="empty-notifications-title">No notifications found</h2>
+              <p>Verification updates, order messages, and admin follow-ups will appear here.</p>
+            </section>
+          {% endfor %}
+        </section>
+
+        {% if page_obj.has_other_pages %}
+          <div class="product-detail__actions" aria-label="Notification pagination">
+            {% if page_obj.has_previous %}
+              <a class="btn btn--outline" href="?status={{ status }}&page={{ page_obj.previous_page_number }}">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                <span>Previous</span>
+              </a>
+            {% endif %}
+
+            <span class="badge">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+            {% if page_obj.has_next %}
+              <a class="btn btn--outline" href="?status={{ status }}&page={{ page_obj.next_page_number }}">
+                <span>Next</span>
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="notification-summary-title">
+        <p class="section-heading__eyebrow">Inbox summary</p>
+        <h2 id="notification-summary-title">Notification status</h2>
+
+        <div class="metrics-grid detail-panel__metrics">
+          <div class="metric">
+            <span class="metric__label">All</span>
+            <strong>{{ all_count }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Unread</span>
+            <strong>{{ unread_count }}</strong>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Read</span>
+            <strong>{{ read_count }}</strong>
+          </div>
+        </div>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt>Verification updates</dt>
+            <dd>Seller review decisions</dd>
+          </div>
+          <div>
+            <dt>Order updates</dt>
+            <dd>Payment and fulfillment follow-up</dd>
+          </div>
+          <div>
+            <dt>Admin messages</dt>
+            <dd>Marketplace support</dd>
+          </div>
+        </dl>
+
+        {% if user.is_seller %}
+          <a class="btn btn--outline cart-summary__checkout" href="{% url 'users:seller_settings' %}">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            <span>Notification settings</span>
+          </a>
+        {% endif %}
+
+        <div class="mobile-money-note">
+          <strong>Trust-focused communication</strong>
+          <span>Important admin messages remain available here so sellers and buyers can track marketplace decisions.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

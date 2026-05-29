@@ -308,50 +308,48 @@ def seller_product_list(request):
 @login_required
 def seller_dashboard(request):
     seller = get_object_or_404(SellerProfile, user=request.user)
+
     product_qs = Product.objects.filter(seller=seller).order_by("-id")
+
     product_field_names = {field.name for field in Product._meta.get_fields()}
     has_featured_field = "is_featured" in product_field_names
+
     total_products = product_qs.count()
-    use_demo_data = total_products == 0
+    active_products = product_qs.filter(is_available=True).count()
+    inactive_products = product_qs.filter(is_available=False).count()
+
     featured_limit = 3
 
-    if use_demo_data:
-        product_items = DEFAULT_DASHBOARD_PRODUCTS
-        active_products = sum(1 for item in product_items if item["is_available"])
-        inactive_products = sum(1 for item in product_items if not item["is_available"])
-        featured_products = [item for item in product_items if item["is_featured"]][:featured_limit]
-        paginator = Paginator(product_items, 10)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        products = list(page_obj.object_list)
-        featured_usage = len(featured_products)
+    if has_featured_field:
+        featured_count = product_qs.filter(is_featured=True).count()
+        featured_products = [
+            _serialize_product(product)
+            for product in product_qs.filter(is_featured=True)[:featured_limit]
+        ]
+        featured_usage = min(featured_count, featured_limit)
     else:
-        active_products = product_qs.filter(is_available=True).count()
-        inactive_products = product_qs.filter(is_available=False).count()
+        featured_products = []
+        featured_usage = 0
 
-        if has_featured_field:
-            featured_count = product_qs.filter(is_featured=True).count()
-            featured_products = [
-                _serialize_product(product)
-                for product in product_qs.filter(is_featured=True)[:featured_limit]
-            ]
-            featured_usage = min(featured_count, featured_limit)
-        else:
-            featured_products = []
-            featured_usage = 0
+    paginator = Paginator(product_qs, 10)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
-        paginator = Paginator(product_qs, 10)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        products = [_serialize_product(product) for product in page_obj.object_list]
+    products = [
+        _serialize_product(product)
+        for product in page_obj.object_list
+    ]
 
     context = {
         "seller": seller,
         "seller_name": request.user.get_full_name() or request.user.username,
         "products": products,
         "page_obj": page_obj,
-        "use_demo_data": use_demo_data,
-        "total_products": total_products if not use_demo_data else len(DEFAULT_DASHBOARD_PRODUCTS),
+        "use_demo_data": False,
+
+        "total_products": total_products,
         "active_products": active_products,
         "inactive_products": inactive_products,
+
         "featured_products": featured_products,
         "featured_slots": _build_featured_slots(featured_products, featured_limit),
         "featured_limit": featured_limit,

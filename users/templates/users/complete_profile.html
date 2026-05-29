@@ -1,24 +1,19 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="en" data-language="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete Profile | Exabay</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+{% load humanize %}
+{% block title %} Complete Profile | Exabay {% endblock %}
+{% block content %}
+
   {% include 'partials/header_bar.html' %}
 
   <main class="auth-page">
     <section class="auth-shell auth-shell--wide" aria-labelledby="profile-title">
       <div class="auth-hero-panel">
         <p class="auth-hero-panel__eyebrow">Marketplace onboarding</p>
-        <h1 id="profile-title">Complete your Exabay profile</h1>
-        <p>Google confirms who you are. Exabay still needs buyer or seller details to keep the marketplace trusted.</p>
+        <h1 id="profile-title">Complete your Exxabay profile</h1>
+        <p>Complete your informations. Exxabay still needs buyer or seller details to keep the marketplace trusted.</p>
         <div class="auth-trust-strip">
           <span class="trust-card__icon">OK</span>
-          <span>Seller documents are used for verification and are not exposed as sensitive previews.</span>
+          <span>Seller some informations are used for verification and are not exposed as sensitive previews.</span>
         </div>
       </div>
 
@@ -49,7 +44,7 @@
               <input type="radio" name="role" value="seller" {% if form.role.value == "seller" %}checked{% endif %}>
               <span>
                 <strong>Seller</strong>
-                <small>Submit business details for Exabay verification.</small>
+                <small>Submit business details for Exxabay verification.</small>
               </span>
             </label>
             {{ form.role.errors }}
@@ -129,5 +124,5 @@
   </main>
   {% include 'partials/footer.html' %}
   <script src="{% static 'js/scripts.js' %}"></script>
-</body>
-</html>
+
+{% endblock %}

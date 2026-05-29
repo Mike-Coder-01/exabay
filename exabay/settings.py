@@ -22,7 +22,13 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = ["exxabay.com","www.exxabay.com","exabay.onrender.com", 'http://127.0.0.1:8000', '127.0.0.1']
+ALLOWED_HOSTS = [
+    "exxabay.com",
+    "www.exxabay.com",
+    "exabay.onrender.com",
+    'http://127.0.0.1:8000', 
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -192,9 +198,36 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'mail.privateemail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "michaelmsita95@gmail.com"
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+
+EMAIL_HOST_USER = 'info@exxabay.com'
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = 'Exxabay <info@exxabay.com>'
+SERVER_EMAIL = 'info@exxabay.com'
+
+# PAYMENT INTEGRATION
+CLICKPESA_CLIENT_ID = env('Payment_Client_id')
+CLICKPESA_API_KEY = env('PAYMENT_API_KEY')
+CLICKPESA_CHECKSUM_KEY = env('CHECKSUM')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'orders': {                    
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

@@ -100,7 +100,10 @@ class Payment(models.Model):
 
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
 
+    gateway_response = models.TextField(blank=True, null=True)   # ← ADD THIS
+
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return f"Payment for Order {self.order.id}"

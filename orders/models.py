@@ -94,13 +94,13 @@ class Payment(models.Model):
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
-    method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
+    method = models.CharField(max_length=30, choices=PAYMENT_METHODS)
 
-    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
+    status = models.CharField(max_length=30, choices=PAYMENT_STATUS, default='pending')
 
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
 
-    gateway_response = models.TextField(blank=True, null=True)   # ← ADD THIS
+    gateway_response = models.TextField(blank=True, null=True)   
 
     created_at = models.DateTimeField(auto_now_add=True)
 

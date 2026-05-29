@@ -27,14 +27,9 @@ class Product(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-        # Only enforce on creation
-        if self._state.adding and not self.seller.is_verified:
-            raise ValueError("Seller is not verified and cannot create products.")
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        # Only when creating new product (Add 10%)
-        if not self.pk:
+        if self._state.adding:  # Only on creation
+            if not self.seller.is_verified:
+                raise ValueError("Seller is not verified and cannot create products.")
             self.price = Decimal(self.price) * Decimal("1.10")
         super().save(*args, **kwargs)
 

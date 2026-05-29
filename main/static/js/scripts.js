@@ -610,13 +610,13 @@ initializeAuthRoleForms();
 initializeFooterNewsletter();
 
 
-fetch(item.dataset.updateUrl, {
-  method: "POST",
-  headers: {
-    "X-CSRFToken": csrfToken,
-    "X-Requested-With": "XMLHttpRequest"
-  },
-  body: new URLSearchParams({
-    quantity: input.value
-  })
-});
+// fetch(item.dataset.updateUrl, {
+//   method: "POST",
+//   headers: {
+//     "X-CSRFToken": csrfToken,
+//     "X-Requested-With": "XMLHttpRequest"
+//   },
+//   body: new URLSearchParams({
+//     quantity: input.value
+//   })
+// });

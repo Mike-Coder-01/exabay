@@ -44,7 +44,7 @@ def add_to_cart(request, product_id):
 
     if product.stock < 1:
         messages.error(request, "This product is out of stock.")
-        return redirect("orders:product_detail", pk=product.id)
+        return redirect("products:product_detail", pk=product.id)
 
     cart, created = Cart.objects.get_or_create(user=request.user)
 

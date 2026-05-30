@@ -4,6 +4,32 @@
 {% block title %} {{ product.name }} | Exxabay {% endblock %}
 {% block content %}
 {% include 'partials/header_bar.html' %}
+{% if messages %}
+    {% for message in messages %}
+      {% if forloop.last %}
+        <div style="
+          padding:14px 18px;
+          margin:15px 0;
+          border-radius:10px;
+          font-size:15px;
+          font-weight:500;
+          line-height:1.5;
+          border:1px solid;
+          {% if message.tags == 'success' %}
+            background:#ecfdf3; color:#027a48; border-color:#abefc6;
+          {% elif message.tags == 'error' %}
+            background:#fef3f2; color:#b42318; border-color:#fecdca;
+          {% elif message.tags == 'warning' %}
+            background:#fffaeb; color:#b54708; border-color:#fedf89;
+          {% elif message.tags == 'info' %}
+            background:#eff8ff; color:#175cd3; border-color:#b2ddff;
+          {% else %}
+            background:#f4f4f5; color:#27272a; border-color:#d4d4d8;
+          {% endif %}
+        ">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
   <main class="product-detail">
     <a class="product-detail__back" href="/#products">Back to marketplace</a>
 

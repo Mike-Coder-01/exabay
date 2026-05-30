@@ -247,7 +247,7 @@ def product_update(request, pk):
             form.save()
             messages.success(request, f'Product "{product.name}" updated successfully!')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            messages.error(request, 'Please correct the errors below. Or turn off  is featured because it exceed limit')
     else:
         form = ProductUpdateForm(instance=product)
 

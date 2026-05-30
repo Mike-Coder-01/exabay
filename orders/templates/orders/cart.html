@@ -1,15 +1,9 @@
+{% extends 'main/base.html' %}
 {% load static %}
 {% load humanize %}
-<!DOCTYPE html>
-<html lang="en" data-language="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="shortcut icon" href="{% static 'images/favicon-v2.png' %}" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Cart | Exxabay</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+{% block title %} Your Cart | Exxabay {% endblock %}
+{% block content %}
+
 {% include 'partials/header_bar.html' %}
 {# ── Django messages ────────────────────────────────────────────────────── #}
 {% if messages %}
@@ -167,7 +161,7 @@
 
           <div class="mobile-money-note">
             <strong>Mobile money supported</strong>
-            <span>Pay securely with M-Pesa, Tigo Pesa, Airtel Money, or card options during checkout.</span>
+            <span>Pay securely with M-Pesa, Tigo Pesa, Airtel Money, during checkout.</span>
           </div>
         </aside>
       </section>
@@ -182,5 +176,5 @@
   </main>
   {% include 'partials/footer.html' %}
   <script src="{% static 'js/scripts.js' %}"></script>
-</body>
-</html>
+
+{% endblock %}

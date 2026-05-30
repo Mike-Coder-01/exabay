@@ -102,7 +102,7 @@
           </div>
           <div class="metric">
             <span class="metric__label">Completed orders</span>
-            <strong>248</strong>
+            <strong>{% if request.user.order_set.status == 'paid'%} {{ request.user.order_set.count }} {% else %} 0 {% endif %}</strong>
           </div>
           <div class="metric">
             <span class="metric__label">Rating</span>

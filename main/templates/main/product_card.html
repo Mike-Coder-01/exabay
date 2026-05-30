@@ -7,7 +7,7 @@
   data-trust-label="{{ trust_label }}"
   data-trust-copy="{{ trust_copy }}"
   data-total-products="{{ seller.product_set.count }}"
-  data-completed-orders="248"
+  data-completed-orders="{% if request.user.order_set.status == 'paid'%} {{ request.user.order_set.count }} {% endif %}"
   data-rating="4.8"
   data-license-document="{% if seller.license_document %}On file{% else %}Not submitted{% endif %}"
   data-license-status="{% if seller.license_document %}Submitted{% else %}Missing{% endif %}"

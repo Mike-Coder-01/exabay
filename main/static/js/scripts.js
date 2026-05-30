@@ -1,7 +1,7 @@
 const translations = {
   en: {
     navLabel: "Primary navigation",
-    searchProducts: "Search Exabay products",
+    searchProducts: "Search Exxabay products",
     navSearchPlaceholder: "Search trusted products, brands, sellers",
     heroSearchPlaceholder: "What are you looking for today?",
     search: "Search",
@@ -53,13 +53,13 @@ const translations = {
     submitted: "Submitted",
     missing: "Missing",
     unavailable: "Unavailable",
-    trustCopyVerified: "This seller has been verified by Exabay and meets our trust standards.",
-    trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exabay review.",
-    trustCopyUnverified: "This seller has not completed Exabay's verification checks yet."
+    trustCopyVerified: "This seller has been verified by Exxabay and meets our trust standards.",
+    trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exxabay review.",
+    trustCopyUnverified: "This seller has not completed Exxabay's verification checks yet."
   },
   sw: {
     navLabel: "Urambazaji mkuu",
-    searchProducts: "Tafuta bidhaa za Exabay",
+    searchProducts: "Tafuta bidhaa za Exxabay",
     navSearchPlaceholder: "Tafuta bidhaa, chapa, na wauzaji wa kuaminika",
     heroSearchPlaceholder: "Unatafuta nini leo?",
     search: "Tafuta",
@@ -111,9 +111,9 @@ const translations = {
     submitted: "Imewasilishwa",
     missing: "Haipo",
     unavailable: "Haipatikani",
-    trustCopyVerified: "Muuzaji huyu amethibitishwa na Exabay na anakidhi viwango vyetu vya uaminifu.",
-    trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exabay.",
-    trustCopyUnverified: "Muuzaji huyu bado hajakamilisha ukaguzi wa uthibitisho wa Exabay."
+    trustCopyVerified: "Muuzaji huyu amethibitishwa na Exxabay na anakidhi viwango vyetu vya uaminifu.",
+    trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exxabay.",
+    trustCopyUnverified: "Muuzaji huyu bado hajakamilisha ukaguzi wa uthibitisho wa Exxabay."
   }
 };
 

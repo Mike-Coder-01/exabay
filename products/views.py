@@ -127,13 +127,16 @@ def product_view(request):
 @login_required
 def create_product(request):
     seller = get_object_or_404(SellerProfile, user=request.user)
+    products = Product.objects.filter(seller=seller, is_featured=True).count()
 
     if not seller.is_verified:
         return HttpResponseForbidden("Seller not verified")
 
     if request.method == "POST":
         form = ProductCreationForm(request.POST)
-
+        is_product_featured = form.cleaned_data['is_featured']
+        if is_product_featured  and products >= 3:
+            messages.info(request, "You already have 3 products as featured, unfeature one to feature this.")
         if form.is_valid():
             product = form.save(commit=False)
             product.seller = seller
@@ -535,29 +538,31 @@ def search_products_api(request):
 
 
 def product_search_view(request):
-    if request.method == 'GET':
-        query = request.GET.get('search_filter')
-        if query:
-            queryset = Product.objects.filter(
-                Q(name__icontains=query) | Q(description__icontains=query)
-            ).annotate(
-                search_rank= Case(
-                    When(name__iexact=query, then=Value(1)),
-                    When(name__istartswith=query, then=Value(2)),
-                    When(name__icontains=query, then=Value(3)),
-                    When(description__icontains=query, then=Value(4)),
-                    default=Value(0),
-                    output_field=IntegerField()
-                )
-            ).order_by('search_rank', '-id')
+    if request.method != 'GET':
+        return redirect(reverse('main:home'))
 
-        redirect(reverse('main:home') + '#product-grid')
+    query = request.GET.get('search_filter')
+    queryset = Product.objects.none()  # safe default
 
-        context = {
-            'products': queryset,
-            'scroll_to_products': True
-        }
-            
+    if query:
+        queryset = Product.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        ).annotate(
+            search_rank=Case(
+                When(name__iexact=query, then=Value(1)),
+                When(name__istartswith=query, then=Value(2)),
+                When(name__icontains=query, then=Value(3)),
+                When(description__icontains=query, then=Value(4)),
+                default=Value(0),
+                output_field=IntegerField()
+            )
+        ).order_by('search_rank', '-id')
+
+    context = {
+        'products': queryset,
+        'scroll_to_products': bool(query),
+    }
+
     return render(request, 'main/index.html', context)
 
 

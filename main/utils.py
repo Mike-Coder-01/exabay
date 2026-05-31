@@ -16,7 +16,6 @@ def send_custom_email(user_email, username, subject, body):
         body=strip_tags(html_content),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[user_email],
-        # ✅ no headers= here
     )
 
     email.attach_alternative(html_content, "text/html")

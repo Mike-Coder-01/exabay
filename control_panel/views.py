@@ -29,6 +29,7 @@ from .payout_services import (
     query_payout_status,
     retrieve_account_balance,
 )
+from main.utils import send_custom_email
 
 
 ORDER_STATUS_FILTERS = [
@@ -71,13 +72,15 @@ def notify_user(admin_user, recipient, notification_type, subject, message, sell
     )
 
     if recipient.email:
-        send_mail(
-            subject,
-            message,
-            getattr(settings, "DEFAULT_FROM_EMAIL", None),
-            [recipient.email],
-            fail_silently=True,
-        )
+        try:
+            send_custom_email(
+                user_email=recipient.email,   
+                username=recipient.username,
+                subject=subject,
+                body=message,                 
+            )
+        except Exception:
+            pass                              
 
     return notification
 

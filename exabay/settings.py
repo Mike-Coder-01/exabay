@@ -210,6 +210,8 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Exxabay <info@exxabay.com>'
 SERVER_EMAIL = 'info@exxabay.com'
 
+
+DEFAULT_CHARSET = "utf-8"  
 # PAYMENT INTEGRATION
 CLICKPESA_CLIENT_ID = env('Payment_Client_id')
 CLICKPESA_API_KEY = env('PAYMENT_API_KEY')

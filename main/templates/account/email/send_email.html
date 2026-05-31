@@ -1,44 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <style>
-        body{
-            font-family: Arial, sans-serif;
-            background-color:white;
-            padding:20px;
-        }
-
-        .container{
-            max-width:600px;
-            margin:auto;
-            background:linear-gradient(120deg, var(--color-primary), var(--color-secondary));
-            padding:30px;
-            border-radius:10px;
-        }
-
-        .footer{
-            margin-top:30px;
-            color:gray;
-            font-size:14px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Exxabay</title>
 </head>
-<body>
+<body style="margin:0; padding:0; background-color:#f5f7fb; font-family:Georgia, 'Times New Roman', serif;">
 
-    <div class="container">
+  <!-- Outer wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f7fb; padding:40px 16px;">
+    <tr>
+      <td align="center">
 
-        <h2>Hello {{ username }},</h2>
+        <!-- Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 12px 28px rgba(15,23,42,0.08);">
 
-        <p>
-            {{ body }}
-        </p>
+          <!-- Header bar -->
+          <tr>
+            <td style="background:linear-gradient(120deg, #1e3a8a 0%, #14b8a6 100%); padding:32px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <!-- Wordmark -->
+                    <span style="font-family:Georgia, serif; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px;">Exx<span style="color:#14b8a6; text-shadow:0 0 20px rgba(20,184,166,0.6);">a</span>bay</span>
+                  </td>
+                  <td align="right">
+                    <!-- Decorative accent pill -->
+                    <span style="display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:999px; padding:4px 14px; font-family:Arial, sans-serif; font-size:11px; color:#e0f2fe; letter-spacing:1px; text-transform:uppercase;">Official Notice</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-        <div class="footer">
-            <p>Best regards,</p>
-            <p><strong>Exxabay Team</strong></p>
-        </div>
+          <!-- Thin accent line -->
+          <tr>
+            <td style="background:linear-gradient(90deg, #1e3a8a, #14b8a6); height:3px; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
 
-    </div>
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:36px 40px 0;">
+              <h2 style="margin:0; font-family:Georgia, serif; font-size:22px; font-weight:700; color:#111827; line-height:1.3;">
+                Hello {{ username }},
+              </h2>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:20px 40px 36px;">
+              <p style="margin:0; font-family:Arial, sans-serif; font-size:15px; line-height:1.85; color:#374151;">
+                {{ body|safe }}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-top:1px solid #e2e8f0; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 2px; font-family:Arial, sans-serif; font-size:13px; color:#64748b;">Best regards,</p>
+                    <p style="margin:0; font-family:Georgia, serif; font-size:14px; font-weight:700; color:#1e3a8a;">The Exxabay Team</p>
+                  </td>
+                  <td align="right" valign="middle">
+                    <!-- Support link -->
+                    <a href="mailto:support@exxabay.com" style="font-family:Arial, sans-serif; font-size:12px; color:#14b8a6; text-decoration:none;">support@exxabay.com</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Bottom strip -->
+          <tr>
+            <td style="background:#f5f7fb; padding:16px 40px; border-top:1px solid #e2e8f0;">
+              <p style="margin:0; font-family:Arial, sans-serif; font-size:11px; color:#94a3b8; text-align:center;">
+                &copy; 2026 Exxabay. All rights reserved. &nbsp;|&nbsp;
+                <a href="https://exxabay.com" style="color:#1e3a8a; text-decoration:none;">exxabay.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
 
 </body>
 </html>

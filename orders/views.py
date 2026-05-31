@@ -441,6 +441,8 @@ def checkout(request):
     )
     return redirect("orders:order_detail", order_id=order.id)
 
+
+
 from .services import generate_token, query_payment_status
 
 from django.utils import timezone

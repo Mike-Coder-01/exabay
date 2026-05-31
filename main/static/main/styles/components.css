@@ -222,6 +222,18 @@
   background: var(--color-danger);
 }
 
+@media (max-width: 768px) {
+  .notification-dot {
+    right: 278px;
+    background: var(--color-danger);
+  }
+}
+@media (max-width: 480px) {
+  .notification-dot {
+    right: 160px;
+  }
+}
+
 .profile-menu {
   display: inline-flex;
   align-items: center;

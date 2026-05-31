@@ -6,7 +6,8 @@
 
   {% include 'partials/header_bar.html' %}
 
-  {% if messages %}
+  <main class="cart-page">
+    {% if messages %}
     {% for message in messages %}
       {% if forloop.last %}
         <div style="
@@ -33,8 +34,6 @@
       {% endif %}
     {% endfor %}
   {% endif %}
-
-  <main class="cart-page">
 
     <!-- ── Hero ───────────────────────────────────────────────────────────────  -->
     <div class="cart-hero">

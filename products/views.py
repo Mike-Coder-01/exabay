@@ -13,6 +13,7 @@ from django.db import models as db_models
 from django.db.models import Case, When, Value, IntegerField, Q, F
 from .filters import ProductFilter
 from django.urls import reverse
+from control_panel.models import AdminNotification
 
 
 
@@ -362,6 +363,11 @@ def seller_dashboard(request):
 
     return render(request, "products/dashboard.html", context)
 
+
+def notification_view (request):
+    user = request.user
+    unread_notifications = AdminNotification.objects.filter(user=user, is_read=False)
+    return render (request, 'products/dashboard.html', {'unread_notification':unread_notifications})
 
 # ----------------------------
 # TOGGLE FEATURED API

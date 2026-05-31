@@ -112,8 +112,15 @@
       </div>
 
       <div class="topbar__actions">
+        <a class="icon-btn" type="button" aria-label="Notifications" href="{% url 'main:home' %}">
+          <!-- <span class="notification-dot" aria-hidden="true"></span> -->
+          <!-- <i class="fa-regular fa-bell" aria-hidden="true"></i> -->
+           <span>Home</span>
+        </a>
         <a class="icon-btn" type="button" aria-label="Notifications" href="{% url 'users:notifications' %}">
+          {% if unread_notification %}
           <span class="notification-dot" aria-hidden="true"></span>
+          {% endif %}
           <i class="fa-regular fa-bell" aria-hidden="true"></i>
         </a>
 

@@ -35,20 +35,17 @@
   <main class="cart-page">
     <section class="cart-hero" aria-labelledby="seller-analytics-title">
       <div>
-        <p class="cart-hero__eyebrow">Seller analytics</p>
-        <h1 id="seller-analytics-title" class="cart-hero__title">Business performance center</h1>
-        <p class="cart-hero__copy">
-          Understand revenue, order health, buyer behavior, inventory risk, and top-performing products from one seller workspace.
-        </p>
+        <p class="cart-hero__eyebrow" data-i18n="sellerAnalytics">Seller analytics</p>
+        <h1 id="seller-analytics-title" class="cart-hero__title" data-i18n="businessPerformanceCenter">Business performance center</h1>
+        <p class="cart-hero__copy" data-i18n="businessPerformanceCopy">Understand revenue, order health, buyer behavior, inventory risk, and top-performing products from one seller workspace.</p>
       </div>
-
-      <div class="cart-hero__trust" style="display: flex;">
-        <span class="trust-card__icon" style="display: flex;justify-content: center;">
+      <div class="cart-hero__trust" style="display:flex;">
+        <span class="trust-card__icon" style="display:flex;justify-content:center;">
           <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
         </span>
         <div>
           <strong>{{ seller.business_name|default:seller.user.username }}</strong>
-          <span>{% if seller.is_verified %}Verified seller analytics{% else %}Analytics visible while verification is in progress{% endif %}</span>
+          <span>{% if seller.is_verified %}<span data-i18n="verifiedSellerAnalytics">Verified seller analytics</span>{% else %}<span data-i18n="analyticsVisiblePending">Analytics visible while verification is in progress</span>{% endif %}</span>
         </div>
       </div>
     </section>
@@ -57,8 +54,8 @@
       <div class="cart-items">
         <div class="cart-items__header">
           <div>
-            <p class="section-heading__eyebrow">Performance overview</p>
-            <h2>Business analysis</h2>
+            <p class="section-heading__eyebrow" data-i18n="performanceOverview">Performance overview</p>
+            <h2 data-i18n="businessAnalysis">Business analysis</h2>
           </div>
           <span class="cart-items__count">{{ summary.total_orders }} order{{ summary.total_orders|pluralize }}</span>
         </div>
@@ -66,24 +63,22 @@
         <form class="auth-form" method="get" aria-label="Analytics date filter">
           <div class="auth-form__grid">
             <label class="auth-field">
-              <span>From date</span>
+              <span data-i18n="fromDate">From date</span>
               <input class="auth-field__input" type="date" name="date_from" value="{{ date_from }}">
             </label>
-
             <label class="auth-field">
-              <span>To date</span>
+              <span data-i18n="toDate">To date</span>
               <input class="auth-field__input" type="date" name="date_to" value="{{ date_to }}">
             </label>
           </div>
-
           <div class="product-detail__actions">
             <button class="btn btn--primary" type="submit">
-              <i class="fa-solid fa-filter" style="margin-right: 5px;" aria-hidden="true"></i>
-              <span>Apply filter</span>
+              <i class="fa-solid fa-filter" style="margin-right:5px;" aria-hidden="true"></i>
+              <span data-i18n="applyFilter">Apply filter</span>
             </button>
             <a class="btn btn--outline" href="{% url 'orders:seller_analytics' %}">
-              <i class="fa-solid fa-rotate-left" style="margin-right: 5px;" aria-hidden="true"></i>
-              <span>Clear</span>
+              <i class="fa-solid fa-rotate-left" style="margin-right:5px;" aria-hidden="true"></i>
+              <span data-i18n="clearFilter">Clear</span>
             </a>
           </div>
         </form>
@@ -91,54 +86,45 @@
         <section class="section" aria-labelledby="analytics-kpis">
           <div class="section__header">
             <div>
-              <h2 class="section__title" id="analytics-kpis">Key business metrics</h2>
-              <p class="section__description">Revenue and order health for the selected period.</p>
+              <h2 class="section__title" id="analytics-kpis" data-i18n="keyBusinessMetrics">Key business metrics</h2>
+              <p class="section__description" data-i18n="keyBusinessMetricsCopy">Revenue and order health for the selected period.</p>
             </div>
           </div>
-
           <div class="metric-grid">
             <article class="metric-card">
               <div class="metric-card__top">
-                <span class="metric-card__icon metric-card__icon--primary" aria-hidden="true">
-                  <i class="fa-solid fa-sack-dollar" style="margin-right: 5px;"></i>
-                </span>
-                <span class="badge badge--neutral">Revenue</span>
+                <span class="metric-card__icon metric-card__icon--primary" aria-hidden="true"><i class="fa-solid fa-sack-dollar" style="margin-right:5px;"></i></span>
+                <span class="badge badge--neutral" data-i18n="revenueLabel">Revenue</span>
               </div>
               <p class="metric-card__value">Tsh {{ summary.gross_revenue|floatformat:"0"|intcomma }}</p>
-              <h3 class="metric-card__label">Gross Revenue</h3>
+              <h3 class="metric-card__label" data-i18n="grossRevenue">Gross Revenue</h3>
             </article>
 
             <article class="metric-card">
               <div class="metric-card__top">
-                <span class="metric-card__icon metric-card__icon--success" aria-hidden="true">
-                  <i class="fa-solid fa-receipt" style="margin-right: 5px;"></i>
-                </span>
-                <span class="badge badge--success">Orders</span>
+                <span class="metric-card__icon metric-card__icon--success" aria-hidden="true"><i class="fa-solid fa-receipt" style="margin-right:5px;"></i></span>
+                <span class="badge badge--success" data-i18n="ordersLabel">Orders</span>
               </div>
               <p class="metric-card__value">{{ summary.revenue_orders }}</p>
-              <h3 class="metric-card__label">Paid / Active Orders</h3>
+              <h3 class="metric-card__label" data-i18n="paidActiveOrders">Paid / Active Orders</h3>
             </article>
 
             <article class="metric-card">
               <div class="metric-card__top">
-                <span class="metric-card__icon metric-card__icon--warning" aria-hidden="true">
-                  <i class="fa-solid fa-chart-pie" style="margin-right: 5px;"></i>
-                </span>
-                <span class="badge badge--warning">AOV</span>
+                <span class="metric-card__icon metric-card__icon--warning" aria-hidden="true"><i class="fa-solid fa-chart-pie" style="margin-right:5px;"></i></span>
+                <span class="badge badge--warning" data-i18n="aovLabel">AOV</span>
               </div>
               <p class="metric-card__value">Tsh {{ summary.average_order_value|floatformat:"0"|intcomma }}</p>
-              <h3 class="metric-card__label">Average Order Value</h3>
+              <h3 class="metric-card__label" data-i18n="averageOrderValue">Average Order Value</h3>
             </article>
 
             <article class="metric-card">
               <div class="metric-card__top">
-                <span class="metric-card__icon metric-card__icon--danger" aria-hidden="true">
-                  <i class="fa-solid fa-triangle-exclamation" style="margin-right: 5px;"></i>
-                </span>
-                <span class="badge badge--danger">Risk</span>
+                <span class="metric-card__icon metric-card__icon--danger" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px;"></i></span>
+                <span class="badge badge--danger" data-i18n="riskLabel">Risk</span>
               </div>
               <p class="metric-card__value">{{ summary.cancellation_rate }}%</p>
-              <h3 class="metric-card__label">Cancellation Rate</h3>
+              <h3 class="metric-card__label" data-i18n="cancellationRate">Cancellation Rate</h3>
             </article>
           </div>
         </section>
@@ -146,35 +132,34 @@
         <section class="section" aria-labelledby="order-health">
           <div class="section__header">
             <div>
-              <h2 class="section__title" id="order-health">Order health</h2>
-              <p class="section__description">Track paid orders, fulfillment progress, and completion performance.</p>
+              <h2 class="section__title" id="order-health" data-i18n="orderHealth">Order health</h2>
+              <p class="section__description" data-i18n="orderHealthCopy">Track paid orders, fulfillment progress, and completion performance.</p>
             </div>
           </div>
-
           <article class="detail-panel">
             <div class="metrics-grid detail-panel__metrics">
               <div class="metric">
-                <span class="metric__label">Pending</span>
+                <span class="metric__label" data-i18n="pendingOrders">Pending</span>
                 <strong>{{ summary.pending_orders }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Paid</span>
+                <span class="metric__label" data-i18n="paidOrders">Paid</span>
                 <strong>{{ summary.paid_orders }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Processing</span>
+                <span class="metric__label" data-i18n="processingOrders">Processing</span>
                 <strong>{{ summary.processing_orders }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Completed</span>
+                <span class="metric__label" data-i18n="completedOrders">Completed</span>
                 <strong>{{ summary.completed_orders }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Completed rate</span>
+                <span class="metric__label" data-i18n="completedRate">Completed rate</span>
                 <strong>{{ summary.completion_rate }}%</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Units sold</span>
+                <span class="metric__label" data-i18n="unitsSold">Units sold</span>
                 <strong>{{ summary.total_units }}</strong>
               </div>
             </div>
@@ -184,11 +169,10 @@
         <section class="section" aria-labelledby="sales-trend">
           <div class="section__header">
             <div>
-              <h2 class="section__title" id="sales-trend">Recent sales trend</h2>
-              <p class="section__description">Last available sales days in the selected period.</p>
+              <h2 class="section__title" id="sales-trend" data-i18n="recentSalesTrend">Recent sales trend</h2>
+              <p class="section__description" data-i18n="recentSalesTrendCopy">Last available sales days in the selected period.</p>
             </div>
           </div>
-
           <article class="panel">
             <div class="documents-list">
               {% for row in daily_sales %}
@@ -206,8 +190,8 @@
               {% empty %}
                 <div class="document-item">
                   <div>
-                    <div class="document-item__name">No sales trend yet</div>
-                    <div class="document-item__status">Paid, processing, and completed sales will appear here.</div>
+                    <div class="document-item__name" data-i18n="noSalesTrend">No sales trend yet</div>
+                    <div class="document-item__status" data-i18n="noSalesTrendCopy">Paid, processing, and completed sales will appear here.</div>
                   </div>
                 </div>
               {% endfor %}
@@ -218,22 +202,21 @@
         <section class="section" aria-labelledby="top-products">
           <div class="section__header">
             <div>
-              <h2 class="section__title" id="top-products">Top products</h2>
-              <p class="section__description">Best-performing products by revenue.</p>
+              <h2 class="section__title" id="top-products" data-i18n="topProducts">Top products</h2>
+              <p class="section__description" data-i18n="topProductsCopy">Best-performing products by revenue.</p>
             </div>
           </div>
-
           <article class="panel table-shell">
             <div class="table-wrap">
               <table class="data-table">
                 <thead class="data-table__head">
                   <tr class="data-table__row">
-                    <th class="data-table__cell" scope="col">Product</th>
-                    <th class="data-table__cell" scope="col">Category</th>
-                    <th class="data-table__cell" scope="col">Orders</th>
-                    <th class="data-table__cell" scope="col">Units</th>
-                    <th class="data-table__cell" scope="col">Revenue</th>
-                    <th class="data-table__cell" scope="col">Stock</th>
+                    <th class="data-table__cell" scope="col" data-i18n="productCol">Product</th>
+                    <th class="data-table__cell" scope="col" data-i18n="categoryCol">Category</th>
+                    <th class="data-table__cell" scope="col" data-i18n="ordersCol">Orders</th>
+                    <th class="data-table__cell" scope="col" data-i18n="unitsCol">Units</th>
+                    <th class="data-table__cell" scope="col" data-i18n="revenueCol">Revenue</th>
+                    <th class="data-table__cell" scope="col" data-i18n="stockCol">Stock</th>
                   </tr>
                 </thead>
                 <tbody class="data-table__body">
@@ -251,7 +234,7 @@
                       <td class="data-table__cell">Tsh {{ product.revenue|floatformat:"0"|intcomma }}</td>
                       <td class="data-table__cell">
                         {% if product.product__stock == 0 %}
-                          <span class="badge badge--danger">Out of stock</span>
+                          <span class="badge badge--danger" data-i18n="outOfStock">Out of stock</span>
                         {% elif product.product__stock <= 5 %}
                           <span class="badge badge--warning">{{ product.product__stock }} left</span>
                         {% else %}
@@ -261,7 +244,7 @@
                     </tr>
                   {% empty %}
                     <tr class="data-table__row">
-                      <td class="data-table__cell" colspan="6">No paid product performance data yet.</td>
+                      <td class="data-table__cell" colspan="6" data-i18n="noProductData">No paid product performance data yet.</td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -273,11 +256,10 @@
         <section class="section" aria-labelledby="action-queue">
           <div class="section__header">
             <div>
-              <h2 class="section__title" id="action-queue">Action queue</h2>
-              <p class="section__description">Orders that need seller attention first.</p>
+              <h2 class="section__title" id="action-queue" data-i18n="actionQueue">Action queue</h2>
+              <p class="section__description" data-i18n="actionQueueCopy">Orders that need seller attention first.</p>
             </div>
           </div>
-
           <article class="panel">
             <div class="documents-list">
               {% for item in action_items %}
@@ -290,7 +272,6 @@
                         <span>{{ product.name|first }}</span>
                       {% endif %}
                     </a>
-
                     <div>
                       <div class="document-item__name">Order #{{ order.id }} - {{ product.name }}</div>
                       <div class="document-item__status">
@@ -299,11 +280,10 @@
                         {{ order.created_at|date:"M d, Y H:i" }}
                       </div>
                     </div>
-
                     {% if buyer.phone_number %}
                       <a class="btn btn--primary" href="tel:{{ buyer.phone_number }}">
-                        <i class="fa-solid fa-phone" style="margin-right: 5px;" aria-hidden="true"></i>
-                        <span>Call buyer</span>
+                        <i class="fa-solid fa-phone" style="margin-right:5px;" aria-hidden="true"></i>
+                        <span data-i18n="callBuyer">Call buyer</span>
                       </a>
                     {% endif %}
                   </div>
@@ -311,8 +291,8 @@
               {% empty %}
                 <div class="document-item">
                   <div>
-                    <div class="document-item__name">No urgent orders</div>
-                    <div class="document-item__status">Pending, paid, and processing orders will appear here.</div>
+                    <div class="document-item__name" data-i18n="noUrgentOrders">No urgent orders</div>
+                    <div class="document-item__status" data-i18n="noUrgentOrdersCopy">Pending, paid, and processing orders will appear here.</div>
                   </div>
                 </div>
               {% endfor %}
@@ -322,72 +302,72 @@
       </div>
 
       <aside class="cart-summary" aria-labelledby="analytics-summary-title">
-        <p class="section-heading__eyebrow">Business snapshot</p>
-        <h2 id="analytics-summary-title">Seller health</h2>
+        <p class="section-heading__eyebrow" data-i18n="businessSnapshot">Business snapshot</p>
+        <h2 id="analytics-summary-title" data-i18n="sellerHealth">Seller health</h2>
 
         <div class="metrics-grid detail-panel__metrics">
           <div class="metric">
-            <span class="metric__label">Products</span>
+            <span class="metric__label" data-i18n="productsLabel">Products</span>
             <strong>{{ inventory_summary.total_products }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Active products</span>
+            <span class="metric__label" data-i18n="activeProducts">Active products</span>
             <strong>{{ inventory_summary.active_products }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Low stock</span>
+            <span class="metric__label" data-i18n="lowStockLabel">Low stock</span>
             <strong>{{ inventory_summary.low_stock_products }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Out of stock</span>
+            <span class="metric__label" data-i18n="outOfStockLabel">Out of stock</span>
             <strong>{{ inventory_summary.out_of_stock_products }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Featured</span>
+            <span class="metric__label" data-i18n="featuredLabel">Featured</span>
             <strong>{{ inventory_summary.featured_products }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Inventory value</span>
+            <span class="metric__label" data-i18n="inventoryValue">Inventory value</span>
             <strong>Tsh {{ inventory_summary.inventory_value|floatformat:"0"|intcomma }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Unique buyers</span>
+            <span class="metric__label" data-i18n="uniqueBuyers">Unique buyers</span>
             <strong>{{ summary.unique_buyers }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Repeat buyers</span>
+            <span class="metric__label" data-i18n="repeatBuyers">Repeat buyers</span>
             <strong>{{ repeat_buyers }}</strong>
           </div>
         </div>
 
         <dl class="cart-summary__lines">
           <div>
-            <dt>Seller status</dt>
-            <dd>{% if seller.is_verified %}Verified{% else %}Pending review{% endif %}</dd>
+            <dt data-i18n="sellerStatusLabel">Seller status</dt>
+            <dd>{% if seller.is_verified %}<span data-i18n="verifiedStatus">Verified</span>{% else %}<span data-i18n="pendingReview">Pending review</span>{% endif %}</dd>
           </div>
           <div>
-            <dt>Completion rate</dt>
+            <dt data-i18n="completionRateLabel">Completion rate</dt>
             <dd>{{ summary.completion_rate }}%</dd>
           </div>
           <div>
-            <dt>Cancelled orders</dt>
+            <dt data-i18n="cancelledOrders">Cancelled orders</dt>
             <dd>{{ summary.cancelled_orders }}</dd>
           </div>
         </dl>
 
         <a class="btn btn--primary cart-summary__checkout" href="{% url 'orders:seller_orders' %}?status=paid">
-          <i class="fa-solid fa-credit-card" style="margin-right: 5px;" aria-hidden="true"></i>
-          <span>Review paid orders</span>
+          <i class="fa-solid fa-credit-card" style="margin-right:5px;" aria-hidden="true"></i>
+          <span data-i18n="reviewPaidOrders">Review paid orders</span>
         </a>
 
         <a class="btn btn--outline cart-summary__checkout" href="{% url 'orders:seller_orders' %}">
-          <i class="fa-solid fa-layer-group" style="margin-right: 5px;" aria-hidden="true"></i>
-          <span>Open orders</span>
+          <i class="fa-solid fa-layer-group" style="margin-right:5px;" aria-hidden="true"></i>
+          <span data-i18n="openOrders">Open orders</span>
         </a>
 
         <div class="mobile-money-note">
-          <strong>Analysis note</strong>
-          <span>Revenue uses paid, processing, and completed seller order lines. Pending and cancelled orders are shown for operational awareness.</span>
+          <strong data-i18n="analysisNote">Analysis note</strong>
+          <span data-i18n="analysisNoteCopy">Revenue uses paid, processing, and completed seller order lines. Pending and cancelled orders are shown for operational awareness.</span>
         </div>
 
         <div class="documents-list">
@@ -404,8 +384,8 @@
           {% empty %}
             <div class="document-item">
               <div>
-                <div class="document-item__name">No category data yet</div>
-                <div class="document-item__status">Category performance appears after paid sales.</div>
+                <div class="document-item__name" data-i18n="noCategoryData">No category data yet</div>
+                <div class="document-item__status" data-i18n="noCategoryDataCopy">Category performance appears after paid sales.</div>
               </div>
             </div>
           {% endfor %}
@@ -425,8 +405,8 @@
           {% empty %}
             <div class="document-item">
               <div>
-                <div class="document-item__name">No status data</div>
-                <div class="document-item__status">Order status breakdown will appear here.</div>
+                <div class="document-item__name" data-i18n="noStatusData">No status data</div>
+                <div class="document-item__status" data-i18n="noStatusDataCopy">Order status breakdown will appear here.</div>
               </div>
             </div>
           {% endfor %}

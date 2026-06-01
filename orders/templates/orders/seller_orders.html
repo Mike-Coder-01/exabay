@@ -34,15 +34,15 @@
   <main class="cart-page">
     <section class="cart-hero" aria-labelledby="seller-orders-title">
       <div>
-        <p class="cart-hero__eyebrow">Seller order center</p>
-        <h1 id="seller-orders-title" class="cart-hero__title">Orders sold on Exxabay</h1>
-        <p class="cart-hero__copy">Track paid orders, pending fulfillment, buyer details, product history, and seller revenue from one trust-focused workspace.</p>
+        <p class="cart-hero__eyebrow" data-i18n="sellerOrderCenter">Seller order center</p>
+        <h1 id="seller-orders-title" class="cart-hero__title" data-i18n="ordersSoldOnExxabay">Orders sold on Exxabay</h1>
+        <p class="cart-hero__copy" data-i18n="sellerOrderCenterCopy">Track paid orders, pending fulfillment, buyer details, product history, and seller revenue from one trust-focused workspace.</p>
       </div>
       <div class="cart-hero__trust">
         <span class="trust-card__icon">OK</span>
         <div>
           <strong>{{ seller.business_name|default:seller.user.username }}</strong>
-          <span>{% if seller.is_verified %}Verified seller profile{% else %}Seller verification in progress{% endif %}</span>
+          <span>{% if seller.is_verified %}<span data-i18n="verifiedSellerProfile">Verified seller profile</span>{% else %}<span data-i18n="sellerVerificationInProgress">Seller verification in progress</span>{% endif %}</span>
         </div>
       </div>
     </section>
@@ -51,8 +51,8 @@
       <div class="cart-items">
         <div class="cart-items__header">
           <div>
-            <p class="section-heading__eyebrow">Order history</p>
-            <h2>Sold products</h2>
+            <p class="section-heading__eyebrow" data-i18n="orderHistory">Order history</p>
+            <h2 data-i18n="soldProducts">Sold products</h2>
           </div>
           <span class="cart-items__count">{{ summary.total_orders }} order{{ summary.total_orders|pluralize }}</span>
         </div>
@@ -77,16 +77,16 @@
 
                 <div class="cart-item__info">
                   <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
-                  <p class="cart-item__seller">Buyer: <strong>{{ order.user.get_full_name|default:order.user.username }}</strong></p>
+                  <p class="cart-item__seller"><span data-i18n="buyerLabel">Buyer:</span> <strong>{{ order.user.get_full_name|default:order.user.username }}</strong></p>
                   <div class="cart-item__meta">
                     <span class="badge">Order #{{ order.id }}</span>
                     <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
                     {% if order.status == "completed" %}
-                      <span class="status-badge status-badge--verified">OK Completed</span>
+                      <span class="status-badge status-badge--verified" data-i18n="okCompleted">OK Completed</span>
                     {% elif order.status == "cancelled" or order.status == "refunded" %}
                       <span class="status-badge status-badge--unverified">X {{ order.status|title }}</span>
                     {% elif order.status == "pending" %}
-                      <span class="status-badge status-badge--pending">! Pending</span>
+                      <span class="status-badge status-badge--pending" data-i18n="pendingOrders">! Pending</span>
                     {% else %}
                       <span class="status-badge status-badge--pending">! {{ order.status|title }}</span>
                     {% endif %}
@@ -94,29 +94,29 @@
                   {% if order.status == "paid" or order.status == "processing" %}
                     <div class="cart-item__meta">
                       {% if order.user.email %}
-                        <a class="btn btn--outline" href="mailto:{{ order.user.email }}">Email buyer</a>
+                        <a class="btn btn--outline" href="mailto:{{ order.user.email }}" data-i18n="emailBuyer">Email buyer</a>
                       {% endif %}
                       {% if order.user.phone_number %}
-                        <a class="btn btn--outline" href="tel:{{ order.user.phone_number }}">Call {{ order.user.phone_number }}</a>
+                        <a class="btn btn--outline" href="tel:{{ order.user.phone_number }}"><span data-i18n="callNow">Call</span> {{ order.user.phone_number }}</a>
                       {% else %}
-                        <span class="badge">No phone number</span>
+                        <span class="badge" data-i18n="noPhoneNumber">No phone number</span>
                       {% endif %}
                     </div>
                   {% endif %}
                 </div>
 
                 <div class="cart-item__price">
-                  <span>Unit price</span>
+                  <span data-i18n="unitPrice">Unit price</span>
                   <strong>Tsh{{ item.price|floatformat:"0"|intcomma }}</strong>
                 </div>
 
                 <div class="cart-item__price">
-                  <span>Quantity</span>
+                  <span data-i18n="quantity">Quantity</span>
                   <strong>{{ item.quantity }}</strong>
                 </div>
 
                 <div class="cart-item__subtotal">
-                  <span>Seller subtotal</span>
+                  <span data-i18n="sellerSubtotal">Seller subtotal</span>
                   <strong>Tsh {{ item.line_total|floatformat:"0"|intcomma }}</strong>
                 </div>
               </article>
@@ -124,66 +124,61 @@
           {% empty %}
             <section class="cart-empty" aria-labelledby="no-seller-orders-title">
               <div class="cart-empty__icon">0</div>
-              <h2 id="no-seller-orders-title">No seller orders yet</h2>
-              <p>Orders for your products will appear here after buyers complete checkout.</p>
+              <h2 id="no-seller-orders-title" data-i18n="noSellerOrders">No seller orders yet</h2>
+              <p data-i18n="noSellerOrdersCopy">Orders for your products will appear here after buyers complete checkout.</p>
             </section>
           {% endfor %}
         </section>
       </div>
 
       <aside class="cart-summary" aria-labelledby="seller-summary-title">
-        <p class="section-heading__eyebrow">Seller summary</p>
-        <h2 id="seller-summary-title">Order performance</h2>
+        <p class="section-heading__eyebrow" data-i18n="sellerSummary">Seller summary</p>
+        <h2 id="seller-summary-title" data-i18n="orderPerformance">Order performance</h2>
 
         <div class="metrics-grid detail-panel__metrics">
           <div class="metric">
-            <span class="metric__label">Total revenue</span>
+            <span class="metric__label" data-i18n="totalRevenue">Total revenue</span>
             <strong>Tsh{{ summary.total_revenue|floatformat:"0"|intcomma }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Unique orders</span>
+            <span class="metric__label" data-i18n="uniqueOrders">Unique orders</span>
             <strong>{{ summary.total_orders }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Units sold</span>
+            <span class="metric__label" data-i18n="unitsSold">Units sold</span>
             <strong>{{ summary.total_units }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Pending / active</span>
+            <span class="metric__label" data-i18n="pendingActive">Pending / active</span>
             <strong>{{ summary.pending_orders }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Paid orders</span>
+            <span class="metric__label" data-i18n="paidOrders">Paid orders</span>
             <strong>{{ summary.paid_orders }}</strong>
           </div>
           <div class="metric">
-            <span class="metric__label">Completed</span>
+            <span class="metric__label" data-i18n="completedOrders">Completed</span>
             <strong>{{ summary.completed_orders }}</strong>
           </div>
         </div>
 
         <dl class="cart-summary__lines">
           <div>
-            <dt>Seller status</dt>
-            <dd>{% if seller.is_verified %}Verified{% else %}Pending review{% endif %}</dd>
+            <dt data-i18n="sellerStatusLabel">Seller status</dt>
+            <dd>{% if seller.is_verified %}<span data-i18n="verifiedStatus">Verified</span>{% else %}<span data-i18n="pendingReview">Pending review</span>{% endif %}</dd>
           </div>
           <div>
-            <dt>Fulfillment focus</dt>
-            <dd>Paid and pending orders</dd>
+            <dt data-i18n="fulfillmentFocus">Fulfillment focus</dt>
+            <dd data-i18n="fulfillmentFocusCopy">Paid and pending orders</dd>
           </div>
           <div>
-            <dt>Payment mode</dt>
-            <dd>Mobile money</dd>
+            <dt data-i18n="paymentMode">Payment mode</dt>
+            <dd data-i18n="paymentModeCopy">Mobile money</dd>
           </div>
         </dl>
 
-        <a class="btn btn--primary cart-summary__checkout" href="?status=paid">View paid orders</a>
-        <a class="btn btn--outline cart-summary__checkout" href="?status=all">View all history</a>
-
-        <!-- <div class="mobile-money-note">
-          <strong>Seller payout note</strong>
-          <span>Revenue shown here is based on completed simulated checkout records. Real settlement rules can be added later.</span>
-        </div> -->
+        <a class="btn btn--primary cart-summary__checkout" href="?status=paid" data-i18n="viewPaidOrders">View paid orders</a>
+        <a class="btn btn--outline cart-summary__checkout" href="?status=all" data-i18n="viewAllHistory">View all history</a>
       </aside>
     </section>
   </main>

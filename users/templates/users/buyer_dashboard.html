@@ -7,6 +7,7 @@
   {% include 'partials/header_bar.html' %}
 
   <main class="cart-page">
+    {# messages block unchanged #}
     {% if messages %}
     {% for message in messages %}
       {% if forloop.last %}
@@ -35,96 +36,81 @@
     {% endfor %}
   {% endif %}
 
-    <!-- ── Hero ───────────────────────────────────────────────────────────────  -->
     <div class="cart-hero">
       <div>
-        <p class="cart-hero__eyebrow">Buyer account</p>
+        <p class="cart-hero__eyebrow" data-i18n="buyerAccount">Buyer account</p>
         <h1 class="cart-hero__title">
-          Welcome, {{ request.user.first_name|default:request.user.username }}
+          <span data-i18n="accountWelcome">Welcome,</span> {{ request.user.first_name|default:request.user.username }}
         </h1>
-        <p class="cart-hero__copy">
-          Manage your orders, update your details, and track your trusted marketplace activity.
-        </p>
+        <p class="cart-hero__copy" data-i18n="accountHeroCopy">Manage your orders, update your details, and track your trusted marketplace activity.</p>
       </div>
       <div class="cart-hero__trust">
         <span class="trust-card__icon">OK</span>
         <div>
-          <strong>Trust-protected account</strong>
-          <span>Your purchases are secured by Exxabay's seller verification system.</span>
+          <strong data-i18n="trustProtectedAccount">Trust-protected account</strong>
+          <span data-i18n="trustProtectedAccountCopy">Your purchases are secured by Exxabay's seller verification system.</span>
         </div>
       </div>
     </div>
 
-    <!-- {# ── Stats row — reusing metric + metrics-grid from modal CSS ─────────── #} -->
     <div class="metrics-grid" style="margin-top:24px;">
       <div class="metric">
-        <span class="metric__label">Total orders</span>
+        <span class="metric__label" data-i18n="totalOrders">Total orders</span>
         <strong>{{ orders.count }}</strong>
       </div>
       <div class="metric">
-        <span class="metric__label">Completed</span>
+        <span class="metric__label" data-i18n="completedOrders">Completed</span>
         <strong>{{ orders_paid.count }}</strong>
       </div>
       <div class="metric">
-        <span class="metric__label">Pending payment</span>
+        <span class="metric__label" data-i18n="pendingPayment">Pending payment</span>
         <strong>{{ orders_pending.count }}</strong>
       </div>
     </div>
 
     <div class="cart-layout" style="margin-top:22px;">
-
-      <!-- {# ══════════════════════════════════════════════════════════════════════
-         LEFT — orders + edit account + contact + seller CTA
-         ══════════════════════════════════════════════════════════════════════ #} -->
       <div style="display:grid; gap:22px;">
 
-        <!-- {# ── Pending payments — action required ─────────────────────────── #} -->
         {% if orders_pending %}
           <section class="cart-items" aria-labelledby="pending-title">
             <div class="cart-items__header">
               <div>
-                <p class="section-heading__eyebrow">Action required</p>
-                <h2 id="pending-title">Pending payments</h2>
+                <p class="section-heading__eyebrow" data-i18n="actionRequired">Action required</p>
+                <h2 id="pending-title" data-i18n="pendingPayments">Pending payments</h2>
               </div>
-              <span class="cart-items__count">{{ orders_pending.count }} pending</span>
+              <span class="cart-items__count">{{ orders_pending.count }} <span data-i18n="pendingCount">pending</span></span>
             </div>
-
             <div class="vendor-group">
               {% for order in orders_pending %}
                 <div class="cart-item" style="grid-template-columns: minmax(0,1fr) auto auto;">
                   <div>
-                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">
-                      Order #{{ order.id }}
-                    </a>
+                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">Order #{{ order.id }}</a>
                     <p class="cart-item__seller">
                       {{ order.created_at|date:"d M Y" }} &middot;
                       {{ order.items.count }} item{{ order.items.count|pluralize }}
                     </p>
                     <div class="cart-item__meta">
-                      <span class="status-badge status-badge--pending">! Pending</span>
+                      <span class="status-badge status-badge--pending" data-i18n="pendingOrders">! Pending</span>
                     </div>
                   </div>
                   <div class="cart-item__subtotal">
-                    <span>Total</span>
+                    <span data-i18n="totalLabel">Total</span>
                     <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
                   </div>
-                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--primary" style="font-size:0.85rem; min-height:36px;">
-                    Pay now →
-                  </a>
+                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--primary" style="font-size:0.85rem; min-height:36px;" data-i18n="payNow">Pay now →</a>
                 </div>
               {% endfor %}
             </div>
           </section>
         {% endif %}
 
-        <!-- {# ── All orders ─────────────────────────────────────────────────── #} -->
         <section class="cart-items" aria-labelledby="orders-title">
           <div class="cart-items__header">
             <div>
-              <p class="section-heading__eyebrow">Order history</p>
-              <h2 id="orders-title">All orders</h2>
+              <p class="section-heading__eyebrow" data-i18n="orderHistoryEyebrow">Order history</p>
+              <h2 id="orders-title" data-i18n="allOrders">All orders</h2>
             </div>
-            <span class="cart-items__count">{{ orders.count }} total</span>
+            <span class="cart-items__count">{{ orders.count }} <span data-i18n="totalCount">total</span></span>
           </div>
 
           {% if orders %}
@@ -132,154 +118,134 @@
               {% for order in orders %}
                 <div class="cart-item" style="grid-template-columns: minmax(0,1fr) auto auto auto;">
                   <div>
-                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">
-                      Order #{{ order.id }}
-                    </a>
+                    <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">Order #{{ order.id }}</a>
                     <p class="cart-item__seller">
                       {{ order.created_at|date:"d M Y" }} &middot;
                       {{ order.items.count }} item{{ order.items.count|pluralize }}
                     </p>
                   </div>
-
                   <div>
                     {% if order.status == "paid" %}
-                      <span class="status-badge status-badge--verified">OK Paid</span>
+                      <span class="status-badge status-badge--verified" data-i18n="okPaid">OK Paid</span>
                     {% elif order.status == "pending" %}
-                      <span class="status-badge status-badge--pending">! Pending</span>
+                      <span class="status-badge status-badge--pending" data-i18n="pendingOrders">! Pending</span>
                     {% elif order.status == "shipped" %}
-                      <span class="status-badge status-badge--pending">⟶ Shipped</span>
+                      <span class="status-badge status-badge--pending" data-i18n="shippedStatus">⟶ Shipped</span>
                     {% elif order.status == "delivered" %}
-                      <span class="status-badge status-badge--verified">OK Delivered</span>
+                      <span class="status-badge status-badge--verified" data-i18n="okDelivered">OK Delivered</span>
                     {% else %}
-                      <span class="status-badge status-badge--unverified">X Cancelled</span>
+                      <span class="status-badge status-badge--unverified" data-i18n="cancelledStatus">X Cancelled</span>
                     {% endif %}
                   </div>
-
                   <div class="cart-item__subtotal">
-                    <span>Total</span>
+                    <span data-i18n="totalLabel">Total</span>
                     <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
                   </div>
-
-                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--outline" style="font-size:0.82rem; min-height:34px;">
-                    View
-                  </a>
+                  <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--outline" style="font-size:0.82rem; min-height:34px;" data-i18n="viewOrder">View</a>
                 </div>
               {% endfor %}
             </div>
-
           {% else %}
             <div class="cart-empty" style="margin-top:0; border:0; box-shadow:none;">
               <div class="cart-empty__icon">0</div>
-              <h2>No orders yet</h2>
-              <p>You haven't placed any orders. Explore trusted sellers and start shopping.</p>
-              <a class="btn btn--primary" href="/">Browse products</a>
+              <h2 data-i18n="noOrdersYet">No orders yet</h2>
+              <p data-i18n="noOrdersCopy">You haven't placed any orders. Explore trusted sellers and start shopping.</p>
+              <a class="btn btn--primary" href="/" data-i18n="browseProducts">Browse products</a>
             </div>
           {% endif %}
         </section>
 
-        <!-- {# ── Edit account ───────────────────────────────────────────────── #} -->
         <section class="cart-items" id="account" aria-labelledby="account-title">
           <div class="cart-items__header">
             <div>
-              <p class="section-heading__eyebrow">Personal details</p>
-              <h2 id="account-title">Edit account</h2>
+              <p class="section-heading__eyebrow" data-i18n="personalDetails">Personal details</p>
+              <h2 id="account-title" data-i18n="editAccount">Edit account</h2>
             </div>
           </div>
-
           <form method="post" action="{% url 'users:edit_profile' %}" class="auth-form" style="padding:4px 0;">
             {% csrf_token %}
-
             <div class="auth-form__grid">
               <label class="auth-field">
-                First name
+                <span data-i18n="firstName">First name</span>
                 <input class="auth-field__input" type="text" name="first_name"
-                  value="{{ request.user.first_name }}" placeholder="First name">
+                  value="{{ request.user.first_name }}" data-i18n-attr="placeholder:firstName">
               </label>
               <label class="auth-field">
-                Last name
+                <span data-i18n="lastName">Last name</span>
                 <input class="auth-field__input" type="text" name="last_name"
-                  value="{{ request.user.last_name }}" placeholder="Last name">
+                  value="{{ request.user.last_name }}" data-i18n-attr="placeholder:lastName">
               </label>
             </div>
-
             <label class="auth-field">
-              Email address
+              <span data-i18n="emailAddress">Email address</span>
               <input class="auth-field__input" type="email" name="email"
-                value="{{ request.user.email }}" placeholder="Email address">
+                value="{{ request.user.email }}" data-i18n-attr="placeholder:emailAddress">
             </label>
-
             <label class="auth-field">
-              Phone number
+              <span data-i18n="phoneNumber">Phone number</span>
               <input class="auth-field__input" type="tel" name="phone_number"
                 value="{{ request.user.phone_number }}" placeholder="e.g. 0712345678">
             </label>
-
             <label class="auth-field">
-              Username
+              <span data-i18n="usernameLabel">Username</span>
               <input class="auth-field__input" type="text" name="username"
-                value="{{ request.user.username }}" placeholder="Username">
+                value="{{ request.user.username }}" data-i18n-attr="placeholder:usernameLabel">
             </label>
 
-            <!-- {# Password change #} -->
             <div class="onboarding-section">
               <div class="onboarding-section__header">
-                <h3>Change password</h3>
+                <h3 data-i18n="changePassword">Change password</h3>
               </div>
               <div class="auth-form__grid">
                 <label class="auth-field">
-                  New password
+                  <span data-i18n="newPassword">New password</span>
                   <input class="auth-field__input" type="password" name="new_password1"
-                    placeholder="New password" autocomplete="new-password">
+                    data-i18n-attr="placeholder:newPassword" autocomplete="new-password">
                 </label>
                 <label class="auth-field">
-                  Confirm password
+                  <span data-i18n="confirmPassword">Confirm password</span>
                   <input class="auth-field__input" type="password" name="new_password2"
-                    placeholder="Confirm new password" autocomplete="new-password">
+                    data-i18n-attr="placeholder:confirmPassword" autocomplete="new-password">
                 </label>
               </div>
-              <p style="margin:0; color:var(--color-muted); font-size:0.86rem;">
+              <p style="margin:0; color:var(--color-muted); font-size:0.86rem;" data-i18n="leaveBlankPassword">
                 Leave blank to keep your current password.
               </p>
             </div>
 
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
-              <button class="btn btn--primary" type="submit">Save changes</button>
-              <button class="btn btn--outline" type="reset">Cancel</button>
+              <button class="btn btn--primary" type="submit" data-i18n="saveChanges">Save changes</button>
+              <button class="btn btn--outline" type="reset" data-i18n="cancelButton">Cancel</button>
             </div>
           </form>
         </section>
 
-        <!-- {# ── Become a seller CTA ────────────────────────────────────────── #} -->
         <section class="cart-hero" id="seller" aria-labelledby="seller-title" style="align-items:flex-start; flex-direction:column; gap:18px;">
           <div>
-            <p class="cart-hero__eyebrow">Grow with Exxabay</p>
-            <h2 id="seller-title" class="cart-hero__title" style="font-size:clamp(1.6rem,3vw,2.5rem);">
+            <p class="cart-hero__eyebrow" data-i18n="growWithExxabay">Grow with Exxabay</p>
+            <h2 id="seller-title" class="cart-hero__title" style="font-size:clamp(1.6rem,3vw,2.5rem);" data-i18n="startSelling">
               Start selling on Exxabay
             </h2>
-            <p class="cart-hero__copy">
+            <p class="cart-hero__copy" data-i18n="startSellingCopy">
               Join thousands of verified sellers. List your products, reach trusted buyers, and grow your business on Tanzania's trust-first marketplace.
             </p>
             <div class="hero__categories">
-              <span class="category-pill">✓ Verified listings</span>
-              <span class="category-pill">✓ Mobile money payouts</span>
-              <span class="category-pill">✓ Seller dashboard</span>
-              <span class="category-pill">✓ Free to register</span>
+              <span class="category-pill" data-i18n="verifiedListings">✓ Verified listings</span>
+              <span class="category-pill" data-i18n="mobileMoneyPayouts">✓ Mobile money payouts</span>
+              <span class="category-pill" data-i18n="sellerDashboardPill">✓ Seller dashboard</span>
+              <span class="category-pill" data-i18n="freeToRegister">✓ Free to register</span>
             </div>
           </div>
           <a href="{% url 'users:complete_profile' %}" class="btn btn--outline"
-            style="border-color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.14); color:#fff; font-size:1rem; min-height:48px; padding:0 28px;">
+            style="border-color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.14); color:#fff; font-size:1rem; min-height:48px; padding:0 28px;"
+            data-i18n="becomeSellerCta">
             Become a seller →
           </a>
         </section>
 
-      </div> 
-      <!-- {# end left column #} -->
+      </div>
 
-      <!-- {# ══════════════════════════════════════════════════════════════════════
-         RIGHT — profile card + contact support
-         ══════════════════════════════════════════════════════════════════════ #} -->
       <aside>
-        {# Profile card — reusing cart-summary #}
         <div class="cart-summary" style="text-align:center; margin-bottom:22px;">
           <div class="trust-card__icon"
             style="width:64px; height:64px; font-size:1.6rem; margin:0 auto 14px; background:linear-gradient(120deg,var(--color-primary),var(--color-secondary)); color:#fff;">
@@ -288,67 +254,62 @@
           <h2 style="margin:0; color:var(--color-primary-dark); font-size:1.15rem; letter-spacing:0;">
             {{ request.user.get_full_name|default:request.user.username }}
           </h2>
-          <p style="margin:6px 0 0; color:var(--color-muted); font-size:0.88rem;">
-            {{ request.user.email }}
-          </p>
+          <p style="margin:6px 0 0; color:var(--color-muted); font-size:0.88rem;">{{ request.user.email }}</p>
           <p style="margin:4px 0 0; color:var(--color-muted); font-size:0.82rem;">
-            Member since {{ request.user.date_joined|date:"M Y" }}
+            <span data-i18n="memberSince">Member since</span> {{ request.user.date_joined|date:"M Y" }}
           </p>
 
           <dl class="cart-summary__lines" style="margin-top:18px; text-align:left;">
             <div>
-              <dt>Phone</dt>
+              <dt data-i18n="phoneLabel">Phone</dt>
               <dd>{{ request.user.phone_number|default:"—" }}</dd>
             </div>
             <div>
-              <dt>Username</dt>
+              <dt data-i18n="usernameField">Username</dt>
               <dd>{{ request.user.username }}</dd>
             </div>
             <div>
-              <dt>Orders</dt>
+              <dt data-i18n="ordersField">Orders</dt>
               <dd>{{ orders.count }}</dd>
             </div>
           </dl>
 
           <a href="{% url 'users:logout' %}" class="btn btn--outline cart-summary__checkout"
-            style="color:var(--color-danger); border-color:var(--color-danger); margin-top:16px;">
+            style="color:var(--color-danger); border-color:var(--color-danger); margin-top:16px;"
+            data-i18n="signOut">
             Sign out
           </a>
         </div>
 
-        <!-- {# Contact support — reusing mobile-money-note + trust-card #} -->
         <div class="cart-summary" id="contact">
-          <p class="section-heading__eyebrow">We are here for you</p>
-          <h2 style="margin:0 0 16px; color:var(--color-primary-dark); font-size:1.25rem; letter-spacing:0;">
+          <p class="section-heading__eyebrow" data-i18n="hereForYou">We are here for you</p>
+          <h2 style="margin:0 0 16px; color:var(--color-primary-dark); font-size:1.25rem; letter-spacing:0;" data-i18n="talkToExxabay">
             Talk to Exxabay
           </h2>
 
           <div class="trust-card" style="margin-bottom:14px;">
             <span class="trust-card__icon">☎</span>
             <div>
-              <strong>Call us directly</strong>
-              <span>Mon–Sat, 8am–6pm EAT</span>
-              <a href="tel:+255612350807" class="btn btn--primary"
-                style="margin-top:10px; width:100%; font-size:0.9rem;">
+              <strong data-i18n="callUsDirectly">Call us directly</strong>
+              <span data-i18n="callHours">Mon–Sat, 8am–6pm EAT</span>
+              <a href="tel:+255612350807" class="btn btn--primary" style="margin-top:10px; width:100%; font-size:0.9rem;">
                 +255 612 350 807
               </a>
             </div>
           </div>
 
           <div class="mobile-money-note" style="margin-bottom:10px;">
-            <strong>WhatsApp support</strong>
-            <span>Faster responses for order issues.</span>
-            <a href="https://wa.me/255757280637" class="btn btn--outline"
-              style="margin-top:10px; width:100%; font-size:0.88rem;">
+            <strong data-i18n="whatsappSupport">WhatsApp support</strong>
+            <span data-i18n="whatsappCopy">Faster responses for order issues.</span>
+            <a href="https://wa.me/255757280637" class="btn btn--outline" style="margin-top:10px; width:100%; font-size:0.88rem;" data-i18n="openWhatsapp">
               Open WhatsApp
             </a>
           </div>
 
           <div class="mobile-money-note">
-            <strong>Email support</strong>
+            <strong data-i18n="emailSupport">Email support</strong>
             <span>support@exxabay.com</span>
-            <a href="mailto:support@exxabay.com" class="btn btn--outline"
-              style="margin-top:10px; width:100%; font-size:0.88rem;">
+            <a href="mailto:support@exxabay.com" class="btn btn--outline" style="margin-top:10px; width:100%; font-size:0.88rem;" data-i18n="sendEmail">
               Send email
             </a>
           </div>
@@ -356,7 +317,6 @@
       </aside>
 
     </div>
-    <!-- {# end cart-layout #} -->
   </main>
 
   {% include 'partials/footer.html' %}

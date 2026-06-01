@@ -2,27 +2,27 @@
   <section class="site-footer__inner">
     <div class="site-footer__brand">
       <a class="site-footer__logo" href="/" aria-label="Exabay homepage">Exxabay</a>
-      <p>Buy from verified sellers with confidence. Exxabay helps shoppers discover products while keeping seller credibility visible.</p>
+      <p data-i18n="footerAboutExxabay">Buy from verified sellers with confidence. Exxabay helps shoppers discover products while keeping seller credibility visible.</p>
 
       <div class="site-footer__trust" aria-label="Marketplace trust highlights">
-        <span class="status-badge status-badge--verified">OK Verified sellers</span>
-        <span class="badge">Secure checkout</span>
-        <span class="stock stock--in">Buyer protection</span>
+        <span class="status-badge status-badge--verified" data-i18n="footerOkVerified">OK Verified sellers</span>
+        <span class="badge" data-i18n="secureCheckout">Secure checkout</span>
+        <span class="stock stock--in" data-i18n="buyerProtection">Buyer protection</span>
       </div>
     </div>
 
     <form class="site-footer__newsletter" data-footer-newsletter>
       {% csrf_token %}
       <div>
-        <p class="section-heading__eyebrow">Marketplace updates</p>
-        <h2>Get trusted deals and seller updates</h2>
-        <p>Receive product drops, buyer protection updates, and seller verification news.</p>
+        <p class="section-heading__eyebrow" data-i18n="marketplaceUpdates">Marketplace updates</p>
+        <h2 data-i18n="getTrustedDealsAndSellersUpdates">Get trusted deals and seller updates</h2>
+        <p data-i18n="receiveProductDrops">Receive product drops, buyer protection updates, and seller verification news.</p>
       </div>
       <div class="site-footer__newsletter-row">
-        <label class="sr-only" for="footer-email">Email address</label>
-        <input id="footer-email" type="email" name="email" placeholder="Enter your email" required>
+        <label class="sr-only" for="footer-email" data-i18n="emailAdress">Email address</label>
+        <input id="footer-email" type="email" name="email" placeholder="Enter your email" data-i18n-attr="placeholder:enterYourEmail" required>
         <button class="btn btn--primary" type="submit">
-          <span class="btn-text">Subscribe</span>
+          <span class="btn-text" data-i18n="subscribe">Subscribe</span>
 
           <!-- hidden spinner -->
           <span class="spinner" style="display:none; align-items:center;">
@@ -57,36 +57,36 @@
 
   <section class="site-footer__links" aria-label="Footer links">
     <nav class="site-footer__group" aria-label="Shop">
-      <h3>Shop</h3>
-      <a href="/#products">All Products</a>
-      <a href="/#products">Categories</a>
-      <a href="/#products">Featured Products</a>
-      <a href="/#products">New Arrivals</a>
+      <h3 data-i18n="shop">Shop</h3>
+      <a href="/#products" data-i18n="allProducts">All Products</a>
+      <a href="/#products" data-i18n="categories">Categories</a>
+      <a href="/#products" data-i18n="featuredProducts">Featured Products</a>
+      <a href="/#products" data-i18n="newArrivals">New Arrivals</a>
     </nav>
 
     <nav class="site-footer__group" aria-label="Sell on Exabay">
-      <h3>Sell on Exabay</h3>
-      <a href="{% url 'users:register'  %}">Become a Seller</a>
-      <a href="{% url 'users:complete_profile' %}">Seller Verification</a>
-      <a href="{% url 'users:complete_profile' %}">Complete Seller Profile</a>
-      <a href="#">Seller Guidelines</a>
+      <h3 data-i18n="sellOnExxabay">Sell on Exxabay</h3>
+      <a href="{% url 'users:register'  %}" data-i18n="becomeASeller">Become a Seller</a>
+      <a href="{% url 'users:complete_profile' %}" data-i18n="sellerVerification">Seller Verification</a>
+      <a href="{% url 'users:complete_profile' %}" data-i18n="completeSellerProfile">Complete Seller Profile</a>
+      <a href="#" data-i18n="sellerGuidelines">Seller Guidelines</a>
     </nav>
 
     <nav class="site-footer__group" aria-label="Customer support">
-      <h3>Customer Support</h3>
-      <a href="#">Help Center</a>
-      <a href="#">Track Order</a>
-      <a href="#">Returns and Refunds</a>
-      <a href="tel:+255612350807">Contact Support</a>
+      <h3 data-i18n="customerSupport">Customer Support</h3>
+      <a href="#" data-i18n="helpCenter">Help Center</a>
+      <a href="#" data-i18n="trackOrder">Track Order</a>
+      <a href="#" data-i18n="returnsAndRefunds">Returns and Refunds</a>
+      <a href="tel:+255612350807" data-i18n="contactSupport">Contact Support</a>
     </nav>
 
     <nav class="site-footer__group" aria-label="Trust and legal">
-      <h3>Trust and Legal</h3>
-      <a href="#">Buyer Protection</a>
-      <a href="#">Seller Verification Policy</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-      <a href="#">Report a Seller</a>
+      <h3 data-i18n="trustAndLegal">Trust and Legal</h3>
+      <a href="#" data-i18n="buyerProtection">Buyer Protection</a>
+      <a href="#" data-i18n="sellerVerificationPolicy">Seller Verification Policy</a>
+      <a href="#" data-i18n="privacyPolicy">Privacy Policy</a>
+      <a href="#" data-i18n="termsOfServices">Terms of Service</a>
+      <a href="#" data-i18n="reportsASeller">Report a Seller</a>
     </nav>
 
     <div class="site-footer__group">
@@ -101,9 +101,9 @@
   </section>
 
   <section class="site-footer__bottom">
-    <p>&copy; 2026 Exxabay. All rights reserved.</p>
+    <p data-i18n="allRightReserved">&copy; 2026 Exxabay. All rights reserved.</p>
     <div class="site-footer__social" aria-label="Social links">
-      <a href="tel:+255612350807">Call now</a>
+      <a href="tel:+255612350807" data-i18n="callNow">Call now</a>
       <a href="#">LinkedIn</a>
       <a href="#">Instagram</a>
       <a href="#">X</a>

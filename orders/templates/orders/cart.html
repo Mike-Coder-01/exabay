@@ -37,15 +37,15 @@
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" data-csrf-token>
     <section class="cart-hero" aria-labelledby="cart-title">
       <div>
-        <p class="cart-hero__eyebrow">Secure marketplace cart</p>
-        <h1 id="cart-title" class="cart-hero__title">Your shopping cart</h1>
-        <p class="cart-hero__copy">Review seller details, quantities, and totals before moving to mobile money checkout.</p>
+        <p class="cart-hero__eyebrow" data-i18n="secureMarketplaceCart">Secure marketplace cart</p>
+        <h1 id="cart-title" class="cart-hero__title" data-i18n="yourShoppingCart">Your shopping cart</h1>
+        <p class="cart-hero__copy" data-i18n="cartHeroCopy">Review seller details, quantities, and totals before moving to mobile money checkout.</p>
       </div>
       <div class="cart-hero__trust">
         <span class="trust-card__icon">OK</span>
         <div>
-          <strong>Trust-protected checkout</strong>
-          <span>Seller verification remains visible throughout your order journey.</span>
+          <strong data-i18n="trustProtectedCheckout">Trust-protected checkout</strong>
+          <span data-i18n="trustProtectedCheckoutCopy">Seller verification remains visible throughout your order journey.</span>
         </div>
       </div>
     </section>
@@ -55,126 +55,127 @@
         <div class="cart-items" aria-label="Cart items">
           <div class="cart-items__header">
             <div>
-              <p class="section-heading__eyebrow">Marketplace order</p>
-              <h2>Items in your cart</h2>
+              <p class="section-heading__eyebrow" data-i18n="marketplaceOrder">Marketplace order</p>
+              <h2 data-i18n="itemsInYourCart">Items in your cart</h2>
             </div>
             <span class="cart-items__count" data-cart-count>{{ cart.items.all|length }} item{{ cart.items.all|length|pluralize }}</span>
           </div>
 
           <section class="vendor-group" aria-label="Cart products by marketplace sellers">
-              {% for item in cart_items %}
-                {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
-                  <article
-                    class="cart-item"
-                    data-cart-item
-                    data-price="{{ product.price }}"
-                    data-quantity="{{ item.quantity }}"
-                    data-update-url="{% url 'orders:cart_update_item' item.pk %}"
-                    data-remove-url="{% url 'orders:cart_remove_item' item.pk %}"
-                  >
-                    <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
-                      {% if first_image %}
-                        <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+            {% for item in cart_items %}
+              {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
+                <article
+                  class="cart-item"
+                  data-cart-item
+                  data-price="{{ product.price }}"
+                  data-quantity="{{ item.quantity }}"
+                  data-update-url="{% url 'orders:cart_update_item' item.pk %}"
+                  data-remove-url="{% url 'orders:cart_remove_item' item.pk %}"
+                >
+                  <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
+                    {% if first_image %}
+                      <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}
+                      <span>{{ product.name|first }}</span>
+                    {% endif %}
+                  </a>
+
+                  <div class="cart-item__info">
+                    <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
+                    <p class="cart-item__seller"><span data-i18n="sellerLabel">Seller:</span> <strong>{{ seller.business_name|default:seller.user.username }}</strong></p>
+                    <div class="cart-item__meta">
+                      <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
+                      {% if seller.is_verified %}
+                        <span class="status-badge status-badge--verified" data-i18n="okVerified">OK Verified</span>
+                      {% elif seller.is_profile_complete %}
+                        <span class="status-badge status-badge--pending" data-i18n="pendingStatus">! Pending</span>
                       {% else %}
-                        <span>{{ product.name|first }}</span>
+                        <span class="status-badge status-badge--unverified" data-i18n="unverifiedStatus">X Unverified</span>
                       {% endif %}
-                    </a>
-
-                    <div class="cart-item__info">
-                      <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
-                      <p class="cart-item__seller">Seller: <strong>{{ seller.business_name|default:seller.user.username }}</strong></p>
-                      <div class="cart-item__meta">
-                        <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
-                        {% if seller.is_verified %}
-                          <span class="status-badge status-badge--verified">OK Verified</span>
-                        {% elif seller.is_profile_complete %}
-                          <span class="status-badge status-badge--pending">! Pending</span>
-                        {% else %}
-                          <span class="status-badge status-badge--unverified">X Unverified</span>
-                        {% endif %}
-                        {% if product.stock <= 5 %}
-                          <span class="stock stock--low">Low Stock</span>
-                        {% else %}
-                          <span class="stock stock--in">In Stock</span>
-                        {% endif %}
-                      </div>
+                      {% if product.stock <= 5 %}
+                        <span class="stock stock--low" data-i18n="lowStock">Low Stock</span>
+                      {% else %}
+                        <span class="stock stock--in" data-i18n="inStock">In Stock</span>
+                      {% endif %}
                     </div>
+                  </div>
 
-                    <div class="cart-item__price">
-                      <span>Price</span>
-                      <strong>Tsh<span data-cart-price>{{ product.price|floatformat:"0"|intcomma }}</span></strong>
-                    </div>
+                  <div class="cart-item__price">
+                    <span data-i18n="price">Price</span>
+                    <strong>Tsh<span data-cart-price>{{ product.price|floatformat:"0"|intcomma }}</span></strong>
+                  </div>
 
-                    <div class="quantity-control" aria-label="Quantity controls">
-                      <button class="quantity-control__button" type="button" data-cart-decrease aria-label="Decrease quantity">-</button>
-                      <label class="sr-only" for="qty-{{ item.pk }}">Quantity</label>
-                      <input id="qty-{{ item.pk }}" class="quantity-control__input" type="number" min="1" max="{{ product.stock }}" value="{{ item.quantity }}" data-cart-quantity>
-                      <button class="quantity-control__button" type="button" data-cart-increase aria-label="Increase quantity">+</button>
-                    </div>
+                  <div class="quantity-control" aria-label="Quantity controls">
+                    <button class="quantity-control__button" type="button" data-cart-decrease data-i18n-attr="aria-label:decreaseQuantity" aria-label="Decrease quantity">-</button>
+                    <label class="sr-only" for="qty-{{ item.pk }}" data-i18n="quantity">Quantity</label>
+                    <input id="qty-{{ item.pk }}" class="quantity-control__input" type="number" min="1" max="{{ product.stock }}" value="{{ item.quantity }}" data-cart-quantity>
+                    <button class="quantity-control__button" type="button" data-cart-increase data-i18n-attr="aria-label:increaseQuantity" aria-label="Increase quantity">+</button>
+                  </div>
 
-                    <div class="cart-item__subtotal">
-                      <span>Subtotal</span>
-                      <strong>Tsh<span data-cart-subtotal>0.00</span></strong>
-                    </div>
+                  <div class="cart-item__subtotal">
+                    <span data-i18n="subtotal">Subtotal</span>
+                    <strong>Tsh<span data-cart-subtotal>0.00</span></strong>
+                  </div>
 
-                    <button class="cart-item__remove" type="button" data-cart-remove aria-label="Remove {{ product.name }}">
-                      Remove
-                    </button>
-                  </article>
-                {% endwith %}
-              {% endfor %}
-            </section>
+                  <button class="cart-item__remove" type="button" data-cart-remove data-i18n-attr="aria-label:remove" aria-label="Remove {{ product.name }}" data-i18n="remove">
+                    Remove
+                  </button>
+                </article>
+              {% endwith %}
+            {% endfor %}
+          </section>
         </div>
 
         <aside class="cart-summary" aria-labelledby="cart-summary-title">
-          <p class="section-heading__eyebrow">Order summary</p>
-          <h2 id="cart-summary-title">Cart total</h2>
+          <p class="section-heading__eyebrow" data-i18n="orderSummary">Order summary</p>
+          <h2 id="cart-summary-title" data-i18n="cartTotal">Cart total</h2>
 
           <dl class="cart-summary__lines">
             <div>
-              <dt>Items subtotal</dt>
+              <dt data-i18n="itemsSubtotal">Items subtotal</dt>
               <dd>Tsh<span data-cart-total>0.00</span></dd>
             </div>
             <div>
-              <dt>Delivery</dt>
-              <dd>Calculated at checkout</dd>
+              <dt data-i18n="delivery">Delivery</dt>
+              <dd data-i18n="calculatedAtCheckout">Calculated at checkout</dd>
             </div>
             <div>
-              <dt>Trust protection</dt>
-              <dd>Included</dd>
+              <dt data-i18n="trustProtection">Trust protection</dt>
+              <dd data-i18n="included">Included</dd>
             </div>
           </dl>
 
           <div class="cart-summary__total">
-            <span>Total</span>
+            <span data-i18n="total">Total</span>
             <strong>Tsh<span data-cart-grand-total>0.00</span></strong>
           </div>
 
-      
           <form method="post" action="{% url 'orders:checkout' %}">
             {% csrf_token %}
-            <button class="btn btn--primary cart-summary__checkout" type="submit">
+            <button class="btn btn--primary cart-summary__checkout" type="submit" data-i18n="proceedToCheckout">
               Proceed to Checkout
             </button>
           </form>
 
-
           <div class="mobile-money-note">
-            <strong>Mobile money supported</strong>
-            <span>Pay securely with M-Pesa, Tigo Pesa, Airtel Money, during checkout.</span>
+            <strong data-i18n="mobileMoneySupported">Mobile money supported</strong>
+            <span data-i18n="mobileMoneyNote">Pay securely with M-Pesa, Tigo Pesa, Airtel Money, during checkout.</span>
           </div>
         </aside>
       </section>
+
     {% else %}
       <section class="cart-empty" aria-labelledby="empty-cart-title">
         <div class="cart-empty__icon">0</div>
-        <h2 id="empty-cart-title">Your cart is empty</h2>
-        <p>Start exploring trusted products from verified sellers across Exxabay.</p>
-        <a class="btn btn--primary" href="/#products">Continue Shopping</a>
+        <h2 id="empty-cart-title" data-i18n="cartEmpty">Your cart is empty</h2>
+        <p data-i18n="cartEmptyCopy">Start exploring trusted products from verified sellers across Exxabay.</p>
+        <a class="btn btn--primary" href="/#products" data-i18n="continueShopping">Continue Shopping</a>
       </section>
     {% endif %}
   </main>
+
   {% include 'partials/footer.html' %}
+  
   <script src="{% static 'js/scripts.js' %}"></script>
 
 {% endblock %}

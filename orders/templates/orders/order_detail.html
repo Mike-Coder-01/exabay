@@ -7,6 +7,7 @@
 {% include 'partials/header_bar.html' %}
 
   <main class="cart-page">
+    {# messages block unchanged #}
     {% if messages %}
     {% for message in messages %}
       {% if forloop.last %}
@@ -34,75 +35,58 @@
     {% endfor %}
     {% endif %}
 
-    
-    {# ═══════════════════════════════════════════════════════════════════════ #}
-    {# PAYMENT BANNER — changes based on payment status                       #}
-    {# ═══════════════════════════════════════════════════════════════════════ #}
-
     {% with status=order.payment.status %}
 
-      {# --- PENDING: show spinner and start polling --- #}
       {% if status == "pending" %}
         <section class="cart-hero" aria-labelledby="order-title">
           <div>
-            <p class="cart-hero__eyebrow">Awaiting payment</p>
+            <p class="cart-hero__eyebrow" data-i18n="awaitingPayment">Awaiting payment</p>
             <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
-            <p class="cart-hero__copy">
-              A payment prompt has been sent to your phone. Please authorise it to complete your order.
-            </p>
+            <p class="cart-hero__copy" data-i18n="awaitingPaymentCopy">A payment prompt has been sent to your phone. Please authorise it to complete your order.</p>
           </div>
-
           <div id="payment-banner" class="cart-hero__trust" style="background:#fefce8; border-color:#fde047; color:#854d0e;">
             <div class="payment-banner__spinner"></div>
             <div>
-              <strong id="payment-banner-heading">Waiting for confirmation</strong>
-              <span id="payment-banner-message">Check your phone for the USSD prompt and enter your PIN.</span>
+              <strong id="payment-banner-heading" data-i18n="waitingForConfirmation">Waiting for confirmation</strong>
+              <span id="payment-banner-message" data-i18n="checkYourPhone">Check your phone for the USSD prompt and enter your PIN.</span>
             </div>
           </div>
-
-          <a href="{% url 'orders:cart' %}" id="try-again-link" class="btn btn--primary" style="display:none; margin-top:1rem;">
+          <a href="{% url 'orders:cart' %}" id="try-again-link" class="btn btn--primary" style="display:none; margin-top:1rem;" data-i18n="tryAgain">
             Try Again
           </a>
         </section>
 
-        
-      {# --- PAID: confirmed state --- #}
       {% elif status == "paid" %}
         <section class="cart-hero" aria-labelledby="order-title">
           <div>
-            <p class="cart-hero__eyebrow">Payment confirmed</p>
+            <p class="cart-hero__eyebrow" data-i18n="paymentConfirmed">Payment confirmed</p>
             <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
-            <p class="cart-hero__copy">
-              Your mobile money payment was successful. Below is your trusted marketplace order summary.
-            </p>
+            <p class="cart-hero__copy" data-i18n="paymentConfirmedCopy">Your mobile money payment was successful. Below is your trusted marketplace order summary.</p>
           </div>
           <div class="cart-hero__trust">
             <span class="trust-card__icon">OK</span>
             <div>
-              <strong>Checkout completed</strong>
-              <span>Seller trust and payment records are attached to this order.</span>
+              <strong data-i18n="checkoutCompleted">Checkout completed</strong>
+              <span data-i18n="checkoutCompletedCopy">Seller trust and payment records are attached to this order.</span>
             </div>
           </div>
         </section>
 
-      {# --- FAILED: cancelled state --- #}
       {% else %}
         <section class="cart-hero" aria-labelledby="order-title">
           <div>
-            <p class="cart-hero__eyebrow">Payment failed</p>
+            <p class="cart-hero__eyebrow" data-i18n="paymentFailed">Payment failed</p>
             <h1 id="order-title" class="cart-hero__title">Order #{{ order.id }}</h1>
-            <p class="cart-hero__copy">
-              Your payment was not completed. Your cart has not been affected, you can try again below.
-            </p>
+            <p class="cart-hero__copy" data-i18n="paymentFailedCopy">Your payment was not completed. Your cart has not been affected, you can try again below.</p>
           </div>
           <div class="cart-hero__trust" style="background:#fef2f2; border-color:#fca5a5; color:#991b1b;">
             <span class="trust-card__icon">X</span>
             <div>
-              <strong>Payment unsuccessful</strong>
-              <span>No money was charged. Please try again or use a different number.</span>
+              <strong data-i18n="paymentUnsuccessful">Payment unsuccessful</strong>
+              <span data-i18n="paymentUnsuccessfulCopy">No money was charged. Please try again or use a different number.</span>
             </div>
           </div>
-          <a href="{% url 'orders:cart' %}" class="btn btn--primary" style="margin-top:1rem;">
+          <a href="{% url 'orders:cart' %}" class="btn btn--primary" style="margin-top:1rem;" data-i18n="tryAgain">
             Try Again
           </a>
         </section>
@@ -110,16 +94,12 @@
 
     {% endwith %}
 
-    {# ═══════════════════════════════════════════════════════════════════════ #}
-    {# ORDER ITEMS & SUMMARY                                                   #}
-    {# ═══════════════════════════════════════════════════════════════════════ #}
-
     <section class="cart-layout" aria-label="Order details">
       <div class="cart-items">
         <div class="cart-items__header">
           <div>
-            <p class="section-heading__eyebrow">Order items</p>
-            <h2>Purchased products</h2>
+            <p class="section-heading__eyebrow" data-i18n="orderItems">Order items</p>
+            <h2 data-i18n="purchasedProducts">Purchased products</h2>
           </div>
           <span class="cart-items__count">
             {{ order.items.count }} item{{ order.items.count|pluralize }}
@@ -139,93 +119,88 @@
                 </a>
 
                 <div class="cart-item__info">
-                  <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">
-                    {{ product.name }}
-                  </a>
+                  <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
                   <p class="cart-item__seller">
-                    Seller: <strong>{{ seller.business_name|default:seller.user.username }}</strong>
+                    <span data-i18n="sellerLabel">Seller:</span> <strong>{{ seller.business_name|default:seller.user.username }}</strong>
                   </p>
-
                   <div class="cart-item__meta">
                     <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
-
                     {% if seller.is_verified %}
-                      <span class="status-badge status-badge--verified">OK Verified</span>
+                      <span class="status-badge status-badge--verified" data-i18n="okVerified">OK Verified</span>
                     {% elif seller.is_profile_complete %}
-                      <span class="status-badge status-badge--pending">! Pending</span>
+                      <span class="status-badge status-badge--pending" data-i18n="pendingStatus">! Pending</span>
                     {% else %}
-                      <span class="status-badge status-badge--unverified">X Unverified</span>
+                      <span class="status-badge status-badge--unverified" data-i18n="unverifiedStatus">X Unverified</span>
                     {% endif %}
                   </div>
                 </div>
 
                 <div class="cart-item__price">
-                  <span>Unit price</span>
+                  <span data-i18n="unitPrice">Unit price</span>
                   <strong>Tsh{{ item.price|floatformat:"0"|intcomma }}</strong>
                 </div>
 
                 <div class="cart-item__price">
-                  <span>Quantity</span>
+                  <span data-i18n="quantity">Quantity</span>
                   <strong>{{ item.quantity }}</strong>
                 </div>
 
                 <div class="cart-item__subtotal">
-                  <span>Subtotal</span>
+                  <span data-i18n="subtotal">Subtotal</span>
                   <strong>Tsh{{ item.subtotal|floatformat:"0"|intcomma }}</strong>
                 </div>
               </article>
             {% endwith %}
           {% empty %}
             <div class="cart-empty">
-              <h2>No order items found</h2>
-              <p>This order does not have any products attached.</p>
+              <h2 data-i18n="noOrderItems">No order items found</h2>
+              <p data-i18n="noOrderItemsCopy">This order does not have any products attached.</p>
             </div>
           {% endfor %}
         </section>
       </div>
 
       <aside class="cart-summary" aria-labelledby="order-summary-title">
-        <p class="section-heading__eyebrow">Receipt</p>
-        <h2 id="order-summary-title">Order summary</h2>
+        <p class="section-heading__eyebrow" data-i18n="receipt">Receipt</p>
+        <h2 id="order-summary-title" data-i18n="orderSummaryTitle">Order summary</h2>
 
         <dl class="cart-summary__lines">
           <div>
-            <dt>Status</dt>
+            <dt data-i18n="statusLabel">Status</dt>
             <dd>{{ order.status|title }}</dd>
           </div>
           <div>
-            <dt>Payment method</dt>
+            <dt data-i18n="paymentMethod">Payment method</dt>
             <dd>{{ order.payment.method|title }}</dd>
           </div>
           <div>
-            <dt>Payment status</dt>
+            <dt data-i18n="paymentStatus">Payment status</dt>
             <dd>{{ order.payment.status|title }}</dd>
           </div>
           <div>
-            <dt>Transaction ID</dt>
+            <dt data-i18n="transactionId">Transaction ID</dt>
             <dd>{{ order.payment.transaction_id|truncatechars:18 }}</dd>
           </div>
         </dl>
 
         <div class="cart-summary__total">
-          <span>Total paid</span>
+          <span data-i18n="totalPaid">Total paid</span>
           <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
         </div>
 
-        <a class="btn btn--primary cart-summary__checkout" href="/">
+        <a class="btn btn--primary cart-summary__checkout" href="/" data-i18n="continueShopping">
           Continue Shopping
         </a>
 
         <div class="mobile-money-note">
-          <strong>Mobile money</strong>
-          <span>
-            Thank you! Your mobile payment was succeccful received
-          </span>
+          <strong data-i18n="mobileMoney">Mobile money</strong>
+          <span data-i18n="mobileMoneyThankYou">Thank you! Your mobile payment was successfully received.</span>
         </div>
       </aside>
     </section>
   </main>
 
+  
   {% include 'partials/footer.html' %}
   <script src="{% static 'js/scripts.js' %}"></script>
   
@@ -291,3 +266,6 @@
   </style>
 
 {% endblock %}
+
+
+

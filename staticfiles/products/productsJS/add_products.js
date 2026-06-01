@@ -107,7 +107,7 @@ getCSRFToken() {
       body: formData,
       headers: {
         "X-CSRFToken": csrfToken,
-        // Don't set Content-Type header - browser will set it with boundary for FormData
+        //Browser will set Content-Type header with boundary for FormData
       },
       // Add credentials to ensure cookies are sent
       credentials: 'same-origin'

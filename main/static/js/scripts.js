@@ -188,7 +188,7 @@ const translations = {
     paymentStatus: "Payment status",
     transactionId: "Transaction ID",
     totalPaid: "Total paid",
-    mobileMoneyThankYou: "Thank you! Your mobile payment was successfully received.",
+    mobileMoneyThankYou: "Simplified payment process with your mobile phone.",
     mobileMoney: "Mobile money",
 
 
@@ -544,7 +544,7 @@ const translations = {
     paymentStatus: "Hali ya malipo",
     transactionId: "Nambari ya muamala",
     totalPaid: "Jumla iliyolipwa",
-    mobileMoneyThankYou: "Asante! Malipo yako ya simu yamepokelewa.",
+    mobileMoneyThankYou: "Mchakato wa malipo umerahisishwa kwenye simu yako",
     mobileMoney: "Malipo ya simu",
 
     // SELLER ANALYTICS

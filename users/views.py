@@ -149,7 +149,7 @@ def _send_seller_onboarding_emails(user):
             "  Please log in to the Exxabay admin panel and review the submitted documents "
             "to verify this seller's identity and business details before granting full marketplace access.\n\n"
             "Review the application here:\n"
-            f"  https://exxabay.com/admin/users/sellerprofile/\n\n"
+            f"  https://exxabay.com/control_panel/admin-panel/\n\n"
             "— Exxabay Automated Notifications"
         ),
     )

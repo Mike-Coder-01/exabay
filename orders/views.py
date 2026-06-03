@@ -473,12 +473,12 @@ def payment_status(request, order_id):
     token = generate_token()
     if token:
         result = query_payment_status(token, payment.transaction_id)
-        logger.info("[POLL] result=%s", result)
+        # logger.info("[POLL] result=%s", result)
 
         if result:
             clickpesa_status = result.get("status", "").upper()
             clickpesa_message = result.get("message", "")
-            logger.info("[POLL] clickpesa_status=%s", clickpesa_status)
+            # logger.info("[POLL] clickpesa_status=%s", clickpesa_status)
 
             if clickpesa_status in ("SUCCESS", "SETTLED"):
                 with transaction.atomic():
@@ -517,7 +517,7 @@ def payment_status(request, order_id):
                 # If it has been PROCESSING for more than 2 minutes, treat as failed.
                 created_at = payment.created_at
                 age = timezone.now() - created_at
-                logger.info("[POLL] PROCESSING age=%s", age)
+                # logger.info("[POLL] PROCESSING age=%s", age)
 
                 if age > timedelta(minutes=1):
                     logger.info("[POLL] PROCESSING timeout — marking as failed")
@@ -604,10 +604,10 @@ def payment_callback(request):
     )
 
     if not is_valid:
-        logger.warning(
-            "[CALLBACK] Checksum mismatch. payload=%s",
-            payload_data,
-        )
+        # logger.warning(
+        #     "[CALLBACK] Checksum mismatch. payload=%s",
+        #     payload_data,
+        # )
 
         return JsonResponse(
             {"error": "Invalid checksum."},

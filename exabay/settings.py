@@ -228,7 +228,7 @@ LOGGING = {
     'loggers': {
         'orders': {                    
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     },

@@ -5,16 +5,46 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     is_seller = models.BooleanField(default=False)
-    phone_number = models.CharField(max_length=20, default='07xx xxx xxx')
+    phone_number = models.CharField(max_length=20)
 
     def __str__(self):
         return self.username
 
 
 class SellerProfile(models.Model):
+
+    REGIONAL_CHOICES = [
+        ('ARU', 'Arusha'),
+        ('DSM', 'Dar es salaam'),
+        ('DOM', 'Dodoma'),
+        ('GEITA', 'Geita'),
+        ('IRINGA', 'Iringa'),
+        ('KGR', 'Kagera'),
+        ('KATAVI', 'Katavi'),
+        ('KGM', 'Kigoma'),
+        ('KLM', 'Kilimanjaro'),
+        ('LINDI', 'Lindi'),
+        ('MNYR', 'Manyara'),
+        ('MARA', 'MARA'),
+        ('MBY', 'Mbeya'),
+        ('MORO', 'Morogoro'),
+        ('MTWARA', 'Mtwara'),
+        ('MWNZ', 'Mwanza'),
+        ('NJOMBE', 'Njombe'),
+        ('PWANI', 'Pwani'),
+        ('RUKWA', 'Rukwa'),
+        ('RVM', 'Ruvuma'),
+        ('SHNYNG', 'Shinyanga'),
+        ('SIMIYU', 'Simiyu'),
+        ('SINGIDA', 'Singida'),
+        ('SONGWE', 'Songwe'),
+        ('TABORA', 'Tabora'),
+        ('TANGA', 'Tanga'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     business_name = models.CharField(max_length=255, blank=True, null=True)
+    located_region = models.CharField(max_length=225, default='DSM', choices=REGIONAL_CHOICES)
 
     # CORE TRUST FIELDS
     tin_number = models.CharField(max_length=50, blank=True, null=True)

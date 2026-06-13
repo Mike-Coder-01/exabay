@@ -115,7 +115,7 @@ def preview_payment(
     # Only the fields ClickPesa documents — nothing extra.
     signable = {
     "amount":             str(amount),
-    "currency":           "TZS",        # ← ADD
+    "currency":           "TZS",        
     "orderReference":     order_reference,
     "phoneNumber":        phone_number,
     "fetchSenderDetails": False,
@@ -156,7 +156,7 @@ def initiate_ussd_push(
     """
     signable = {
     "amount":         str(amount),
-    "currency":       "TZS",            # ← ADD
+    "currency":       "TZS",            
     "orderReference": order_reference,
     "phoneNumber":    phone_number,
   }
@@ -173,7 +173,7 @@ def initiate_ussd_push(
 
     try:
         r = requests.post(PUSH_URL, json=payload, headers=headers, timeout=(10, 60))
-        logger.info("[PUSH] status=%s body=%s", r.status_code, r.text)
+        # logger.info("[PUSH] status=%s body=%s", r.status_code, r.text)
         return r
     except Exception:
         logger.exception("[PUSH] request failed")
@@ -193,7 +193,7 @@ def query_payment_status(token: str, order_reference: str) -> dict | None:
     }
     try:
         r = requests.get(url, headers=headers, timeout=(10, 30))
-        logger.info("[QUERY] status=%s body=%s", r.status_code, r.text)
+        # logger.info("[QUERY] status=%s body=%s", r.status_code, r.text)
         if r.status_code == 200:
             data = r.json()
             # Returns a list — get the first record

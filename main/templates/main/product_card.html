@@ -54,6 +54,12 @@
           {{ trust_label }}
         </span>
       </div>
+      <div class="product-card__seller-line">
+        <span class="product-card__seller-name">
+          <span data-card-i18n="Location">Location</span>:
+          <strong>{{ product.seller.get_located_region_display }}</strong>
+        </span>
+      </div>
       <button class="product-card__trust-link" type="button" data-seller-trigger>
         <span data-card-i18n="viewSellerTrust">View Seller Trust</span>
       </button>

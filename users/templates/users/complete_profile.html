@@ -7,6 +7,7 @@
   {% include 'partials/header_bar.html' %}
 
   <main class="auth-page">
+    {% include 'partials/messages.html' %}
     <section class="auth-shell auth-shell--wide" aria-labelledby="profile-title">
       <div class="auth-hero-panel">
         <p class="auth-hero-panel__eyebrow">Marketplace onboarding</p>
@@ -98,6 +99,12 @@
             </div>
 
             <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.region_choices.id_for_label }}">
+                <span>Region</span>
+                {{ form.region_choices }}
+                {{ form.region_choices.errors }}
+              </label>
+
               <label class="auth-field" for="{{ form.vat_number.id_for_label }}">
                 <span>VAT number <small>Optional</small></span>
                 {{ form.vat_number }}

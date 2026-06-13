@@ -12,6 +12,33 @@ from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem, Payment
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from users.decorators import seller_onboarding_required
+from .services import generate_token, query_payment_status
+from django.utils import timezone
+from datetime import timedelta 
+import json
+import logging
+from decimal import Decimal
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import F
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+
+from orders.models import Cart, Order, OrderItem, Payment
+from products.models import Product
+
+from .services import (
+    generate_order_reference,
+    generate_token,
+    initiate_ussd_push,
+    preview_payment,
+    validate_checksum,
+)
+
 
 logger = logging.getLogger(__name__)  
 # __name__ will be 'orders.views' — covered by 'orders' logger above
@@ -139,111 +166,8 @@ def remove_cart_item(request, item_id):
         "cart_count": cart.items.count(),
     })
 
-# @login_required
-# @transaction.atomic
-# def checkout(request):
-#     if request.method != "POST":
-#         messages.error(request, "Invalid request.")
-#         return redirect("orders:cart")
 
-#     cart, created = Cart.objects.select_for_update().get_or_create(
-#         user=request.user
-#     )
 
-#     cart_items = (
-#         cart.items
-#         .select_related("product", "product__seller")
-#         .select_for_update()
-#     )
-
-#     if not cart_items.exists():
-#         messages.error(request, "Your cart is empty.")
-#         return redirect("orders:cart")
-
-#     total_amount = Decimal("0.00")
-
-#     for item in cart_items:
-#         product = item.product
-
-#         if not product.is_available:
-#             messages.error(request, f"{product.name} is unavailable.")
-#             return redirect("orders:cart")
-
-#         if item.quantity > product.stock:
-#             messages.error(request, f"Insufficient stock for {product.name}.")
-#             return redirect("orders:cart")
-
-#         total_amount += product.price * item.quantity
-
-#     payment_success = True
-
-#     if not payment_success:
-#         messages.error(request, "Payment failed.")
-#         return redirect("orders:cart")
-
-#     order = Order.objects.create(
-#         user=request.user,
-#         total_amount=total_amount,
-#         status="paid"
-#     )
-
-#     order_items = [
-#         OrderItem(
-#             order=order,
-#             product=item.product,
-#             quantity=item.quantity,
-#             price=item.product.price
-#         )
-#         for item in cart_items
-#     ]
-
-#     OrderItem.objects.bulk_create(order_items)
-
-#     for item in cart_items:
-#         product = item.product
-#         new_stock = product.stock - item.quantity
-
-#         Product.objects.filter(pk=product.pk).update(
-#             stock=F("stock") - item.quantity,
-#             is_available=new_stock > 0
-#         )
-
-#     Payment.objects.create(
-#         order=order,
-#         amount=total_amount,
-#         method="mobile_money",
-#         status="paid",
-#         transaction_id=str(uuid.uuid4())
-#     )
-
-#     cart.items.all().delete()
-
-#     messages.success(request, "Checkout completed successfully.")
-#     return redirect("orders:order_detail", order_id=order.id)
-
-import json
-import logging
-from decimal import Decimal
-
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.db.models import F
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-
-from orders.models import Cart, Order, OrderItem, Payment
-from products.models import Product
-
-from .services import (
-    generate_order_reference,
-    generate_token,
-    initiate_ussd_push,
-    preview_payment,
-    validate_checksum,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -305,11 +229,12 @@ def checkout(request):
     """
     if request.method != "POST":
         return redirect("orders:cart")
-
-    phone_number = _normalize_phone(getattr(request.user, "phone_number", None))
+    
+    phone = request.POST.get('phone')
+    phone_number = _normalize_phone(phone or getattr(request.user, 'phone_number', None))
     if not phone_number:
-        messages.error(request, "A valid phone number is required for mobile payment.")
-        return redirect("orders:cart")
+        messages.error(request, "A valid phone number is required for mobile payment.Update your phone number.")
+        return redirect("users:edit_profile")
 
     # ── 1. Lock cart rows ────────────────────────────────────────────────────
     with transaction.atomic():
@@ -372,7 +297,7 @@ def checkout(request):
     # Outside the atomic block — network calls must not hold DB locks
     token = generate_token()
     if not token:
-        logger.error("[CHECKOUT] Token generation failed. order=%s", order.id)
+        logger.debug("[CHECKOUT] Token generation failed. order=%s", order.id)
         _cancel_order(order, payment, "Token generation failed")
         messages.error(request, "Payment service unavailable. Please try again.")
         return redirect("orders:cart")
@@ -381,13 +306,13 @@ def checkout(request):
     preview_resp = preview_payment(token, total, order_reference, phone_number)
 
     if preview_resp is None:
-        logger.error("[CHECKOUT] Preview request failed. order=%s", order.id)
+        logger.debug("[CHECKOUT] Preview request failed. order=%s", order.id)
         _cancel_order(order, payment, "Preview request error")
         messages.error(request, "Could not reach payment gateway. Please try again.")
         return redirect("orders:cart")
 
     if preview_resp.status_code != 200:
-        logger.error(
+        logger.debug(
             "[CHECKOUT] Preview rejected. order=%s status=%s body=%s",
             order.id, preview_resp.status_code, preview_resp.text,
         )
@@ -401,7 +326,7 @@ def checkout(request):
 
     active_methods = preview_resp.json().get("activeMethods", [])
     if not active_methods:
-        logger.warning("[CHECKOUT] No active channels. order=%s phone=%s", order.id, phone_number)
+        logger.debug("[CHECKOUT] No active channels. order=%s phone=%s", order.id, phone_number)
         _cancel_order(order, payment, "No active payment channels")
         messages.error(request, "No payment channels available for your number right now.")
         return redirect("orders:cart")
@@ -410,13 +335,13 @@ def checkout(request):
     push_resp = initiate_ussd_push(token, total, order_reference, phone_number)
 
     if push_resp is None:
-        logger.error("[CHECKOUT] USSD push request failed. order=%s", order.id)
+        logger.debug("[CHECKOUT] USSD push request failed. order=%s", order.id)
         _cancel_order(order, payment, "USSD push request error")
         messages.error(request, "Could not send payment prompt. Please try again.")
         return redirect("orders:cart")
 
     if push_resp.status_code not in (200, 201):
-        logger.error(
+        logger.debug(
             "[CHECKOUT] USSD push rejected. order=%s status=%s body=%s",
             order.id, push_resp.status_code, push_resp.text,
         )
@@ -434,19 +359,13 @@ def checkout(request):
             payment.gateway_response = push_resp.text
             payment.save(update_fields=["gateway_response"])
 
-    logger.info("[CHECKOUT] USSD push sent. order=%s reference=%s", order.id, order_reference)
+    logger.debug("[CHECKOUT] USSD push sent. order=%s reference=%s", order.id, order_reference)
     messages.success(
         request,
         "A payment prompt has been sent to your phone. Please authorise it to complete your order.",
     )
     return redirect("orders:order_detail", order_id=order.id)
 
-
-
-from .services import generate_token, query_payment_status
-
-from django.utils import timezone
-from datetime import timedelta
 
 @login_required
 def payment_status(request, order_id):
@@ -473,12 +392,12 @@ def payment_status(request, order_id):
     token = generate_token()
     if token:
         result = query_payment_status(token, payment.transaction_id)
-        # logger.info("[POLL] result=%s", result)
+        logger.debug("[POLL] result=%s", result)
 
         if result:
             clickpesa_status = result.get("status", "").upper()
             clickpesa_message = result.get("message", "")
-            # logger.info("[POLL] clickpesa_status=%s", clickpesa_status)
+            logger.debug("[POLL] clickpesa_status=%s", clickpesa_status)
 
             if clickpesa_status in ("SUCCESS", "SETTLED"):
                 with transaction.atomic():
@@ -517,10 +436,10 @@ def payment_status(request, order_id):
                 # If it has been PROCESSING for more than 2 minutes, treat as failed.
                 created_at = payment.created_at
                 age = timezone.now() - created_at
-                # logger.info("[POLL] PROCESSING age=%s", age)
+                logger.debug("[POLL] PROCESSING age=%s", age)
 
                 if age > timedelta(minutes=1):
-                    logger.info("[POLL] PROCESSING timeout — marking as failed")
+                    logger.debug("[POLL] PROCESSING timeout — marking as failed")
                     with transaction.atomic():
                         payment.status = "failed"
                         payment.save(update_fields=["status"])
@@ -565,20 +484,20 @@ def payment_callback(request):
         data = json.loads(request.body.decode("utf-8"))
 
     except (json.JSONDecodeError, UnicodeDecodeError):
-        logger.warning("[CALLBACK] Malformed JSON body")
+        logger.debug("[CALLBACK] Malformed JSON body")
 
         return JsonResponse(
             {"error": "Invalid JSON."},
             status=400,
         )
 
-    logger.info("[CALLBACK] payload=%s", data)
+    logger.debug("[CALLBACK] payload=%s", data)
 
     # ── Extract inner payload ────────────────────────────────────────────────
     payload_data = data.get("data", {})
 
     if not isinstance(payload_data, dict):
-        logger.warning("[CALLBACK] Missing or invalid data object")
+        logger.debug("[CALLBACK] Missing or invalid data object") 
 
         return JsonResponse(
             {"error": "Invalid payload structure."},
@@ -590,7 +509,7 @@ def payment_callback(request):
     received_checksum = payload_data.pop("checksum", None)
 
     if not received_checksum:
-        logger.warning("[CALLBACK] Missing checksum")
+        logger.debug("[CALLBACK] Missing checksum")
 
         return JsonResponse(
             {"error": "Missing checksum."},
@@ -604,10 +523,10 @@ def payment_callback(request):
     )
 
     if not is_valid:
-        # logger.warning(
-        #     "[CALLBACK] Checksum mismatch. payload=%s",
-        #     payload_data,
-        # )
+        logger.debug(
+            "[CALLBACK] Checksum mismatch. payload=%s",
+            payload_data,
+        )
 
         return JsonResponse(
             {"error": "Invalid checksum."},
@@ -619,7 +538,7 @@ def payment_callback(request):
 
     order_reference = payload_data.get("orderReference")
 
-    logger.info(
+    logger.debug(
         "[CALLBACK] event=%s reference=%s",
         event,
         order_reference,
@@ -633,7 +552,7 @@ def payment_callback(request):
 
     # Ignore unrelated events
     if event not in ("PAYMENT RECEIVED", "PAYMENT FAILED"):
-        logger.info(
+        logger.debug(
             "[CALLBACK] Ignoring unhandled event=%s",
             event,
         )
@@ -652,7 +571,7 @@ def payment_callback(request):
             )
 
         except Payment.DoesNotExist:
-            logger.error(
+            logger.debug(
                 "[CALLBACK] Payment not found. reference=%s",
                 order_reference,
             )
@@ -664,7 +583,7 @@ def payment_callback(request):
 
         # ── Idempotency ──────────────────────────────────────────────────────
         if payment.status == "paid":
-            logger.info(
+            logger.debug(
                 "[CALLBACK] Already paid. reference=%s",
                 order_reference,
             )

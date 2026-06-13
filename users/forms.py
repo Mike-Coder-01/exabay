@@ -1,11 +1,11 @@
 from . models import User
 from django import forms
+from django import forms
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
 
-# User Creation Form
-# class UserRegisterUser (forms.ModelForm):
-#     class Meta:
-#         model = User
-#         fields = ['email', 'phone_number', 'is_seller']
+from .models import SellerProfile, SellerSettings, User
 
 from django import forms
 from django.contrib.auth import authenticate
@@ -88,6 +88,8 @@ class RegistrationForm(forms.ModelForm):
         }),
     )
 
+    phone_number = forms.CharField(required=True)
+
     class Meta:
         model = User
         fields = ("username", "email", "phone_number")
@@ -97,6 +99,7 @@ class RegistrationForm(forms.ModelForm):
                 "placeholder": "Choose a username",
                 "autocomplete": "username",
             }),
+
             "email": forms.EmailInput(attrs={
                 "class": "auth-field__input",
                 "placeholder": "you@example.com",
@@ -142,144 +145,172 @@ class RegistrationForm(forms.ModelForm):
         return user
 
 
-class CompleteProfileForm(forms.Form):
-    ROLE_BUYER = "buyer"
-    ROLE_SELLER = "seller"
-    ROLE_CHOICES = (
-        (ROLE_BUYER, "Continue as Buyer"),
-        (ROLE_SELLER, "Continue as Seller"),
-    )
+# class CompleteProfileForm(forms.Form):
+#     REGIONAL_CHOICES = [
+#         ('', '-- Select Region --'),
+#         ('ARU', 'Arusha'),
+#         ('DSM', 'Dar es salaam'),
+#         ('DOM', 'Dodoma'),
+#         ('GEITA', 'Geita'),
+#         ('IRINGA', 'Iringa'),
+#         ('KGR', 'Kagera'),
+#         ('KATAVI', 'Katavi'),
+#         ('KGM', 'Kigoma'),
+#         ('KLM', 'Kilimanjaro'),
+#         ('LINDI', 'Lindi'),
+#         ('MNYR', 'Manyara'),
+#         ('MARA', 'MARA'),
+#         ('MBY', 'Mbeya'),
+#         ('MORO', 'Morogoro'),
+#         ('MTWARA', 'Mtwara'),
+#         ('MWNZ', 'Mwanza'),
+#         ('NJOMBE', 'Njombe'),
+#         ('PWANI', 'Pwani'),
+#         ('RUKWA', 'Rukwa'),
+#         ('RVM', 'Ruvuma'),
+#         ('SHNYNG', 'Shinyanga'),
+#         ('SIMIYU', 'Simiyu'),
+#         ('SINGIDA', 'Singida'),
+#         ('SONGWE', 'Songwe'),
+#         ('TABORA', 'Tabora'),
+#         ('TANGA', 'Tanga'),
+#     ]
+#     ROLE_BUYER = "buyer"
+#     ROLE_SELLER = "seller"
+#     ROLE_CHOICES = (
+#         (ROLE_BUYER, "Continue as Buyer"),
+#         (ROLE_SELLER, "Continue as Seller"),
+#     )
 
-    role = forms.ChoiceField(
-        choices=ROLE_CHOICES,
-        widget=forms.RadioSelect(attrs={"class": "auth-role__radio"}),
-        initial=ROLE_BUYER,
-    )
-    phone_number = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "auth-field__input",
-            "placeholder": "Phone number",
-            "autocomplete": "tel",
-        }),
-    )
-    business_name = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "auth-field__input",
-            "placeholder": "Registered business name",
-        }),
-    )
-    tin_number = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "auth-field__input",
-            "placeholder": "TIN number",
-        }),
-    )
-    license_document = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={"class": "auth-field__input auth-field__input--file"}),
-    )
-    license_expiry_date = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={
-            "class": "auth-field__input",
-            "type": "date",
-        }),
-    )
-    vat_number = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "auth-field__input",
-            "placeholder": "VAT number, if available",
-        }),
-    )
-    vrn_number = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "auth-field__input",
-            "placeholder": "VRN number, if available",
-        }),
-    )
-    tax_clearance_document = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={"class": "auth-field__input auth-field__input--file"}),
-    )
+#     role = forms.ChoiceField(
+#         choices=ROLE_CHOICES,
+#         widget=forms.RadioSelect(attrs={"class": "auth-role__radio"}),
+#         initial=ROLE_BUYER,
+#     )
+#     phone_number = forms.CharField(
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             "class": "auth-field__input",
+#             "placeholder": "Phone number",
+#             "autocomplete": "tel",
+#         }),
+#     )
+#     business_name = forms.CharField(
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             "class": "auth-field__input",
+#             "placeholder": "Registered business name",
+#         }),
+#     )
+#     tin_number = forms.CharField(
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             "class": "auth-field__input",
+#             "placeholder": "TIN number",
+#         }),
+#     )
+#     license_document = forms.FileField(
+#         required=False,
+#         widget=forms.ClearableFileInput(attrs={"class": "auth-field__input auth-field__input--file"}),
+#     )
+#     license_expiry_date = forms.DateField(
+#         required=False,
+#         widget=forms.DateInput(attrs={
+#             "class": "auth-field__input",
+#             "type": "date",
+#         }),
+#     )
+#     region_choices = forms.ChoiceField(
+#         required=True,
+#         choices=REGIONAL_CHOICES,
+#         widget=forms.Select(attrs={
+#             "class": "auth-field__input",
+#         }),
+#     )
+#     vat_number = forms.CharField(
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             "class": "auth-field__input",
+#             "placeholder": "VAT number, if available",
+#         }),
+#     )
+#     vrn_number = forms.CharField(
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             "class": "auth-field__input",
+#             "placeholder": "VRN number, if available",
+#         }),
+#     )
+#     tax_clearance_document = forms.FileField(
+#         required=False,
+#         widget=forms.ClearableFileInput(attrs={"class": "auth-field__input auth-field__input--file"}),
+#     )
 
-    def __init__(self, *args, user=None, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, user=None, **kwargs):
+#         self.user = user
+#         super().__init__(*args, **kwargs)
 
-        if user and not self.is_bound:
-            seller_profile = getattr(user, "sellerprofile", None)
-            self.initial.update({
-                "role": self.ROLE_SELLER if user.is_seller else self.ROLE_BUYER,
-                "phone_number": user.phone_number,
-            })
-            if seller_profile:
-                self.initial.update({
-                    "business_name": seller_profile.business_name,
-                    "tin_number": seller_profile.tin_number,
-                    "license_expiry_date": seller_profile.license_expiry_date,
-                    "vat_number": seller_profile.vat_number,
-                    "vrn_number": seller_profile.vrn_number,
-                })
+#         if user and not self.is_bound:
+#             seller_profile = getattr(user, "sellerprofile", None)
+#             self.initial.update({
+#                 "role": self.ROLE_SELLER if user.is_seller else self.ROLE_BUYER,
+#                 "phone_number": user.phone_number,
+#             })
+#             if seller_profile:
+#                 self.initial.update({
+#                     "business_name": seller_profile.business_name,
+#                     "tin_number": seller_profile.tin_number,
+#                     "license_expiry_date": seller_profile.license_expiry_date,
+#                     "vat_number": seller_profile.vat_number,
+#                     "vrn_number": seller_profile.vrn_number,
+#                 })
 
-    def clean(self):
-        cleaned_data = super().clean()
+#     def clean(self):
+#         cleaned_data = super().clean()
 
-        if cleaned_data.get("role") == self.ROLE_BUYER and not cleaned_data.get("phone_number"):
-            self.add_error("phone_number", "Phone number is required to complete your buyer profile.")
+#         if cleaned_data.get("role") == self.ROLE_BUYER and not cleaned_data.get("phone_number"):
+#             self.add_error("phone_number", "Phone number is required to complete your buyer profile.")
 
-        if cleaned_data.get("role") == self.ROLE_SELLER:
-            required_seller_fields = (
-                "business_name",
-                "tin_number",
-                "license_expiry_date",
-            )
-            for field in required_seller_fields:
-                if not cleaned_data.get(field):
-                    self.add_error(field, "This field is required for seller onboarding.")
+#         if cleaned_data.get("role") == self.ROLE_SELLER:
+#             required_seller_fields = (
+#                 "business_name",
+#                 "tin_number",
+#                 "license_expiry_date",
+#             )
+#             for field in required_seller_fields:
+#                 if not cleaned_data.get(field):
+#                     self.add_error(field, "This field is required for seller onboarding.")
 
-            existing_profile = getattr(self.user, "sellerprofile", None)
-            has_existing_license = bool(existing_profile and existing_profile.license_document)
-            if not cleaned_data.get("license_document") and not has_existing_license:
-                self.add_error("license_document", "Business license document is required for seller onboarding.")
+#             existing_profile = getattr(self.user, "sellerprofile", None)
+#             has_existing_license = bool(existing_profile and existing_profile.license_document)
+#             if not cleaned_data.get("license_document") and not has_existing_license:
+#                 self.add_error("license_document", "Business license document is required for seller onboarding.")
 
-        return cleaned_data
+#         return cleaned_data
 
-    def save(self):
-        role = self.cleaned_data["role"]
-        user = self.user
-        user.phone_number = self.cleaned_data.get("phone_number")
-        user.is_seller = role == self.ROLE_SELLER
-        user.save(update_fields=["phone_number", "is_seller"])
+#     def save(self):
+#         role = self.cleaned_data["role"]
+#         user = self.user
+#         user.phone_number = self.cleaned_data.get("phone_number")
+#         user.is_seller = role == self.ROLE_SELLER
+#         user.save(update_fields=["phone_number", "is_seller"])
 
-        if user.is_seller:
-            profile, _ = SellerProfile.objects.get_or_create(user=user)
-            profile.business_name = self.cleaned_data.get("business_name")
-            profile.tin_number = self.cleaned_data.get("tin_number")
-            profile.license_expiry_date = self.cleaned_data.get("license_expiry_date")
-            profile.vat_number = self.cleaned_data.get("vat_number")
-            profile.vrn_number = self.cleaned_data.get("vrn_number")
+#         if user.is_seller:
+#             profile, _ = SellerProfile.objects.get_or_create(user=user)
+#             profile.business_name = self.cleaned_data.get("business_name")
+#             profile.tin_number = self.cleaned_data.get("tin_number")
+#             profile.license_expiry_date = self.cleaned_data.get("license_expiry_date")
+#             profile.vat_number = self.cleaned_data.get("vat_number")
+#             profile.vrn_number = self.cleaned_data.get("vrn_number")
 
-            if self.cleaned_data.get("license_document"):
-                profile.license_document = self.cleaned_data["license_document"]
-            if self.cleaned_data.get("tax_clearance_document"):
-                profile.tax_clearance_document = self.cleaned_data["tax_clearance_document"]
+#             if self.cleaned_data.get("license_document"):
+#                 profile.license_document = self.cleaned_data["license_document"]
+#             if self.cleaned_data.get("tax_clearance_document"):
+#                 profile.tax_clearance_document = self.cleaned_data["tax_clearance_document"]
 
-            profile.save()
+#             profile.save()
 
-        return user
-
-
-from django import forms
-from django.contrib.auth import authenticate
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
-from django.contrib.auth.password_validation import validate_password
-
-from .models import SellerProfile, SellerSettings, User
+#         return user
 
 
 class ExabayLoginForm(AuthenticationForm):
@@ -410,6 +441,36 @@ class RegistrationForm(forms.ModelForm):
 
 
 class CompleteProfileForm(forms.Form):
+    REGIONAL_CHOICES = [
+        ('', '-- Select Region --'),
+        ('ARU', 'Arusha'),
+        ('DSM', 'Dar es salaam'),
+        ('DOM', 'Dodoma'),
+        ('GEITA', 'Geita'),
+        ('IRINGA', 'Iringa'),
+        ('KGR', 'Kagera'),
+        ('KATAVI', 'Katavi'),
+        ('KGM', 'Kigoma'),
+        ('KLM', 'Kilimanjaro'),
+        ('LINDI', 'Lindi'),
+        ('MNYR', 'Manyara'),
+        ('MARA', 'MARA'),
+        ('MBY', 'Mbeya'),
+        ('MORO', 'Morogoro'),
+        ('MTWARA', 'Mtwara'),
+        ('MWNZ', 'Mwanza'),
+        ('NJOMBE', 'Njombe'),
+        ('PWANI', 'Pwani'),
+        ('RUKWA', 'Rukwa'),
+        ('RVM', 'Ruvuma'),
+        ('SHNYNG', 'Shinyanga'),
+        ('SIMIYU', 'Simiyu'),
+        ('SINGIDA', 'Singida'),
+        ('SONGWE', 'Songwe'),
+        ('TABORA', 'Tabora'),
+        ('TANGA', 'Tanga'),
+    ]
+
     ROLE_BUYER = "buyer"
     ROLE_SELLER = "seller"
     ROLE_CHOICES = (
@@ -453,6 +514,13 @@ class CompleteProfileForm(forms.Form):
         widget=forms.DateInput(attrs={
             "class": "auth-field__input",
             "type": "date",
+        }),
+    )
+    region_choices = forms.ChoiceField(
+        required=True,
+        choices=REGIONAL_CHOICES,
+        widget=forms.Select(attrs={
+            "class": "auth-field__input",
         }),
     )
     vat_number = forms.CharField(

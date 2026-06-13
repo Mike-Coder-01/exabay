@@ -109,6 +109,14 @@
               <dd>Tsh<span data-cart-total>0.00</span></dd>
             </div>
             <div>
+              <dt data-i18n="Charges">Charges</dt>
+              <dd>Tsh<span data-payment-fee>0.00</span></dd>
+            </div>
+            <div>
+              <dt data-i18n="AmountPayable">Amount payable</dt>
+              <dd>Tsh<span data-amount-payable>0.00</span></dd>
+            </div>
+            <div>
               <dt data-i18n="delivery">Delivery</dt>
               <dd data-i18n="calculatedAtCheckout">Calculated at checkout</dd>
             </div>
@@ -118,15 +126,20 @@
             </div>
           </dl>
 
-          <div class="cart-summary__total">
+          <!-- <div class="cart-summary__total">
             <span data-i18n="total">Total</span>
             <strong>Tsh<span data-cart-grand-total>0.00</span></strong>
-          </div><br>
+          </div>
+
+          <div class="cart-summary__total">
+            <span data-i18n="Amount payable">Amount payable</span>
+            <strong>Tsh<span data-amount-payable>0.00</span></strong>
+          </div><br> -->
 
           <form method="post" action="{% url 'orders:checkout' %}">
             {% csrf_token %}
             <label class="auth-field">
-              <span>Payment phone number</span>
+              <span data-i18n="PaymentPhoneNumber">Payment phone number</span>
               <input type="text" name="phone" placeholder="Enter phone for payment" class="auth-field__input">
             </label>
             <button class="btn btn--primary cart-summary__checkout" type="submit" data-i18n="proceedToCheckout">

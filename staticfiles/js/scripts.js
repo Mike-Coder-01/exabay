@@ -160,6 +160,9 @@ const translations = {
     cartEmptyCopy: "Start exploring trusted products from verified sellers across Exxabay.",
     decreaseQuantity: "Decrease quantity",
     increaseQuantity: "Increase quantity",
+    Charges: "Charges",
+    AmountPayable: "Amount payable",
+    PaymentPhoneNumber: "Payment phone number",
 
     // ORDER DETAILS
     awaitingPayment: "Awaiting payment",
@@ -188,7 +191,7 @@ const translations = {
     paymentStatus: "Payment status",
     transactionId: "Transaction ID",
     totalPaid: "Total paid",
-    mobileMoneyThankYou: "Thank you! Your mobile payment was successfully received.",
+    mobileMoneyThankYou: "Simplified payment process with your mobile phone.",
     mobileMoney: "Mobile money",
 
 
@@ -516,6 +519,9 @@ const translations = {
     cartEmptyCopy: "Anza kuchunguza bidhaa za kuaminika kutoka kwa wauzaji waliothibitishwa kwenye Exxabay.",
     decreaseQuantity: "Punguza idadi",
     increaseQuantity: "Ongeza idadi",
+    Charges: "Ada",
+    AmountPayable: "Kiasi cha kulipa",
+    PaymentPhoneNumber: "Namba ya simu ya malipo",
 
     // ORDER DETAILS
     awaitingPayment: "Inasubiri malipo",
@@ -544,7 +550,7 @@ const translations = {
     paymentStatus: "Hali ya malipo",
     transactionId: "Nambari ya muamala",
     totalPaid: "Jumla iliyolipwa",
-    mobileMoneyThankYou: "Asante! Malipo yako ya simu yamepokelewa.",
+    mobileMoneyThankYou: "Mchakato wa malipo umerahisishwa kwenye simu yako",
     mobileMoney: "Malipo ya simu",
 
     // SELLER ANALYTICS
@@ -712,6 +718,30 @@ const translations = {
   }
 };
 
+function getClickPesaFee(amount) {
+  if (amount >= 500 && amount <= 999) return 54;
+  if (amount >= 1000 && amount <= 1999) return 92;
+  if (amount >= 2000 && amount <= 2999) return 124;
+  if (amount >= 3000 && amount <= 3999) return 230;
+  if (amount >= 4000 && amount <= 4999) return 380;
+  if (amount >= 5000 && amount <= 9999) return 580;
+  if (amount >= 10000 && amount <= 19999) return 920;
+  if (amount >= 20000 && amount <= 39999) return 1150;
+  if (amount >= 40000 && amount <= 49999) return 1572;
+  if (amount >= 50000 && amount <= 99999) return 2136;
+  if (amount >= 100000 && amount <= 199999) return 3240;
+  if (amount >= 200000 && amount <= 299999) return 3660;
+  if (amount >= 300000 && amount <= 399999) return 4080;
+  if (amount >= 400000 && amount <= 499999) return 4340;
+  if (amount >= 500000 && amount <= 599999) return 4820;
+  if (amount >= 600000 && amount <= 799999) return 5230;
+  if (amount >= 800000 && amount <= 999999) return 6146;
+  if (amount >= 1000000 && amount <= 1999999) return 7210;
+  if (amount >= 2000000 && amount <= 3000000) return 7960;
+
+  return 0;
+}
+
 const modal = document.querySelector("#seller-modal");
 const modalDialog = modal ? modal.querySelector(".modal__dialog") : null;
 const closeTriggers = modal ? modal.querySelectorAll("[data-modal-close]") : [];
@@ -721,6 +751,7 @@ const cartPage = document.querySelector("[data-cart-page]");
 let currentLanguage = "en";
 let activeCard = null;
 let lastFocusedElement = null;
+
 
 const statusMeta = {
   verified: { icon: "OK", className: "status-badge--verified", labelKey: "verified" },
@@ -994,11 +1025,26 @@ function updateCartTotals() {
     cartTotal += subtotal;
   });
 
+  // ✅ MUST be HERE (after loop)
+  const fee = getClickPesaFee(cartTotal);
+  const amountPayable = cartTotal + fee;
+
   cartPage
     .querySelectorAll("[data-cart-total], [data-cart-grand-total]")
     .forEach((element) => {
       element.textContent = formatMoney(cartTotal);
     });
+
+    const feeEl = cartPage.querySelector("[data-payment-fee]");
+  if (feeEl) {
+    feeEl.textContent = formatMoney(fee);
+  }
+
+  const payableEl = cartPage.querySelector("[data-amount-payable]");
+  if (payableEl) {
+    payableEl.textContent = formatMoney(amountPayable);
+  }
+
 
   const countElement = cartPage.querySelector("[data-cart-count]");
 

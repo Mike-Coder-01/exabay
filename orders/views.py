@@ -19,16 +19,10 @@ import json
 import logging
 from decimal import Decimal
 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.db.models import F
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
-from orders.models import Cart, Order, OrderItem, Payment
+from orders.models import Cart, Order, OrderItem, Payment, ExxabayGoOrder
 from products.models import Product
 
 from .services import (
@@ -1107,3 +1101,18 @@ def seller_analytics(request):
     }
 
     return render(request, "orders/seller_analytics.html", context)
+
+
+
+# EXXABAY GO ORDER VIEW
+def create_exxabay_go_order(request):
+    if request.method == 'POST':
+        amount_to_be_paid = request.POST.get('amount')
+        buyer_phone_number = request.POST.get('phone')
+        try:
+            exxabay_go_order = ExxabayGoOrder.create(
+                amount_to_be_paid = amount_to_be_paid,
+                buyer_phone_number = buyer_phone_number,
+            )
+        except Exception:
+            messages.error('Error occured while creating ExxabayGo Order.')

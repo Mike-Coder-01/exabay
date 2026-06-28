@@ -1,0 +1,144 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %} Report a Seller | Exxabay {% endblock %}
+{% block content %}
+
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="report-title">
+      <div>
+        <p class="cart-hero__eyebrow" data-i18n="reportSellerEyebrow">Marketplace safety</p>
+        <h1 id="report-title" class="cart-hero__title" data-i18n="reportSellerTitle">Report a seller</h1>
+        <p class="cart-hero__copy" data-i18n="reportSellerSummary">
+          Tell Exabay about suspicious seller behavior, misleading products, delivery issues, or trust concerns.
+        </p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-flag" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong data-i18n="buyerProtectionTitle">Buyer protection</strong>
+          <span data-i18n="reportSellerTrustCopy">Reports help Exabay review sellers and keep marketplace trust signals meaningful.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="Report a seller form">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow" data-i18n="safetyReport">Safety report</p>
+            <h2 data-i18n="sellerReportDetails">Seller report details</h2>
+          </div>
+          <span class="cart-items__count" data-i18n="supportReview">Support review</span>
+        </div>
+
+        {% if messages %}
+          <div class="documents-list">
+            {% for message in messages %}
+              <div class="document-item">
+                <div>
+                  <div class="document-item__name">{{ message }}</div>
+                  <div class="document-item__status" data-i18n="reportStatus">Report status</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <article class="detail-panel">
+          <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.seller_name.id_for_label }}">
+                <span data-i18n="reportSellerNameLabel">Seller or store name</span>
+                {{ form.seller_name }}
+                {{ form.seller_name.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ form.order_id.id_for_label }}">
+                <span><span data-i18n="reportOrderIdLabel">Order ID</span> <small data-i18n="optionalLabel">Optional</small></span>
+                {{ form.order_id }}
+                {{ form.order_id.errors }}
+              </label>
+            </div>
+
+            <div class="auth-form__grid">
+              <label class="auth-field" for="{{ form.reporter_email.id_for_label }}">
+                <span data-i18n="reportEmailLabel">Your email</span>
+                {{ form.reporter_email }}
+                {{ form.reporter_email.errors }}
+              </label>
+
+              <label class="auth-field" for="{{ form.reason.id_for_label }}">
+                <span data-i18n="reportReasonLabel">Reason</span>
+                {{ form.reason }}
+                {{ form.reason.errors }}
+              </label>
+            </div>
+
+            <label class="auth-field" for="{{ form.details.id_for_label }}">
+              <span data-i18n="reportDetailsLabel">What happened?</span>
+              {{ form.details }}
+              {{ form.details.errors }}
+            </label>
+
+            <label class="auth-field" for="{{ form.evidence_url.id_for_label }}">
+              <span><span data-i18n="reportEvidenceLabel">Evidence link</span> <small data-i18n="optionalLabel">Optional</small></span>
+              {{ form.evidence_url }}
+              {{ form.evidence_url.errors }}
+            </label>
+
+            <button class="btn btn--primary" type="submit">
+              <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+              <span data-i18n="submitReport">Submit report</span>
+            </button>
+          </form>
+        </article>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="report-summary-title">
+        <p class="section-heading__eyebrow" data-i18n="beforeSubmitting">Before submitting</p>
+        <h2 id="report-summary-title" data-i18n="helpfulDetails">Helpful details</h2>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt data-i18n="includeLabel">Include</dt>
+            <dd data-i18n="includeReportDetails">Seller name, order ID, product, and timeline</dd>
+          </div>
+          <div>
+            <dt data-i18n="avoidLabel">Avoid</dt>
+            <dd data-i18n="avoidReportDetails">Passwords, PINs, and sensitive payment credentials</dd>
+          </div>
+          <div>
+            <dt data-i18n="reviewLabel">Review</dt>
+            <dd data-i18n="reviewReportDetails">Exabay support checks reports for marketplace risk</dd>
+          </div>
+        </dl>
+
+        <a class="btn btn--outline cart-summary__checkout" href="{% url 'main:buyer_protection' %}">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          <span data-i18n="buyerProtectionTitle">Buyer protection</span>
+        </a>
+
+        <div class="mobile-money-note">
+          <strong data-i18n="urgentSafetyIssue">Urgent safety issue?</strong>
+          <span data-i18n="urgentSafetyIssueCopy">If money or account access is at immediate risk, contact Exabay support directly in addition to submitting this report.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 # Create your models here.
 class Order(models.Model):
@@ -108,3 +109,23 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment for Order {self.order.id}"
     
+
+class ExxabayGoOrder(models.Model):
+    seller_profile = models.ForeignKey('users.SellerProfile', on_delete=models.CASCADE, null=True, blank=True)
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False
+    )
+    amount_to_be_paid = models.DecimalField(max_digits=12, decimal_places=2)
+    buyer_phone_number = models.CharField(max_length=13)
+    order_payment_link = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwags):
+        if not self.order_payment_link:
+            self.order_payment_link = f'https://exxabay.com/orders/order-payment/{self.token}'
+        super().save(*args, **kwags)
+
+    def __str__(self):
+        return f'Order for {self.buyer_phone_number}'

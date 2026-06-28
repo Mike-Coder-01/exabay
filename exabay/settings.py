@@ -200,7 +200,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-EMAIL_HOST = 'mail.privateemail.com'
+EMAIL_HOST = 'smtp.zoho.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 

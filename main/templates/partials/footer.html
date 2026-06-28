@@ -69,7 +69,7 @@
       <a href="{% url 'users:register'  %}" data-i18n="becomeASeller">Become a Seller</a>
       <a href="{% url 'users:complete_profile' %}" data-i18n="sellerVerification">Seller Verification</a>
       <a href="{% url 'users:complete_profile' %}" data-i18n="completeSellerProfile">Complete Seller Profile</a>
-      <a href="#" data-i18n="sellerGuidelines">Seller Guidelines</a>
+      <a href="{% url 'main:seller_guidelines' %}" data-i18n="sellerGuidelines">Seller Guidelines</a>
     </nav>
 
     <nav class="site-footer__group" aria-label="Customer support">
@@ -82,11 +82,11 @@
 
     <nav class="site-footer__group" aria-label="Trust and legal">
       <h3 data-i18n="trustAndLegal">Trust and Legal</h3>
-      <a href="#" data-i18n="buyerProtection">Buyer Protection</a>
-      <a href="#" data-i18n="sellerVerificationPolicy">Seller Verification Policy</a>
-      <a href="#" data-i18n="privacyPolicy">Privacy Policy</a>
-      <a href="#" data-i18n="termsOfServices">Terms of Service</a>
-      <a href="#" data-i18n="reportsASeller">Report a Seller</a>
+      <a href="{% url 'main:buyer_protection' %}" data-i18n="buyerProtection">Buyer Protection</a>
+      <a href="{% url 'main:seller_verification_policy' %}" data-i18n="sellerVerificationPolicy">Seller Verification Policy</a>
+      <a href="{% url 'main:privacy_policy' %}" data-i18n="privacyPolicy">Privacy Policy</a>
+      <a href="{% url 'main:terms_of_service' %}" data-i18n="termsOfServices">Terms of Service</a>
+      <a href="{% url 'main:report_seller' %}" data-i18n="reportsASeller">Report a Seller</a>
     </nav>
 
     <div class="site-footer__group">

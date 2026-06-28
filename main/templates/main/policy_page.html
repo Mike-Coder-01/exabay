@@ -1,0 +1,91 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %} {{ page.title }} | Exxabay {% endblock %}
+{% block content %}
+
+  {% include 'partials/header_bar.html' %}
+
+  <main class="cart-page">
+    <section class="cart-hero" aria-labelledby="policy-title">
+      <div>
+        <p class="cart-hero__eyebrow" data-i18n="{{ page.eyebrow_key }}">{{ page.eyebrow }}</p>
+        <h1 id="policy-title" class="cart-hero__title" data-i18n="{{ page.title_key }}">{{ page.title }}</h1>
+        <p class="cart-hero__copy" data-i18n="{{ page.summary_key }}">{{ page.summary }}</p>
+      </div>
+
+      <div class="cart-hero__trust">
+        <span class="trust-card__icon">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong data-i18n="{{ page.badge_key }}">{{ page.badge }}</strong>
+          <span data-i18n="policyHeroTrustCopy">Exabay policies are built around safer buyer and seller relationships.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cart-layout" aria-label="{{ page.title }}">
+      <div class="cart-items">
+        <div class="cart-items__header">
+          <div>
+            <p class="section-heading__eyebrow" data-i18n="exabayPolicy">Exabay policy</p>
+            <h2 data-i18n="{{ page.title_key }}">{{ page.title }}</h2>
+          </div>
+          <span class="cart-items__count">{{ page.sections|length }} <span data-i18n="sectionsLabel">sections</span></span>
+        </div>
+
+        <section class="vendor-group">
+          {% for section in page.sections %}
+            <article class="detail-panel">
+              <div class="onboarding-section">
+                <div class="onboarding-section__header">
+                  <h3>{{ forloop.counter }}. <span data-i18n="{{ section.title_key }}">{{ section.title }}</span></h3>
+                  <span class="badge" data-i18n="{{ page.badge_key }}">{{ page.badge }}</span>
+                </div>
+                <p class="detail-panel__copy" data-i18n="{{ section.body_key }}">{{ section.body }}</p>
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="policy-summary-title">
+        <p class="section-heading__eyebrow" data-i18n="trustCenter">Trust center</p>
+        <h2 id="policy-summary-title" data-i18n="relatedActions">Related actions</h2>
+
+        <dl class="cart-summary__lines">
+          <div>
+            <dt data-i18n="policyLabel">Policy</dt>
+            <dd data-i18n="{{ page.title_key }}">{{ page.title }}</dd>
+          </div>
+          <div>
+            <dt data-i18n="focusLabel">Focus</dt>
+            <dd data-i18n="{{ page.badge_key }}">{{ page.badge }}</dd>
+          </div>
+          <div>
+            <dt data-i18n="marketplaceLabel">Marketplace</dt>
+            <dd>Exabay</dd>
+          </div>
+        </dl>
+
+        <div class="product-detail__actions">
+          {% for action in page.actions %}
+            <a class="btn {% if forloop.first %}btn--primary{% else %}btn--outline{% endif %}" href="{% url action.url %}">
+              <span data-i18n="{{ action.label_key }}">{{ action.label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+
+        <div class="mobile-money-note">
+          <strong data-i18n="importantNote">Important note</strong>
+          <span data-i18n="policyImportantNoteCopy">This page gives marketplace guidance. Exabay may update policies as products, payments, and seller requirements evolve.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="{% static 'js/scripts.js' %}"></script>
+  
+{% endblock %}

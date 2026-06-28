@@ -1277,7 +1277,7 @@ function setLanguage(language) {
   currentLanguage = language;
   // Save the selected language
   localStorage.setItem("language", language);
-  
+
   applyStaticTranslations();
   applyCardTranslations();
 
@@ -1611,9 +1611,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-setLanguage("en");
+setLanguage(localStorage.getItem("language") || "en");
 initializeCartPage();
 initializeAuthRoleForms();
 initializeFooterNewsletter();
-
-

@@ -9,21 +9,20 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from products.models import Product
-from .models import Cart, CartItem, Order, OrderItem, Payment
+from .models import Cart, CartItem, Order, OrderItem, Payment, ExxabayGoOrder
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from users.decorators import seller_onboarding_required
-from .services import generate_token, query_payment_status
 from django.utils import timezone
 from datetime import timedelta 
-import json
-import logging
-from decimal import Decimal
 
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
-from orders.models import Cart, Order, OrderItem, Payment, ExxabayGoOrder
-from products.models import Product
+from django.core.paginator import Paginator
+from django.db.models.functions import TruncDate
+from django.utils.dateparse import parse_date
+
+from users.decorators import seller_onboarding_required
 
 from .services import (
     generate_order_reference,
@@ -31,6 +30,7 @@ from .services import (
     initiate_ussd_push,
     preview_payment,
     validate_checksum,
+    query_payment_status,
 )
 
 
@@ -159,11 +159,6 @@ def remove_cart_item(request, item_id):
         "cart_total": str(cart_total),
         "cart_count": cart.items.count(),
     })
-
-
-
-
-logger = logging.getLogger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -754,20 +749,6 @@ def seller_orders(request):
         "status_filters": status_filters,
     })
 
-
-
-from decimal import Decimal
-
-from django.core.paginator import Paginator
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
-from django.db.models.functions import TruncDate
-from django.utils.dateparse import parse_date
-from django.shortcuts import render
-
-from products.models import Product
-from users.decorators import seller_onboarding_required
-
-from .models import OrderItem
 
 
 @seller_onboarding_required

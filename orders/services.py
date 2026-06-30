@@ -193,7 +193,7 @@ def query_payment_status(token: str, order_reference: str) -> dict | None:
     }
     try:
         r = requests.get(url, headers=headers, timeout=(10, 30))
-        # logger.info("[QUERY] status=%s body=%s", r.status_code, r.text)
+        logger.info("[QUERY] status=%s body=%s", r.status_code, r.text)
         if r.status_code == 200:
             data = r.json()
             # Returns a list — get the first record

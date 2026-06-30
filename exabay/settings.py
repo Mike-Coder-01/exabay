@@ -28,6 +28,8 @@ ALLOWED_HOSTS = [
     "exabay.onrender.com",
     'http://127.0.0.1:8000', 
     '127.0.0.1',
+    "exxabay.co.tz",
+    "www.exxabay.co.tz",
 ]
 
 
@@ -61,6 +63,7 @@ AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "main.domain_redirect_middleware.RedirectCoTzMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

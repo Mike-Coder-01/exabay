@@ -7,9 +7,9 @@ class RedirectCoTzMiddleware:
     def __call__(self, request):
         host = request.get_host()
 
-        if host in ("exxabay.co.tz", "www.exxabay.co.tz"):
+        if host in ("exxabay.com", "www.exxabay.com"):
             return HttpResponsePermanentRedirect(
-                f"https://exxabay.com{request.get_full_path()}"
+                f"https://exxabay.co.tz{request.get_full_path()}"
             )
 
         return self.get_response(request)

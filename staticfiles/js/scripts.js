@@ -538,6 +538,38 @@ const translations = {
     reportReason_poor_communication: "Poor or unsafe communication",
     reportReason_document_trust: "Seller trust concern",
     reportReason_other: "Other"
+
+
+    // EXXABAY GO
+    howItWorksEyebrow: "How it works",
+        howItWorksTitle: "Simple. Secure. Instant.",
+
+        howStep1Title: "Apply and get verified",
+        howStep1Desc: "Submit your TIN, business license, national ID, and shop photos. Approved within 48 hours.",
+
+        howStep2Title: "List products or use Exxabay Go",
+        howStep2Desc: "Add products to the marketplace, or generate secure payment links for your WhatsApp and Instagram customers.",
+
+        howStep3Title: "Customer pays securely",
+        howStep3Desc: "Buyers pay via M-Pesa, Airtel Money, Halopesa, or Mixx by Yas. No hidden charges.",
+
+        howStep4Title: "Receive funds instantly",
+        howStep4Desc: "Marketplace: 90% paid to you instantly. Exxabay Go: customer pays the small fee, you receive 100% of your agreed amount.",
+
+        whyExxabayEyebrow: "Why Exxabay",
+        whyExxabayTitle: "Trust built into every transaction",
+
+        whyCard1Title: "Every seller verified",
+        whyCard1Desc: "TIN, business license, national ID, and shop address confirmed before any seller goes live.",
+
+        whyCard2Title: "Exxabay Go",
+        whyCard2Desc: "Accept payments from WhatsApp and Instagram customers through a verified, secure link.",
+
+        whyCard3Title: "Legal accountability",
+        whyCard3Desc: "If a seller defrauds you, we release their full legal details for police action. No one can hide.",
+
+        whyCard4Title: "No upfront costs",
+        whyCard4Desc: "No listing fees. No monthly fees. Sellers pay 10% only when they make a sale."
   },
 
 
@@ -1078,6 +1110,38 @@ const translations = {
     reportReason_poor_communication: "Mawasiliano mabaya au yasiyo salama",
     reportReason_document_trust: "Wasiwasi kuhusu uaminifu wa muuzaji",
     reportReason_other: "Nyingine",
+
+
+    // EXXABAY GO
+    howItWorksEyebrow: "Inafanyaje kazi",
+    howItWorksTitle: "Rahisi. Salama. Papo hapo.",
+
+    howStep1Title: "Omba na uthibitishwe",
+    howStep1Desc: "Wasilisha TIN, leseni ya biashara, kitambulisho cha taifa, na picha za duka lako. Unathibitishwa ndani ya saa 48.",
+
+    howStep2Title: "Ongeza bidhaa au tumia Exxabay Go",
+    howStep2Desc: "Ongeza bidhaa sokoni au tengeneza link salama za malipo kwa wateja wa WhatsApp na Instagram.",
+
+    howStep3Title: "Mteja analipa kwa usalama",
+    howStep3Desc: "Malipo kupitia M-Pesa, Airtel Money, Halopesa, au Mixx by Yas. Hakuna gharama zilizofichwa.",
+
+    howStep4Title: "Pokea pesa papo hapo",
+    howStep4Desc: "Soko: 90% unalipwa mara moja. Exxabay Go: mteja analipa ada ndogo, wewe unapokea 100% ya makubaliano.",
+
+    whyExxabayEyebrow: "Kwa nini Exxabay",
+    whyExxabayTitle: "Uaminifu ndani ya kila muamala",
+
+    whyCard1Title: "Kila muuzaji anathibitishwa",
+    whyCard1Desc: "TIN, leseni ya biashara, kitambulisho cha taifa, na anwani ya duka vinathibitishwa kabla ya muuzaji kuanza.",
+
+    whyCard2Title: "Exxabay Go",
+    whyCard2Desc: "Pokea malipo kutoka WhatsApp na Instagram kupitia link salama na iliyothibitishwa.",
+
+    whyCard3Title: "Uwajibikaji wa kisheria",
+    whyCard3Desc: "Kama muuzaji atakudanganya, tunatoa taarifa zake zote kwa polisi kuchukua hatua. Hakuna kujificha.",
+
+    whyCard4Title: "Hakuna gharama za awali",
+    whyCard4Desc: "Hakuna ada ya kujiunga au ya kila mwezi. Wauzaji hulipa 10% tu wanapouza."
   }
 };
 

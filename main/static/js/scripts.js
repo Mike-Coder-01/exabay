@@ -551,10 +551,10 @@ const translations = {
     howStep2Desc: "Add products to the marketplace, or generate secure payment links for your WhatsApp and Instagram customers.",
 
     howStep3Title: "Customer pays securely",
-    howStep3Desc: "Buyers pay via M-Pesa, Airtel Money, Halopesa, or Mixx by Yas. No hidden charges.",
+    howStep3Desc: "Buyers pay via M-Pesa, Airtel Money, Halopesa, or Mixx by Yas.",
 
     howStep4Title: "Receive funds instantly",
-    howStep4Desc: "Marketplace: 90% paid to you instantly. Exxabay Go: customer pays the small fee, you receive 100% of your agreed amount.",
+    howStep4Desc: "Marketplace: Get paid instantly. Exxabay Go: customer pays the small fee, you receive 100% of your agreed amount.",
 
     whyExxabayEyebrow: "Why Exxabay",
     whyExxabayTitle: "Trust built into every transaction",
@@ -569,7 +569,26 @@ const translations = {
     whyCard3Desc: "If a seller defrauds you, we release their full legal details for police action. No one can hide.",
 
     whyCard4Title: "No upfront costs",
-    whyCard4Desc: "No listing fees. No monthly fees. Sellers pay 10% only when they make a sale."
+    whyCard4Desc: "No listing fees. No monthly fees.",
+
+    "exxabayGo.hero.badge": "EXXABAY GO",
+  "exxabayGo.hero.new": "NEW",
+  "exxabayGo.hero.title": "Sell anywhere. Get paid securely.",
+  "exxabayGo.hero.description":
+    "Already selling on WhatsApp, Instagram, or Facebook? Exxabay Go lets verified sellers send a secure payment link to any customer no marketplace listing needed. Only Tsh 1,500 + 1% per transaction.",
+
+  "exxabayGo.hero.platform.whatsapp": "WhatsApp",
+  "exxabayGo.hero.platform.instagram": "Instagram",
+  "exxabayGo.hero.platform.facebook": "Facebook",
+  "exxabayGo.hero.platform.sms": "SMS",
+
+  "exxabayGo.hero.cta": "Learn more about Exxabay Go",
+  "exxabayGo.hero.note": "Available to Exxabay verified sellers only",
+
+  "exxabayGo.hero.step1": "Seller enters customer number + amount",
+  "exxabayGo.hero.step2": "Exxabay generates a secure verified payment link",
+  "exxabayGo.hero.step3": "Customer pays via M-Pesa, Airtel, Halopesa, or Mixx",
+  "exxabayGo.hero.step4": "Seller receives 100% of agreed amount instantly"
   },
 
 
@@ -1123,10 +1142,10 @@ const translations = {
     howStep2Desc: "Ongeza bidhaa sokoni au tengeneza link salama za malipo kwa wateja wa WhatsApp na Instagram.",
 
     howStep3Title: "Mteja analipa kwa usalama",
-    howStep3Desc: "Malipo kupitia M-Pesa, Airtel Money, Halopesa, au Mixx by Yas. Hakuna gharama zilizofichwa.",
+    howStep3Desc: "Malipo kupitia M-Pesa, Airtel Money, Halopesa, au Mixx by Yas.",
 
     howStep4Title: "Pokea pesa papo hapo",
-    howStep4Desc: "Soko: 90% unalipwa mara moja. Exxabay Go: mteja analipa ada ndogo, wewe unapokea 100% ya makubaliano.",
+    howStep4Desc: "Soko: Pata malipo mara moja. Exxabay Go: mteja analipa ada ndogo, wewe unapokea 100% ya makubaliano.",
 
     whyExxabayEyebrow: "Kwa nini Exxabay",
     whyExxabayTitle: "Uaminifu ndani ya kila muamala",
@@ -1141,9 +1160,30 @@ const translations = {
     whyCard3Desc: "Kama muuzaji atakudanganya, tunatoa taarifa zake zote kwa polisi kuchukua hatua. Hakuna kujificha.",
 
     whyCard4Title: "Hakuna gharama za awali",
-    whyCard4Desc: "Hakuna ada ya kujiunga au ya kila mwezi. Wauzaji hulipa 10% tu wanapouza."
+    whyCard4Desc: "Hakuna ada ya kujiunga au ya kila mwezi.",
+
+    "exxabayGo.hero.badge": "EXXABAY GO",
+  "exxabayGo.hero.new": "MPYA",
+  "exxabayGo.hero.title": "Uza popote. Pokea malipo kwa usalama.",
+  "exxabayGo.hero.description":
+    "Unauza kupitia WhatsApp, Instagram, au Facebook? Exxabay Go inawawezesha wauzaji waliothibitishwa kutuma link salama ya malipo kwa mteja yeyote bila kuweka bidhaa sokoni. Ada ni Tsh 1,500 + 1% kwa kila muamala.",
+
+  "exxabayGo.hero.platform.whatsapp": "WhatsApp",
+  "exxabayGo.hero.platform.instagram": "Instagram",
+  "exxabayGo.hero.platform.facebook": "Facebook",
+  "exxabayGo.hero.platform.sms": "SMS",
+
+  "exxabayGo.hero.cta": "Jifunze zaidi kuhusu Exxabay Go",
+  "exxabayGo.hero.note": "Inapatikana kwa wauzaji waliothibitishwa wa Exxabay pekee",
+
+  "exxabayGo.hero.step1": "Muuzaji anaweka namba ya mteja + kiasi",
+  "exxabayGo.hero.step2": "Exxabay inatengeneza link salama ya malipo",
+  "exxabayGo.hero.step3": "Mteja analipa kupitia M-Pesa, Airtel, Halopesa au Mixx",
+  "exxabayGo.hero.step4": "Muuzaji anapokea 100% ya malipo mara moja",
+
   }
 };
+
 
 function getClickPesaFee(amount) {
   if (amount >= 500 && amount <= 999) return 54;

@@ -49,6 +49,167 @@
     max-width: 620px;
   }
 
+  /* ---------- HERO / EXXABAY GO ---------- */
+.exxabayGo-hero {
+  background: radial-gradient(circle at 20% 0%, #1c4d63 0%, var(--xg-primary-dark) 55%, #0b1424 100%);
+  color: #fff;
+  padding: 72px 0;
+}
+
+.exxabayGo-hero .exxabayGo-wrap {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.exxabayGo-hero__badge {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 22px;
+}
+
+.exxabayGo-hero__new {
+  background: var(--xg-secondary);
+  color: #04241f;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.exxabayGo-hero h1 {
+  font-size: clamp(32px, 4.4vw, 52px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin-bottom: 22px;
+}
+
+.exxabayGo-hero p {
+  color: rgba(255,255,255,0.68);
+  font-size: 16.5px;
+  max-width: 480px;
+  margin-bottom: 28px;
+}
+
+.exxabayGo-hero p strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.exxabayGo-hero__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+
+.exxabayGo-hero__pills span {
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.exxabayGo-hero__cta {
+  display: inline-block;
+  background: #fff;
+  color: var(--xg-primary-dark);
+  font-weight: 700;
+  font-size: 15.5px;
+  padding: 15px 32px;
+  border-radius: var(--xg-radius-card);
+  text-decoration: none;
+  box-shadow: var(--xg-shadow-card);
+  transition: transform .15s ease;
+}
+
+.exxabayGo-hero__cta:hover {
+  transform: translateY(-2px);
+}
+
+.exxabayGo-hero__note {
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.exxabayGo-hero__flow {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 8px 26px;
+}
+
+.exxabayGo-hero__step {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.exxabayGo-hero__step:last-child {
+  border-bottom: none;
+}
+
+.exxabayGo-hero__icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exxabayGo-hero__icon .ti {
+  font-size: 16px;
+  color: var(--xg-secondary);
+}
+
+.exxabayGo-hero__step:first-child .exxabayGo-hero__icon .ti {
+  color: #25D366; /* WhatsApp green */
+}
+
+.exxabayGo-hero__step--done .exxabayGo-hero__icon {
+  background: rgba(20,184,166,.25);
+  border-color: rgba(20,184,166,.45);
+}
+
+.exxabayGo-hero__step--done .exxabayGo-hero__icon .ti {
+  color: #1D9E75;
+}
+
+.exxabayGo-hero__step--done .exxabayGo-hero__dot {
+  background: var(--xg-secondary);
+  border-color: var(--xg-secondary);
+}
+
+.exxabayGo-hero__step p {
+  color: rgba(255,255,255,0.82);
+  font-size: 15.5px;
+  margin: 0;
+  max-width: none;
+}
+
+.exxabayGo-hero__step--done p {
+  font-weight: 600;
+  color: #fff;
+}
+
   /* ---------- HOW IT WORKS ---------- */
   .exxabayGo-how { background: var(--xg-surface); }
   .exxabayGo-how__list { display: flex; flex-direction: column; max-width: 720px; }
@@ -127,6 +288,92 @@
 
 <div class="exxabayGo-scope">
 
+  <!-- HERO: EXXABAY GO -->
+  <section class="exxabayGo-hero">
+    <div class="exxabayGo-wrap">
+      <div>
+        <div class="exxabayGo-hero__badge">
+          <i class="ti ti-bolt"></i>
+          EXXABAY GO <span class="exxabayGo-hero__new" data-i18n="exxabayGo.hero.new">NEW</span>
+        </div>
+
+        <h1 data-i18n="exxabayGo.hero.title">
+          Sell anywhere.<br>Get paid securely.
+        </h1>
+
+        <p data-i18n="exxabayGo.hero.description">
+          Already selling on WhatsApp, Instagram, or Facebook?
+          Exxabay Go lets verified sellers send a secure payment
+          link to any customer no marketplace listing needed.
+          <strong>Only Tsh 1,500 + 1% per transaction.</strong>
+        </p>
+
+        <div class="exxabayGo-hero__pills">
+          <span class="go-platform">
+            <i class="ti ti-brand-whatsapp"></i> WhatsApp
+          </span>
+          <span class="go-platform">
+            <i class="ti ti-brand-instagram"></i> Instagram
+          </span>
+          <span class="go-platform">
+            <i class="ti ti-brand-facebook"></i> Facebook
+          </span>
+          <span class="go-platform">
+            <i class="ti ti-message"></i> SMS
+          </span>
+        </div>
+
+        <a href="#" class="exxabayGo-hero__cta" data-i18n="exxabayGo.hero.cta">
+          Learn more about Exxabay Go
+        </a>
+
+        <div class="exxabayGo-hero__note" data-i18n="exxabayGo.hero.note">
+          Available to Exxabay verified sellers only
+        </div>
+      </div>
+
+      <div class="exxabayGo-hero__flow">
+
+        <div class="exxabayGo-hero__step">
+          <div class="exxabayGo-hero__icon">
+            <i class="ti ti-brand-whatsapp"></i>
+          </div>
+          <p data-i18n="exxabayGo.hero.step1">
+            Seller enters customer number + amount
+          </p>
+        </div>
+
+        <div class="exxabayGo-hero__step">
+          <div class="exxabayGo-hero__icon">
+            <i class="ti ti-link"></i>
+          </div>
+          <p data-i18n="exxabayGo.hero.step2">
+            Exxabay generates a secure verified payment link
+          </p>
+        </div>
+
+        <div class="exxabayGo-hero__step">
+          <div class="exxabayGo-hero__icon">
+            <i class="ti ti-device-mobile"></i>
+          </div>
+          <p data-i18n="exxabayGo.hero.step3">
+            Customer pays via M-Pesa, Airtel, Halopesa, or Mixx
+          </p>
+        </div>
+
+        <div class="exxabayGo-hero__step exxabayGo-hero__step--done">
+          <div class="exxabayGo-hero__icon">
+            <i class="ti ti-check"></i>
+          </div>
+          <p data-i18n="exxabayGo.hero.step4">
+            Seller receives 100% of agreed amount instantly
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- HOW IT WORKS -->
   <section class="exxabayGo-how">
     <div class="exxabayGo-wrap">
@@ -167,7 +414,7 @@
               Customer pays securely
             </div>
             <div class="exxabayGo-how__desc" data-i18n="howStep3Desc">
-              Buyers pay via M-Pesa, Airtel Money, Halopesa, or Mixx by Yas. No hidden charges.
+              Buyers pay via M-Pesa, Airtel Money, Halopesa, or Mixx by Yas.
             </div>
           </div>
         </div>
@@ -179,7 +426,7 @@
               Receive funds instantly
             </div>
             <div class="exxabayGo-how__desc" data-i18n="howStep4Desc">
-              Marketplace: 90% paid to you instantly. Exxabay Go: customer pays the small fee, you receive 100% of your agreed amount.
+              Marketplace: Get paid instantly. Exxabay Go: customer pays the small fee, you receive 100% of your agreed amount.
             </div>
           </div>
         </div>
@@ -222,7 +469,7 @@
           </div>
         </div>
 
-        <div class="exxabayGo-why__card">
+        <!-- <div class="exxabayGo-why__card">
           <div class="exxabayGo-why__icon"><i class="ti ti-gavel"></i></div>
           <div class="exxabayGo-why__title" data-i18n="whyCard3Title">
             Legal accountability
@@ -230,7 +477,7 @@
           <div class="exxabayGo-why__desc" data-i18n="whyCard3Desc">
             If a seller defrauds you, we release their full legal details for police action. No one can hide.
           </div>
-        </div>
+        </div> -->
 
         <div class="exxabayGo-why__card">
           <div class="exxabayGo-why__icon"><i class="ti ti-coin"></i></div>
@@ -238,7 +485,7 @@
             No upfront costs
           </div>
           <div class="exxabayGo-why__desc" data-i18n="whyCard4Desc">
-            No listing fees. No monthly fees. Sellers pay 10% only when they make a sale.
+            No listing fees. No monthly fees.
           </div>
         </div>
 

@@ -275,14 +275,47 @@
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 900px) {
-    .exxabayGo-why__grid { grid-template-columns: 1fr; }
-    .exxabayGo-acc__grid { grid-template-columns: 1fr 1fr; }
+    /* .exxabayGo-why__grid { grid-template-columns: 1fr; }
+    .exxabayGo-acc__grid { grid-template-columns: 1fr 1fr; } */
+    .exxabayGo-hero .exxabayGo-wrap {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .exxabayGo-why__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .exxabayGo-acc__grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
+
   @media (max-width: 560px) {
-    .exxabayGo-scope section { padding: 56px 0; }
+    /* .exxabayGo-scope section { padding: 56px 0; }
     .exxabayGo-acc__grid { grid-template-columns: 1fr; }
     .exxabayGo-scope h2 { margin-bottom: 32px; }
-    .exxabayGo-how__step { gap: 16px; }
+    .exxabayGo-how__step { gap: 16px; } */
+
+    .exxabayGo-scope section {
+    padding: 56px 0;
+  }
+
+  .exxabayGo-hero {
+    padding: 48px 0;
+  }
+
+  .exxabayGo-acc__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exxabayGo-scope h2 {
+    margin-bottom: 32px;
+  }
+
+  .exxabayGo-how__step {
+    gap: 16px;
+  }
   }
 </style>
 

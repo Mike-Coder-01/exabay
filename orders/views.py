@@ -24,6 +24,10 @@ from django.utils.dateparse import parse_date
 
 from users.decorators import seller_onboarding_required
 
+from decimal import Decimal, InvalidOperation
+from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 from .services import (
     generate_order_reference,
     generate_token,
@@ -1085,15 +1089,133 @@ def seller_analytics(request):
 
 
 
-# EXXABAY GO ORDER VIEW
+BASE_FEE = Decimal('1500')
+FEE_RATE = Decimal('0.01')
+
+
+def calculate_fee(amount):
+    amount = Decimal(str(amount))
+    if amount <= 0:
+        return Decimal('0')
+    return BASE_FEE + (amount * FEE_RATE)
+
+
 def create_exxabay_go_order(request):
-    if request.method == 'POST':
-        amount_to_be_paid = request.POST.get('amount')
-        buyer_phone_number = request.POST.get('phone')
-        try:
-            exxabay_go_order = ExxabayGoOrder.create(
-                amount_to_be_paid = amount_to_be_paid,
-                buyer_phone_number = buyer_phone_number,
-            )
-        except Exception:
-            messages.error('Error occured while creating ExxabayGo Order.')
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        amount_to_be_paid = Decimal(str(data['amount']))
+        buyer_phone_number = data['phone']
+
+        if amount_to_be_paid <= 0:
+            return JsonResponse({'success': False, 'error': 'Amount must be greater than zero.'}, status=400)
+
+        fee_amount = calculate_fee(amount_to_be_paid)
+        total_amount = amount_to_be_paid + fee_amount
+
+        exxabay_go_order = ExxabayGoOrder.objects.create(
+            amount_to_be_paid=amount_to_be_paid,
+            fee_amount=fee_amount,
+            total_amount=total_amount,
+            buyer_phone_number=buyer_phone_number,
+        )
+
+        payment_path = reverse('orders:order_payment_detail', kwargs={'token': exxabay_go_order.token})
+        payment_link = request.build_absolute_uri(payment_path)
+
+        return JsonResponse({
+            'success': True,
+            'payment_link': payment_link,
+            'token': str(exxabay_go_order.token),
+        })
+
+    except (KeyError, InvalidOperation, ValueError):
+        return JsonResponse({'success': False, 'error': 'Invalid order data provided.'}, status=400)
+    except Exception:
+        logger.exception("Failed to create ExxabayGoOrder")
+        return JsonResponse({'success': False, 'error': 'Could not create the order. Please try again.'}, status=400)
+    
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+
+def order_payment_detail(request, token):
+    order = get_object_or_404(ExxabayGoOrder, token=token)
+    context = {'order': order}
+    return render(request, 'orders/order_payment_detail.html', context)
+
+
+from . import services as cp
+def initiate_order_payment(request, token):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+    order = get_object_or_404(ExxabayGoOrder, token=token)
+
+    if order.status == ExxabayGoOrder.STATUS_PAID:
+        return JsonResponse({'success': False, 'error': 'This order has already been paid.'}, status=400)
+
+    normalized_phone = _normalize_phone(order.buyer_phone_number)
+    if not normalized_phone:
+        return JsonResponse({'success': False, 'error': 'Invalid phone number on this order.'}, status=400)
+
+    if not order.order_reference:
+        order.order_reference = cp.generate_order_reference()
+        order.save(update_fields=['order_reference'])
+
+    auth_token = cp.generate_token()
+    if not auth_token:
+        logger.error("ClickPesa token generation failed for order %s", order.token)
+        return JsonResponse({'success': False, 'error': 'Could not start payment. Please try again.'}, status=502)
+
+    response = cp.initiate_ussd_push(
+        token=auth_token,
+        amount=order.total_amount,
+        order_reference=order.order_reference,
+        phone_number=normalized_phone,
+    )
+
+    if response is None:
+        return JsonResponse({'success': False, 'error': 'Could not reach the payment gateway. Please try again.'}, status=502)
+
+    if response.status_code not in (200, 201):
+        logger.error("ClickPesa push failed for order %s: %s %s", order.token, response.status_code, response.text)
+        order.status = ExxabayGoOrder.STATUS_FAILED
+        order.save(update_fields=['status'])
+        return JsonResponse({'success': False, 'error': 'Payment request was rejected. Please check the number and try again.'}, status=400)
+
+    return JsonResponse({'success': True, 'message': 'Payment prompt sent to your phone.'})
+
+
+def order_payment_status(request, token):
+    order = get_object_or_404(ExxabayGoOrder, token=token)
+
+    # Already resolved locally — no need to hit ClickPesa again.
+    if order.status in (ExxabayGoOrder.STATUS_PAID, ExxabayGoOrder.STATUS_FAILED):
+        return JsonResponse({'status': order.status})
+
+    if not order.order_reference:
+        return JsonResponse({'status': order.status})
+
+    auth_token = cp.generate_token()
+    if not auth_token:
+        return JsonResponse({'status': order.status})
+
+    record = cp.query_payment_status(auth_token, order.order_reference)
+
+    if record:
+        gateway_status = (record.get('status') or '').upper()
+
+        if gateway_status == 'SUCCESS':
+            order.status = ExxabayGoOrder.STATUS_PAID
+            order.paid_at = timezone.now()
+            order.save(update_fields=['status', 'paid_at'])
+        elif gateway_status in ('FAILED', 'CANCELLED', 'REJECTED'):
+            order.status = ExxabayGoOrder.STATUS_FAILED
+            order.save(update_fields=['status'])
+        # else: still PENDING/PROCESSING on ClickPesa's side — leave as-is, frontend keeps polling
+
+    return JsonResponse({'status': order.status})

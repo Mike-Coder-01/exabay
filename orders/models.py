@@ -111,21 +111,31 @@ class Payment(models.Model):
     
 
 class ExxabayGoOrder(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_PAID = 'paid'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_PAID, 'Paid'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+
     seller_profile = models.ForeignKey('users.SellerProfile', on_delete=models.CASCADE, null=True, blank=True)
-    token = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        editable=False
-    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     amount_to_be_paid = models.DecimalField(max_digits=12, decimal_places=2)
+    order_reference = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    fee_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     buyer_phone_number = models.CharField(max_length=13)
     order_payment_link = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
 
-    def save(self, *args, **kwags):
+    def save(self, *args, **kwargs):
         if not self.order_payment_link:
-            self.order_payment_link = f'https://exxabay.com/orders/order-payment/{self.token}'
-        super().save(*args, **kwags)
+            self.order_payment_link = f'/orders/order-payment/{self.token}/'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Order for {self.buyer_phone_number}'

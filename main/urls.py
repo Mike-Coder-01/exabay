@@ -11,4 +11,6 @@ urlpatterns = [
     path("terms-of-service/", views.terms_of_service, name="terms_of_service"),
     path("report-seller/", views.report_seller, name="report_seller"),
     path("seller-guidelines/", views.seller_guidelines, name="seller_guidelines"),
+    path("exxabayGo/", views.exxabay_go_land_page, name='exxabayGo'),
+    path('exxabay_go_payment_link_generate/', views.exxabay_go_payment_link_generate, name='payment_link'),
 ]

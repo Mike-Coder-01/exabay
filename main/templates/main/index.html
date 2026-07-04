@@ -55,7 +55,7 @@
 
       <div id="product-grid" class="product-grid" aria-live="polite">
         {% for product in products %}
-        {% if product.is_featured %}
+        {% if request.GET.search_filter or product.is_featured %}
           {% with seller=product.seller first_image=product.images.first %}
             {% if seller.is_verified %}
               {% with trust_status="verified" trust_label="Verified" trust_copy="This seller has been verified by Exxabay and meets our trust standards." %}

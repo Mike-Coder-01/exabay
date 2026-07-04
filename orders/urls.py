@@ -5,6 +5,10 @@ app_name = 'orders'
 
 urlpatterns = [
     path('orders/', views.orderView, name='orders'),
+    path('create_exxabay_go_order/', views.create_exxabay_go_order, name='exxabay_Go_Order'),
+    path('order-payment/<uuid:token>/', views.order_payment_detail, name='order_payment_detail'),
+    path('order-payment/<uuid:token>/pay/', views.initiate_order_payment, name='initiate_order_payment'),
+    path('order-payment/<uuid:token>/status/', views.order_payment_status, name='order_payment_status'),
     path('checkout/', views.checkout, name='checkout'),
     # path('payment/callback/', views.payment_callback, name='payment_callback'),
     path("cart/", views.cart_view, name="cart"),

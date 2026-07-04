@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generate a payment link | Exxabay Go</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+.exg-form-wrap{
+  --color-primary: #1e3a8a;
+  --color-primary-dark: #172554;
+  --color-secondary: #14b8a6;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+  --color-bg: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --radius-card: 8px;
+  --radius-pill: 999px;
+  --container: 1180px;
+
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--color-bg);
+  color:var(--color-text);
+  padding:56px 20px;
+}
+.exg-form-wrap *{box-sizing:border-box}
+.exg-form-inner{max-width:560px;margin:0 auto}
+
+.exg-form-eyebrow{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--color-secondary);
+  margin-bottom:10px;
+  text-align:center;
+}
+.exg-form-title{
+  font-size:26px;
+  font-weight:800;
+  color:var(--color-text);
+  margin-bottom:8px;
+  text-align:center;
+  letter-spacing:-0.01em;
+}
+.exg-form-sub{
+  font-size:14.5px;
+  color:var(--color-muted);
+  text-align:center;
+  margin-bottom:32px;
+  line-height:1.6;
+}
+
+/* CARD */
+.exg-card{
+  background:var(--color-surface);
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-card);
+  box-shadow:var(--shadow-soft);
+  padding:28px;
+}
+
+.exg-field{margin-bottom:20px}
+.exg-field:last-of-type{margin-bottom:0}
+.exg-label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  color:var(--color-text);
+  margin-bottom:8px;
+}
+.exg-input-group{
+  display:flex;
+  align-items:center;
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-card);
+  overflow:hidden;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.exg-input-group:focus-within{
+  border-color:var(--color-primary);
+  box-shadow:0 0 0 3px rgba(30,58,138,0.12);
+}
+.exg-input-prefix{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:12px 14px;
+  background:var(--color-bg);
+  border-right:1px solid var(--color-border);
+  font-size:14.5px;
+  font-weight:600;
+  color:var(--color-muted);
+}
+.exg-input-prefix i{font-size:16px;color:var(--color-secondary)}
+.exg-input-group input{
+  flex:1;
+  border:none;
+  outline:none;
+  padding:12px 14px;
+  font-size:15px;
+  font-family:inherit;
+  color:var(--color-text);
+  background:transparent;
+  width:100%;
+}
+.exg-hint{
+  font-size:12.5px;
+  color:var(--color-muted);
+  margin-top:6px;
+}
+.exg-hint.exg-error{color:var(--color-danger)}
+
+/* FEE BREAKDOWN */
+.exg-breakdown{
+  margin-top:24px;
+  border-top:1px dashed var(--color-border);
+  padding-top:20px;
+}
+.exg-breakdown-title{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--color-muted);
+  margin-bottom:14px;
+}
+.exg-fee-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 0;
+  font-size:14.5px;
+}
+.exg-fee-row .exg-fl{color:var(--color-muted)}
+.exg-fee-row .exg-fv{font-weight:700;color:var(--color-text)}
+.exg-fee-row.exg-total{border-top:1px solid var(--color-border)}
+.exg-fee-row.exg-total .exg-fv{color:var(--color-warning)}
+.exg-fee-row.exg-receives{
+  background:rgba(22,163,74,0.06);
+  margin:8px -28px -28px;
+  padding:16px 28px;
+  border-radius:0 0 var(--radius-card) var(--radius-card);
+}
+.exg-fee-row.exg-receives .exg-fl{color:var(--color-text);font-weight:600}
+.exg-fee-row.exg-receives .exg-fv{color:var(--color-success);font-size:16px}
+
+/* BUTTON */
+.exg-btn{
+  width:100%;
+  margin-top:24px;
+  background:var(--color-primary);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-card);
+  padding:15px;
+  font-size:15.5px;
+  font-weight:700;
+  font-family:inherit;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+  transition:background .15s ease;
+}
+.exg-btn:hover{background:var(--color-primary-dark)}
+.exg-btn:disabled{background:var(--color-muted);cursor:not-allowed;opacity:.6}
+.exg-btn i{font-size:18px}
+
+.exg-lock-note{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-size:12.5px;
+  color:var(--color-muted);
+  margin-top:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="exg-form-wrap">
+  <div class="exg-form-inner">
+
+    <div class="exg-form-eyebrow">Exxabay Go</div>
+    <div class="exg-form-title">Generate a payment link</div>
+    <div class="exg-form-sub">Enter your customer's WhatsApp number and the amount. The fee is calculated and locked the moment you generate the link.</div>
+
+    <div class="exg-card">
+        {% csrf_token %}
+      <div class="exg-field">
+        <label class="exg-label" for="exg-phone">Customer's WhatsApp number</label>
+        <div class="exg-input-group">
+          <span class="exg-input-prefix"><i class="ti ti-brand-whatsapp"></i> +255</span>
+          <input type="tel" id="exg-phone" placeholder="712 345 678" inputmode="numeric">
+        </div>
+        <div class="exg-hint">We'll send the payment link to this number on WhatsApp.</div>
+      </div>
+
+      <div class="exg-field">
+        <label class="exg-label" for="exg-amount">Amount to charge</label>
+        <div class="exg-input-group">
+          <span class="exg-input-prefix">Tsh</span>
+          <input type="text" id="exg-amount" placeholder="300,000" inputmode="numeric">
+        </div>
+        <div class="exg-hint">The exact amount you want to receive from this sale.</div>
+      </div>
+
+      <div class="exg-breakdown">
+        <div class="exg-breakdown-title">Fee breakdown</div>
+        <div class="exg-fee-row">
+          <span class="exg-fl">Seller enters amount</span>
+          <span class="exg-fv" id="exg-out-amount">Tsh 0</span>
+        </div>
+        <div class="exg-fee-row">
+          <span class="exg-fl">Exxabay Go fee (paid by customer)</span>
+          <span class="exg-fv" id="exg-out-fee">Tsh 1,500</span>
+        </div>
+        <div class="exg-fee-row exg-total">
+          <span class="exg-fl">Customer pays total</span>
+          <span class="exg-fv" id="exg-out-total">Tsh 1,500</span>
+        </div>
+        <div class="exg-fee-row exg-receives">
+          <span class="exg-fl">Seller receives</span>
+          <span class="exg-fv" id="exg-out-receives">Tsh 0 · 100%</span>
+        </div>
+      </div>
+
+      <button class="exg-btn" id="exg-generate-btn"><i class="ti ti-brand-whatsapp"></i> Generate &amp; send via WhatsApp</button>
+      <div class="exg-lock-note"><i class="ti ti-lock"></i> Fee locks the moment you generate the link</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+    (function(){
+    const amountInput = document.getElementById('exg-amount');
+    const phoneInput = document.getElementById('exg-phone');
+    const outAmount = document.getElementById('exg-out-amount');
+    const outFee = document.getElementById('exg-out-fee');
+    const outTotal = document.getElementById('exg-out-total');
+    const outReceives = document.getElementById('exg-out-receives');
+    const generateBtn = document.getElementById('exg-generate-btn');
+    const errorBlock = document.getElementById('errorBlock');
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const BASE_FEE = 1500;
+    const FEE_RATE = 0.01;
+
+    function formatTsh(n){
+        return 'Tsh ' + Math.round(n).toLocaleString('en-US');
+    }
+
+    function parseAmount(value){
+        const digits = value.replace(/[^0-9]/g, '');
+        return digits ? parseInt(digits, 10) : 0;
+    }
+
+    function calcFee(amount){
+        return amount > 0 ? BASE_FEE + (amount * FEE_RATE) : 0;
+    }
+
+    function recalc(){
+        const amount = parseAmount(amountInput.value);
+        const fee = calcFee(amount);
+        const total = amount + fee;
+
+        outAmount.textContent = formatTsh(amount);
+        outFee.textContent = formatTsh(fee);
+        outTotal.textContent = formatTsh(total);
+        outReceives.textContent = formatTsh(amount) + ' · 100%';
+    }
+
+    amountInput.addEventListener('input', function(e){
+        const raw = parseAmount(e.target.value);
+        e.target.value = raw ? raw.toLocaleString('en-US') : '';
+        recalc();
+    });
+
+    async function createOrder(amount, phoneDigits){
+        const response = await fetch('/orders/create_exxabay_go_order/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            phone: phoneDigits,
+            amount: amount,
+        }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+        throw new Error(data.error || 'Error occurred while creating order.');
+        }
+
+        return data.payment_link;
+    }
+
+    generateBtn.addEventListener('click', async function(){
+        if (errorBlock) errorBlock.textContent = '';
+
+        const amount = parseAmount(amountInput.value);
+        const phoneDigits = phoneInput.value.replace(/[^0-9]/g, '');
+
+        if (!phoneDigits) {
+        phoneInput.focus();
+        return;
+        }
+        if (!amount) {
+        amountInput.focus();
+        return;
+        }
+
+        const fee = calcFee(amount);
+        const total = amount + fee;
+
+        generateBtn.disabled = true;
+
+        try {
+        const paymentLink = await createOrder(amount, phoneDigits);
+
+        const message = encodeURIComponent(
+            'You have a payment request from a verified Exxabay seller.\n' +
+            'Amount: ' + formatTsh(amount) + '\n' +
+            'Total to pay: ' + formatTsh(total) + '\n' +
+            paymentLink
+        );
+
+        window.open('https://wa.me/255' + phoneDigits + '?text=' + message, '_blank');
+        } catch (err) {
+        if (errorBlock) errorBlock.textContent = 'Error occurred while creating order.';
+        console.error(err);
+        } finally {
+        generateBtn.disabled = false;
+        }
+    });
+
+    recalc();
+    })();
+</script>
+</body>
+</html>

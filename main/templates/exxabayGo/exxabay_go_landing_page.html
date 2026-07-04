@@ -1,258 +1,246 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exxabay Go · Sell anywhere. Get paid securely.</title>
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}Exxabay Go · Sell anywhere. Get paid securely.{% endblock %}
+{% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
-:root{
-  --brand:#1D6E8E;
-  --brand-dark:#063328;
-  --brand-teal:#159189;
-  --hero-bg:#063328;
-  --light-teal:#E8F4F2;
-  --text:#1A1A1A;
-  --text-mid:#555;
-  --text-soft:#888;
-  --border:#E2E4E8;
-  --bg:#FFFFFF;
-  --bg2:#F4F6F8;
-  --r:10px;
-  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;max-width:480px;margin:0 auto}
-button{cursor:pointer;font-family:var(--font)}
+.exg-page{
+  --exg-brand:#1D6E8E;
+  --exg-brand-dark:#063328;
+  --exg-brand-teal:#159189;
+  --exg-hero-bg:#063328;
+  --exg-light-teal:#E8F4F2;
+  --exg-text:#1A1A1A;
+  --exg-text-mid:#555;
+  --exg-text-soft:#888;
+  --exg-border:#E2E4E8;
+  --exg-bg:#FFFFFF;
+  --exg-bg2:#F4F6F8;
+  --exg-radius:10px;
+  --exg-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 
-/* NAV */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:100}
-.logo{font-size:17px;font-weight:700;color:var(--brand)}
-.back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-soft)}
-.back i{font-size:15px}
+  font-family:var(--exg-font);
+  background:var(--exg-bg);
+  color:var(--exg-text);
+  font-size:16px;
+  line-height:1.6;
+  width:100%;
+  margin:0;
+  box-sizing:border-box;
+}
+.exg-page *{box-sizing:border-box}
+.exg-page button{cursor:pointer;font-family:var(--exg-font)}
 
 /* HERO */
-.hero{background:var(--hero-bg);padding:28px 16px 24px;position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;bottom:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(21,145,137,.1);pointer-events:none}
-.h-eye{font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.h-eye i{font-size:14px;color:#1D9E75}
-.h-title{font-size:24px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:8px}
-.h-title em{color:#1D9E75;font-style:normal}
-.h-sub{font-size:13px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:20px}
-.h-btn{width:100%;background:#fff;color:var(--hero-bg);border:none;border-radius:var(--r);padding:13px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px}
-.h-btn i{font-size:17px}
-.h-note{font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:4px}
-.h-note i{font-size:12px}
+.exg-page .exg-hero{background:var(--exg-hero-bg);padding:28px 16px 24px;position:relative;overflow:hidden}
+.exg-page .exg-hero::after{content:'';position:absolute;bottom:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(21,145,137,.1);pointer-events:none}
+.exg-page .exg-h-eye{font-size:13px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.exg-page .exg-h-eye i{font-size:14px;color:#1D9E75}
+.exg-page .exg-h-title{font-size:36px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:8px}
+.exg-page .exg-h-title em{color:#1D9E75;font-style:normal}
+.exg-page .exg-h-sub{font-size:17px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:20px}
+.exg-page .exg-h-btn{width:100%;background:#fff;color:var(--exg-hero-bg);border:none;border-radius:var(--exg-radius);padding:16px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px}
+.exg-page .exg-h-btn i{font-size:17px}
+.exg-page .exg-h-note{font-size:13px;color:rgba(255,255,255,.3);text-align:center;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:4px}
+.exg-page .exg-h-note i{font-size:12px}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)}
-.stat{padding:14px 8px;border-right:1px solid var(--border);text-align:center}
-.stat:last-child{border-right:none}
-.sv{font-size:15px;font-weight:700;color:var(--brand)}
-.sl{font-size:10px;color:var(--text-soft);margin-top:2px;line-height:1.3}
+.exg-page .exg-stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--exg-border)}
+.exg-page .exg-stat{padding:14px 8px;border-right:1px solid var(--exg-border);text-align:center}
+.exg-page .exg-stat:last-child{border-right:none}
+.exg-page .exg-sv{font-size:22px;font-weight:700;color:var(--exg-brand)}
+.exg-page .exg-sl{font-size:14px;color:var(--exg-text-soft);margin-top:2px;line-height:1.3}
 
-.divider{border:none;border-top:1px solid var(--border)}
+.exg-page .exg-divider{border:none;border-top:1px solid var(--exg-border)}
 
 /* SECTIONS */
-.section{padding:22px 16px}
-.sec-eye{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brand-teal);margin-bottom:4px}
-.sec-t{font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px}
+.exg-page .exg-section{padding:22px 16px}
+.exg-page .exg-sec-eye{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--exg-brand-teal);margin-bottom:4px}
+.exg-page .exg-sec-t{font-size:26px;font-weight:700;color:var(--exg-text);margin-bottom:16px}
 
 /* STEPS */
-.step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start}
-.step:last-child{border-bottom:none}
-.sn{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px}
-.st{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
-.sd{font-size:12px;color:var(--text-mid);line-height:1.55}
+.exg-page .exg-step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--exg-border);align-items:flex-start}
+.exg-page .exg-step:last-child{border-bottom:none}
+.exg-page .exg-sn{width:30px;height:30px;border-radius:50%;background:var(--exg-brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px}
+.exg-page .exg-st{font-size:17px;font-weight:600;color:var(--exg-text);margin-bottom:3px}
+.exg-page .exg-sd{font-size:15px;color:var(--exg-text-mid);line-height:1.55}
 
 /* FEE */
-.fee-bg{background:var(--bg2);padding:22px 16px}
-.fee-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
-.fee-formula{font-size:14px;font-weight:700;color:var(--brand);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.fee-formula i{font-size:16px}
-.fee-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
-.fee-row:last-child{border-bottom:none}
-.fl{font-size:12px;color:var(--text-soft)}
-.fv{font-size:12px;font-weight:600;color:var(--text)}
-.fv.go{color:var(--brand-teal)}
-.fee-note{font-size:11px;color:var(--text-soft);line-height:1.55;display:flex;gap:6px;align-items:flex-start}
-.fee-note i{font-size:14px;color:#1D9E75;flex-shrink:0;margin-top:1px}
+.exg-page .exg-fee-bg{background:var(--exg-bg2);padding:22px 16px}
+.exg-page .exg-fee-card{background:#fff;border:1px solid var(--exg-border);border-radius:14px;padding:16px;margin-bottom:12px}
+.exg-page .exg-fee-formula{font-size:18px;font-weight:700;color:var(--exg-brand);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.exg-page .exg-fee-formula i{font-size:16px}
+.exg-page .exg-fee-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--exg-border)}
+.exg-page .exg-fee-row:last-child{border-bottom:none}
+.exg-page .exg-fl{font-size:15px;color:var(--exg-text-soft)}
+.exg-page .exg-fv{font-size:15px;font-weight:600;color:var(--exg-text)}
+.exg-page .exg-fv.exg-go{color:var(--exg-brand-teal)}
+.exg-page .exg-fee-note{font-size:14px;color:var(--exg-text-soft);line-height:1.55;display:flex;gap:6px;align-items:flex-start}
+.exg-page .exg-fee-note i{font-size:14px;color:#1D9E75;flex-shrink:0;margin-top:1px}
 
 /* WHO */
-.who-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
-.who-card:last-child{margin-bottom:0}
-.wico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--light-teal);color:#0F6E56;flex-shrink:0}
-.wico i{font-size:18px}
-.wt{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
-.wd{font-size:12px;color:var(--text-mid);line-height:1.5}
+.exg-page .exg-who-card{background:var(--exg-bg2);border:1px solid var(--exg-border);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+.exg-page .exg-who-card:last-child{margin-bottom:0}
+.exg-page .exg-wico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--exg-light-teal);color:#0F6E56;flex-shrink:0}
+.exg-page .exg-wico i{font-size:18px}
+.exg-page .exg-wt{font-size:17px;font-weight:600;color:var(--exg-text);margin-bottom:3px}
+.exg-page .exg-wd{font-size:15px;color:var(--exg-text-mid);line-height:1.5}
 
 /* PROTECT */
-.protect{background:var(--hero-bg);padding:26px 16px}
-.p-eye{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
-.p-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:8px}
-.p-sub{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:18px;line-height:1.6}
-.pitem{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
-.pitem:last-child{margin-bottom:0}
-.pdot{width:6px;height:6px;border-radius:50%;background:#1D9E75;flex-shrink:0;margin-top:6px}
-.ptxt{font-size:12px;color:rgba(255,255,255,.65);line-height:1.55}
-.ptxt strong{color:#fff;font-weight:600}
+.exg-page .exg-protect{background:var(--exg-hero-bg);padding:26px 16px}
+.exg-page .exg-p-eye{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
+.exg-page .exg-p-title{font-size:24px;font-weight:700;color:#fff;margin-bottom:8px}
+.exg-page .exg-p-sub{font-size:16px;color:rgba(255,255,255,.6);margin-bottom:18px;line-height:1.6}
+.exg-page .exg-pitem{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.exg-page .exg-pitem:last-child{margin-bottom:0}
+.exg-page .exg-pdot{width:6px;height:6px;border-radius:50%;background:#1D9E75;flex-shrink:0;margin-top:6px}
+.exg-page .exg-ptxt{font-size:15px;color:rgba(255,255,255,.65);line-height:1.55}
+.exg-page .exg-ptxt strong{color:#fff;font-weight:600}
 
 /* FAQ */
-.faq-bg{background:var(--bg2);padding:22px 16px}
-.faq-item{border-bottom:1px solid var(--border)}
-.faq-item:last-child{border-bottom:none}
-.faq-q{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 0;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)}
-.faq-q i{font-size:16px;color:var(--text-soft);flex-shrink:0;transition:transform .2s}
-.faq-a{font-size:12px;color:var(--text-mid);line-height:1.6;padding-bottom:12px;display:none}
-.faq-item.open .faq-a{display:block}
-.faq-item.open .faq-q i{transform:rotate(180deg)}
+.exg-page .exg-faq-bg{background:var(--exg-bg2);padding:22px 16px}
+.exg-page .exg-faq-item{border-bottom:1px solid var(--exg-border)}
+.exg-page .exg-faq-item:last-child{border-bottom:none}
+.exg-page .exg-faq-q{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 0;cursor:pointer;font-size:17px;font-weight:600;color:var(--exg-text)}
+.exg-page .exg-faq-q i{font-size:16px;color:var(--exg-text-soft);flex-shrink:0;transition:transform .2s}
+.exg-page .exg-faq-a{font-size:15px;color:var(--exg-text-mid);line-height:1.6;padding-bottom:12px;display:none}
+.exg-page .exg-faq-item.exg-open .exg-faq-a{display:block}
+.exg-page .exg-faq-item.exg-open .exg-faq-q i{transform:rotate(180deg)}
 
 /* BOTTOM CTA */
-.bottom{padding:24px 16px;border-top:1px solid var(--border)}
-.bc-t{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
-.bc-s{font-size:12px;color:var(--text-soft);margin-bottom:16px;line-height:1.55}
-.btn-dash{width:100%;background:var(--brand);color:#fff;border:none;border-radius:var(--r);padding:13px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px}
-.btn-dash i{font-size:17px}
-.btn-sec{width:100%;background:none;border:1px solid var(--border);border-radius:var(--r);padding:11px;font-size:13px;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-sec i{font-size:15px}
+.exg-page .exg-bottom{padding:24px 16px;border-top:1px solid var(--exg-border)}
+.exg-page .exg-bc-t{font-size:24px;font-weight:700;color:var(--exg-text);margin-bottom:6px}
+.exg-page .exg-bc-s{font-size:15px;color:var(--exg-text-soft);margin-bottom:16px;line-height:1.55}
+.exg-page .exg-btn-dash{width:100%;background:var(--exg-brand);color:#fff;border:none;border-radius:var(--exg-radius);padding:16px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px}
+.exg-page .exg-btn-dash i{font-size:17px}
+.exg-page .exg-btn-sec{width:100%;background:none;border:1px solid var(--exg-border);border-radius:var(--exg-radius);padding:14px;font-size:16px;color:var(--exg-text);display:flex;align-items:center;justify-content:center;gap:6px}
+.exg-page .exg-btn-sec i{font-size:15px}
 
-/* FOOTER */
-.footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.flogo{font-size:14px;font-weight:700;color:var(--brand)}
-.flinks{display:flex;gap:14px}
-.flink{font-size:11px;color:var(--text-soft)}
+/* LANG TOGGLE */
+.exg-page .exg-lang-toggle{position:fixed;top:14px;right:14px;z-index:200;background:#fff;border:1px solid var(--exg-border);border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;color:var(--exg-text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 </style>
-</head>
-<body>
 
-<nav class="nav">
-  <span class="logo">Exxabay</span>
-  <a class="back" href="https://exxabay.co.tz"><i class="ti ti-arrow-left"></i> Marketplace</a>
-</nav>
+{% include 'partials/header_bar.html' %}
 
-<div class="hero">
-  <div class="h-eye"><i class="ti ti-bolt"></i> Exxabay Go</div>
-  <div class="h-title">Sell anywhere.<br><em>Get paid securely.</em></div>
-  <div class="h-sub">A portable payment tool for verified Exxabay sellers. Send a secure, branded payment link to any customer on WhatsApp, Instagram, or SMS — no marketplace listing required.</div>
-  <a href="https://exxabay.co.tz/dashboard/go" style="text-decoration:none">
-    <button class="h-btn"><i class="ti ti-layout-dashboard"></i> Go to seller dashboard</button>
-  </a>
-  <div class="h-note"><i class="ti ti-lock"></i> Available to Exxabay verified sellers only</div>
+<div class="exg-page">
+
+  <div class="exg-hero">
+    <div class="exg-h-eye"><i class="ti ti-bolt"></i> <span data-i18n="hero.eyebrow">Exxabay Go</span></div>
+    <div class="exg-h-title"><span data-i18n="hero.title_line1">Sell anywhere.</span><br><em data-i18n="hero.title_line2">Get paid securely.</em></div>
+    <div class="exg-h-sub" data-i18n="hero.subtitle">A portable payment tool for verified Exxabay sellers. Send a secure, branded payment link to any customer on WhatsApp, Instagram, or SMS no marketplace listing required.</div>
+    <a href="{% url 'products:sellerDashboard' %}" style="text-decoration:none">
+      <button class="exg-h-btn"><i class="ti ti-layout-dashboard"></i> <span data-i18n="common.dashboard_cta">Go to seller dashboard</span></button>
+    </a>
+    <div class="exg-h-note"><i class="ti ti-lock"></i> <span data-i18n="hero.note">Available to Exxabay verified sellers only</span></div>
+  </div>
+
+  <div class="exg-stats">
+    <div class="exg-stat"><div class="exg-sv">Tsh 1,500</div><div class="exg-sl" data-i18n="stats.fee_label">Base fee per link</div></div>
+    <div class="exg-stat"><div class="exg-sv">+ 1%</div><div class="exg-sl" data-i18n="stats.percent_label">Of transaction amount</div></div>
+    <div class="exg-stat"><div class="exg-sv" data-i18n="stats.instant">Instant</div><div class="exg-sl" data-i18n="stats.payout_label">Seller payout</div></div>
+  </div>
+
+  <hr class="exg-divider">
+
+  <section class="exg-section">
+    <div class="exg-sec-eye" data-i18n="how.eyebrow">How it works</div>
+    <div class="exg-sec-t" data-i18n="how.title">Three steps to a secure payment</div>
+    <div class="exg-step">
+      <div class="exg-sn">1</div>
+      <div><div class="exg-st" data-i18n="how.step1_title">Enter customer's WhatsApp number and amount</div><div class="exg-sd" data-i18n="how.step1_desc">Open Exxabay Go from your seller dashboard. Two fields only phone number and amount. The fee is calculated and locked the moment you generate the link.</div></div>
+    </div>
+    <div class="exg-step">
+      <div class="exg-sn">2</div>
+      <div><div class="exg-st" data-i18n="how.step2_title">Send the payment link</div><div class="exg-sd" data-i18n="how.step2_desc">Click "Send via WhatsApp" the link goes directly to your customer with a pre-written Swahili message. Or send via SMS. The link shows your verified business name and the exact amount the customer needs to pay.</div></div>
+    </div>
+    <div class="exg-step">
+      <div class="exg-sn">3</div>
+      <div><div class="exg-st" data-i18n="how.step3_title">Customer pays, you receive funds instantly</div><div class="exg-sd" data-i18n="how.step3_desc">Your customer pays from any mobile money number they choose M-Pesa, Airtel Money, Halopesa, or Mixx by Yas. You receive 100% of the agreed amount. The small Exxabay Go fee is paid by the customer on top.</div></div>
+    </div>
+  </section>
+
+  <hr class="exg-divider">
+
+  <section class="exg-fee-bg">
+    <div class="exg-sec-eye" data-i18n="fee.eyebrow">Fee structure</div>
+    <div class="exg-sec-t" data-i18n="fee.title">Simple and transparent</div>
+    <div class="exg-fee-card">
+      <div class="exg-fee-formula"><i class="ti ti-calculator"></i> <span data-i18n="fee.formula">Tsh 1,500 + 1% of transaction amount</span></div>
+      <div class="exg-fee-row"><span class="exg-fl" data-i18n="fee.row_seller_enters">Seller enters amount</span><span class="exg-fv">Tsh 300,000</span></div>
+      <div class="exg-fee-row"><span class="exg-fl" data-i18n="fee.row_fee">Exxabay Go fee (paid by customer)</span><span class="exg-fv">Tsh 4,500</span></div>
+      <div class="exg-fee-row"><span class="exg-fl" data-i18n="fee.row_total">Customer pays total</span><span class="exg-fv">Tsh 304,500</span></div>
+      <div class="exg-fee-row"><span class="exg-fl" data-i18n="fee.row_receives">Seller receives</span><span class="exg-fv exg-go">Tsh 300,000 · 100%</span></div>
+    </div>
+    <div class="exg-fee-note"><i class="ti ti-info-circle"></i> <span data-i18n="fee.note">The fee is paid by the customer, not the seller. It is locked permanently at link generation. The seller always receives exactly the agreed amount regardless of transaction size.</span></div>
+  </section>
+
+  <hr class="exg-divider">
+
+  <section class="exg-section">
+    <div class="exg-sec-eye" data-i18n="who.eyebrow">Who can use Exxabay Go</div>
+    <div class="exg-sec-t" data-i18n="who.title">Built for verified sellers</div>
+    <div class="exg-who-card"><div class="exg-wico"><i class="ti ti-shield-check"></i></div><div><div class="exg-wt" data-i18n="who.card1_title">Verified marketplace sellers only</div><div class="exg-wd" data-i18n="who.card1_desc">You must have completed full Exxabay verification TIN, business license, national ID, and shop photos before accessing Exxabay Go. No exceptions.</div></div></div>
+    <div class="exg-who-card"><div class="exg-wico"><i class="ti ti-brand-whatsapp"></i></div><div><div class="exg-wt" data-i18n="who.card2_title">Sellers with WhatsApp and social media customers</div><div class="exg-wd" data-i18n="who.card2_desc">Keep selling exactly where you are on WhatsApp, Instagram, or Facebook with a secure, verified payment layer your customers can trust.</div></div></div>
+    <div class="exg-who-card"><div class="exg-wico"><i class="ti ti-building-store"></i></div><div><div class="exg-wt" data-i18n="who.card3_title">Sellers growing beyond the marketplace</div><div class="exg-wd" data-i18n="who.card3_desc">Accept payments from any customer you find anywhere, while keeping your Exxabay verification and trust profile working for you.</div></div></div>
+  </section>
+
+  <section class="exg-protect">
+    <div class="exg-p-eye" data-i18n="protect.eyebrow">Buyer protection</div>
+    <div class="exg-p-title" data-i18n="protect.title">Every payment is protected</div>
+    <div class="exg-p-sub" data-i18n="protect.subtitle">When a buyer pays through your Exxabay Go link, they see your verified name and a clear accountability guarantee before paying.</div>
+    <div class="exg-pitem"><div class="exg-pdot"></div><div class="exg-ptxt" data-i18n="protect.item1" data-i18n-html="true">Buyer sees your <strong>verified business name</strong> and Exxabay Verified status before paying</div></div>
+    <div class="exg-pitem"><div class="exg-pdot"></div><div class="exg-ptxt" data-i18n="protect.item2" data-i18n-html="true">Payment link shows the <strong>exact amount</strong> no hidden charges, full transparency</div></div>
+    <div class="exg-pitem"><div class="exg-pdot"></div><div class="exg-ptxt" data-i18n="protect.item3" data-i18n-html="true">If a seller fails to deliver, Exxabay releases their <strong>full legal name, national ID, and shop address</strong> for police action</div></div>
+    <div class="exg-pitem"><div class="exg-pdot"></div><div class="exg-ptxt" data-i18n="protect.item4" data-i18n-html="true">Buyer is invited to create an Exxabay account <strong>after payment only</strong> never forced before</div></div>
+  </section>
+
+  <hr class="exg-divider">
+
+  <section class="exg-faq-bg">
+    <div class="exg-sec-eye" data-i18n="faq.eyebrow">Common questions</div>
+    <div class="exg-sec-t" data-i18n="faq.title">Frequently asked</div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q1">Do I need to list a product to use Exxabay Go?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a1">No. Exxabay Go requires only a customer phone number and an amount. No product listing, no photos, no category selection. It is designed entirely for off-platform and social media sales.</div>
+    </div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q2">Can my customer pay from a different mobile number?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a2">Yes. You enter your customer's WhatsApp number to send the link. But when the customer opens the link they can pay from any mobile money number they choose. They are not locked to the number you entered.</div>
+    </div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q3">Who pays the Exxabay Go fee?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a3">The customer pays the fee on top of the agreed amount. You always receive exactly the amount you entered when generating the link. The fee is shown transparently to the customer before they confirm payment.</div>
+    </div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q4">Can the fee change after I generate a link?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a4">No. The fee is permanently locked the moment you click generate. Even if Exxabay updates its fee structure in the future, that specific link will always show the fee that was calculated at the moment of generation.</div>
+    </div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q5">How do I get access to Exxabay Go?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a5">Exxabay Go is available inside your seller dashboard once your Exxabay verification is complete. If you have not yet been verified, apply as a seller on Exxabay first. The verification process takes up to 48 hours.</div>
+    </div>
+    <div class="exg-faq-item" onclick="this.classList.toggle('exg-open')">
+      <div class="exg-faq-q"><span data-i18n="faq.q6">What is the difference between Exxabay Go and the marketplace?</span> <i class="ti ti-chevron-down"></i></div>
+      <div class="exg-faq-a" data-i18n="faq.a6">The Exxabay Marketplace is where buyers discover your products through search and browse. Exxabay Go is for customers you find yourself on WhatsApp, Instagram, or anywhere you sell. On the marketplace, sellers pay a 10% commission. On Exxabay Go, customers pay Tsh 1,500 + 1% and sellers receive 100% of the agreed amount.</div>
+    </div>
+  </section>
+
+  <hr class="exg-divider">
+
+  <section class="exg-bottom">
+    <div class="exg-bc-t" data-i18n="bottom.title">Ready to use Exxabay Go?</div>
+    <div class="exg-bc-s" data-i18n="bottom.subtitle">Access Exxabay Go from your seller dashboard. Generate your first secure payment link in under a minute.</div>
+    <a href="{% url 'products:sellerDashboard' %}" style="text-decoration:none">
+      <button class="exg-btn-dash"><i class="ti ti-layout-dashboard"></i> <span data-i18n="common.dashboard_cta">Go to seller dashboard</span></button>
+    </a>
+    <a href="{% url 'users:register' %}" style="text-decoration:none">
+      <button class="exg-btn-sec"><i class="ti ti-user-plus"></i> <span data-i18n="bottom.apply_cta">Not verified yet? apply as a seller</span></button>
+    </a>
+  </section>
+
 </div>
 
-<div class="stats">
-  <div class="stat"><div class="sv">Tsh 1,500</div><div class="sl">Base fee per link</div></div>
-  <div class="stat"><div class="sv">+ 1%</div><div class="sl">Of transaction amount</div></div>
-  <div class="stat"><div class="sv">Instant</div><div class="sl">Seller payout</div></div>
-</div>
+{% include 'partials/footer.html' %}
+<script src="{% static 'js/scripts.js' %}"></script>
 
-<hr class="divider">
-
-<section class="section">
-  <div class="sec-eye">How it works</div>
-  <div class="sec-t">Three steps to a secure payment</div>
-  <div class="step">
-    <div class="sn">1</div>
-    <div><div class="st">Enter customer's WhatsApp number and amount</div><div class="sd">Open Exxabay Go from your seller dashboard. Two fields only — phone number and amount. The fee is calculated and locked the moment you generate the link.</div></div>
-  </div>
-  <div class="step">
-    <div class="sn">2</div>
-    <div><div class="st">Send the payment link</div><div class="sd">Click "Send via WhatsApp" — the link goes directly to your customer with a pre-written Swahili message. Or send via SMS. The link shows your verified business name and the exact amount the customer needs to pay.</div></div>
-  </div>
-  <div class="step">
-    <div class="sn">3</div>
-    <div><div class="st">Customer pays, you receive funds instantly</div><div class="sd">Your customer pays from any mobile money number they choose — M-Pesa, Airtel Money, Halopesa, or Mixx by Yas. You receive 100% of the agreed amount. The small Exxabay Go fee is paid by the customer on top.</div></div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<section class="fee-bg">
-  <div class="sec-eye">Fee structure</div>
-  <div class="sec-t">Simple and transparent</div>
-  <div class="fee-card">
-    <div class="fee-formula"><i class="ti ti-calculator"></i> Tsh 1,500 + 1% of transaction amount</div>
-    <div class="fee-row"><span class="fl">Seller enters amount</span><span class="fv">Tsh 300,000</span></div>
-    <div class="fee-row"><span class="fl">Exxabay Go fee (paid by customer)</span><span class="fv">Tsh 4,500</span></div>
-    <div class="fee-row"><span class="fl">Customer pays total</span><span class="fv">Tsh 304,500</span></div>
-    <div class="fee-row"><span class="fl">Seller receives</span><span class="fv go">Tsh 300,000 · 100%</span></div>
-  </div>
-  <div class="fee-note"><i class="ti ti-info-circle"></i> The fee is paid by the customer, not the seller. It is locked permanently at link generation. The seller always receives exactly the agreed amount regardless of transaction size.</div>
-</section>
-
-<hr class="divider">
-
-<section class="section">
-  <div class="sec-eye">Who can use Exxabay Go</div>
-  <div class="sec-t">Built for verified sellers</div>
-  <div class="who-card"><div class="wico"><i class="ti ti-shield-check"></i></div><div><div class="wt">Verified marketplace sellers only</div><div class="wd">You must have completed full Exxabay verification — TIN, business license, national ID, and shop photos — before accessing Exxabay Go. No exceptions.</div></div></div>
-  <div class="who-card"><div class="wico"><i class="ti ti-brand-whatsapp"></i></div><div><div class="wt">Sellers with WhatsApp and social media customers</div><div class="wd">Keep selling exactly where you are — on WhatsApp, Instagram, or Facebook — with a secure, verified payment layer your customers can trust.</div></div></div>
-  <div class="who-card"><div class="wico"><i class="ti ti-building-store"></i></div><div><div class="wt">Sellers growing beyond the marketplace</div><div class="wd">Accept payments from any customer you find anywhere, while keeping your Exxabay verification and trust profile working for you.</div></div></div>
-</section>
-
-<section class="protect">
-  <div class="p-eye">Buyer protection</div>
-  <div class="p-title">Every payment is protected</div>
-  <div class="p-sub">When a buyer pays through your Exxabay Go link, they see your verified name and a clear accountability guarantee before paying.</div>
-  <div class="pitem"><div class="pdot"></div><div class="ptxt">Buyer sees your <strong>verified business name</strong> and Exxabay Verified status before paying</div></div>
-  <div class="pitem"><div class="pdot"></div><div class="ptxt">Payment link shows the <strong>exact amount</strong> — no hidden charges, full transparency</div></div>
-  <div class="pitem"><div class="pdot"></div><div class="ptxt">If a seller fails to deliver, Exxabay releases their <strong>full legal name, national ID, and shop address</strong> for police action</div></div>
-  <div class="pitem"><div class="pdot"></div><div class="ptxt">Buyer is invited to create an Exxabay account <strong>after payment only</strong> — never forced before</div></div>
-</section>
-
-<hr class="divider">
-
-<section class="faq-bg">
-  <div class="sec-eye">Common questions</div>
-  <div class="sec-t">Frequently asked</div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">Do I need to list a product to use Exxabay Go? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">No. Exxabay Go requires only a customer phone number and an amount. No product listing, no photos, no category selection. It is designed entirely for off-platform and social media sales.</div>
-  </div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">Can my customer pay from a different mobile number? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">Yes. You enter your customer's WhatsApp number to send the link. But when the customer opens the link they can pay from any mobile money number they choose. They are not locked to the number you entered.</div>
-  </div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">Who pays the Exxabay Go fee? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">The customer pays the fee on top of the agreed amount. You always receive exactly the amount you entered when generating the link. The fee is shown transparently to the customer before they confirm payment.</div>
-  </div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">Can the fee change after I generate a link? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">No. The fee is permanently locked the moment you click generate. Even if Exxabay updates its fee structure in the future, that specific link will always show the fee that was calculated at the moment of generation.</div>
-  </div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">How do I get access to Exxabay Go? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">Exxabay Go is available inside your seller dashboard once your Exxabay verification is complete. If you have not yet been verified, apply as a seller on Exxabay first. The verification process takes up to 48 hours.</div>
-  </div>
-  <div class="faq-item" onclick="this.classList.toggle('open')">
-    <div class="faq-q">What is the difference between Exxabay Go and the marketplace? <i class="ti ti-chevron-down"></i></div>
-    <div class="faq-a">The Exxabay Marketplace is where buyers discover your products through search and browse. Exxabay Go is for customers you find yourself — on WhatsApp, Instagram, or anywhere you sell. On the marketplace, sellers pay a 10% commission. On Exxabay Go, customers pay Tsh 1,500 + 1% and sellers receive 100% of the agreed amount.</div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<section class="bottom">
-  <div class="bc-t">Ready to use Exxabay Go?</div>
-  <div class="bc-s">Access Exxabay Go from your seller dashboard. Generate your first secure payment link in under a minute.</div>
-  <a href="https://exxabay.co.tz/dashboard/go" style="text-decoration:none">
-    <button class="btn-dash"><i class="ti ti-layout-dashboard"></i> Go to seller dashboard</button>
-  </a>
-  <a href="https://exxabay.co.tz/users/register/" style="text-decoration:none">
-    <button class="btn-sec"><i class="ti ti-user-plus"></i> Not verified yet — apply as a seller</button>
-  </a>
-</section>
-
-<footer class="footer">
-  <span class="flogo">Exxabay</span>
-  <div class="flinks">
-    <a class="flink" href="https://exxabay.co.tz">exxabay.co.tz</a>
-    <a class="flink" href="#">Help centre</a>
-    <a class="flink" href="tel:+255612350807">Contact</a>
-  </div>
-</footer>
-
-</body>
-</html>
+{% endblock %}

@@ -25,6 +25,9 @@ def home(request):
     })
 
 
+def exxabay_go_payment_link_generate(request):
+    return render(request, 'exxabayGo/exxabay_go_payment.html')
+
 
 POLICY_PAGES = {
     "buyer_protection": {
@@ -233,6 +236,10 @@ def terms_of_service(request):
 
 def seller_guidelines(request):
     return render_policy_page(request, "seller_guidelines")
+
+
+def exxabay_go_land_page(request):
+    return render(request, 'exxabayGo/exxabay_go_landing_page.html')
 
 
 def report_seller(request):

@@ -27,6 +27,17 @@
         This total does not include any USSD/network charges your mobile operator may apply separately.
       </div>
 
+      <div class="exg-pay-field">
+        <label class="exg-pay-label" for="exg-pay-phone">Your mobile money number</label>
+        <div class="exg-pay-input-group">
+          <span class="exg-pay-prefix">+255</span>
+          <input type="tel" id="exg-pay-phone" placeholder="712 345 678" inputmode="numeric">
+        </div>
+        <div class="exg-pay-hint" id="exg-pay-phone-hint">
+          Enter the number registered with your mobile money (M-Pesa, Tigo Pesa, Airtel Money, HaloPesa). Start with 7 or 6, no leading 0.
+        </div>
+      </div>
+
       <button class="exg-pay-btn" id="exg-pay-btn" data-token="{{ order.token }}">
         Pay Tsh {{ order.total_amount|floatformat:0 }}
       </button>
@@ -55,6 +66,17 @@
 .exg-pay-row.exg-pay-total{border-top:1px solid #e2e8f0;margin-top:4px}
 .exg-pay-row.exg-pay-total .exg-pay-fv{color:#f59e0b}
 .exg-pay-note{font-size:12.5px;color:#64748b;margin-top:16px;line-height:1.5}
+
+.exg-pay-field{margin-top:22px}
+.exg-pay-label{display:block;font-size:13px;font-weight:700;color:#111827;margin-bottom:8px}
+.exg-pay-input-group{display:flex;align-items:center;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;transition:border-color .15s ease, box-shadow .15s ease}
+.exg-pay-input-group:focus-within{border-color:#1e3a8a;box-shadow:0 0 0 3px rgba(30,58,138,0.12)}
+.exg-pay-input-group.exg-pay-invalid{border-color:#dc2626}
+.exg-pay-prefix{flex:none;padding:12px 14px;background:#f5f7fb;border-right:1px solid #e2e8f0;font-size:14.5px;font-weight:600;color:#64748b}
+.exg-pay-input-group input{flex:1;border:none;outline:none;padding:12px 14px;font-size:15px;font-family:inherit;color:#111827;background:transparent;width:100%}
+.exg-pay-hint{font-size:12.5px;color:#64748b;margin-top:6px;line-height:1.5}
+.exg-pay-hint.exg-pay-hint-error{color:#dc2626}
+
 .exg-pay-btn{width:100%;margin-top:20px;background:#1e3a8a;color:#fff;border:none;border-radius:8px;padding:15px;font-size:15.5px;font-weight:700;cursor:pointer}
 .exg-pay-btn:hover{background:#172554}
 .exg-pay-btn:disabled{background:#64748b;cursor:not-allowed;opacity:.6}
@@ -67,6 +89,10 @@
   const payBtn = document.getElementById('exg-pay-btn');
   const statusBox = document.getElementById('exg-pay-status');
   const errorBox = document.getElementById('exg-pay-error');
+  const phoneInput = document.getElementById('exg-pay-phone');
+  const phoneGroup = phoneInput.closest('.exg-pay-input-group');
+  const phoneHint = document.getElementById('exg-pay-phone-hint');
+  const defaultHintText = phoneHint.textContent;
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   const token = payBtn.dataset.token;
 
@@ -76,6 +102,20 @@
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;
   }
+
+  // Accepts 9-digit local number starting with 6 or 7 (e.g. 712345678).
+  // Buyer is told explicitly not to include the leading 0 or +255.
+  function getValidatedPhone(){
+    const digits = phoneInput.value.replace(/[^0-9]/g, '');
+    const isValid = /^[67]\d{8}$/.test(digits);
+    return { digits, isValid };
+  }
+
+  phoneInput.addEventListener('input', function(){
+    phoneGroup.classList.remove('exg-pay-invalid');
+    phoneHint.classList.remove('exg-pay-hint-error');
+    phoneHint.textContent = defaultHintText;
+  });
 
   function pollStatus(){
     pollTimer = setInterval(async function(){
@@ -99,12 +139,27 @@
 
   payBtn.addEventListener('click', async function(){
     errorBox.textContent = '';
+
+    const { digits, isValid } = getValidatedPhone();
+
+    if (!isValid) {
+      phoneGroup.classList.add('exg-pay-invalid');
+      phoneHint.classList.add('exg-pay-hint-error');
+      phoneHint.textContent = 'Enter a valid 9-digit number starting with 7 or 6 (e.g. 712345678), no leading 0.';
+      phoneInput.focus();
+      return;
+    }
+
     payBtn.disabled = true;
 
     try {
       const res = await fetch(`/orders/order-payment/${token}/pay/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': csrftoken },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({ phone: '255' + digits }),
       });
       const data = await res.json();
 

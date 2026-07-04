@@ -1149,6 +1149,7 @@ def order_payment_detail(request, token):
 
 
 from . import services as cp
+import re
 def initiate_order_payment(request, token):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
@@ -1158,9 +1159,16 @@ def initiate_order_payment(request, token):
     if order.status == ExxabayGoOrder.STATUS_PAID:
         return JsonResponse({'success': False, 'error': 'This order has already been paid.'}, status=400)
 
-    normalized_phone = _normalize_phone(order.buyer_phone_number)
-    if not normalized_phone:
-        return JsonResponse({'success': False, 'error': 'Invalid phone number on this order.'}, status=400)
+    try:
+        data = json.loads(request.body)
+        raw_phone = data.get('phone', '')
+    except (json.JSONDecodeError, AttributeError):
+        raw_phone = ''
+
+    payer_phone = _normalize_phone(raw_phone)
+
+    if not payer_phone or not re.match(r'^255[67]\d{8}$', payer_phone):
+        return JsonResponse({'success': False, 'error': 'Please enter a valid phone number.'}, status=400)
 
     if not order.order_reference:
         order.order_reference = cp.generate_order_reference()
@@ -1175,17 +1183,37 @@ def initiate_order_payment(request, token):
         token=auth_token,
         amount=order.total_amount,
         order_reference=order.order_reference,
-        phone_number=normalized_phone,
+        phone_number=payer_phone,
     )
 
     if response is None:
         return JsonResponse({'success': False, 'error': 'Could not reach the payment gateway. Please try again.'}, status=502)
 
     if response.status_code not in (200, 201):
+        gateway_message = None
+        try:
+            gateway_body = response.json()
+            raw_message = gateway_body.get('message')
+            if isinstance(raw_message, list):
+                gateway_message = '; '.join(str(m) for m in raw_message)
+            elif isinstance(raw_message, str):
+                gateway_message = raw_message
+        except ValueError:
+            pass
+
         logger.error("ClickPesa push failed for order %s: %s %s", order.token, response.status_code, response.text)
+
         order.status = ExxabayGoOrder.STATUS_FAILED
         order.save(update_fields=['status'])
-        return JsonResponse({'success': False, 'error': 'Payment request was rejected. Please check the number and try again.'}, status=400)
+
+        SAFE_GATEWAY_ERROR_HINTS = ('insufficient', 'balance', 'phone', 'number', 'invalid')
+
+        if gateway_message and any(hint in gateway_message.lower() for hint in SAFE_GATEWAY_ERROR_HINTS):
+            buyer_message = gateway_message
+        else:
+            buyer_message = 'Payment request was rejected. Please try again.'
+
+        return JsonResponse({'success': False, 'error': buyer_message}, status=400)
 
     return JsonResponse({'success': True, 'message': 'Payment prompt sent to your phone.'})
 
@@ -1193,7 +1221,6 @@ def initiate_order_payment(request, token):
 def order_payment_status(request, token):
     order = get_object_or_404(ExxabayGoOrder, token=token)
 
-    # Already resolved locally — no need to hit ClickPesa again.
     if order.status in (ExxabayGoOrder.STATUS_PAID, ExxabayGoOrder.STATUS_FAILED):
         return JsonResponse({'status': order.status})
 
@@ -1209,13 +1236,13 @@ def order_payment_status(request, token):
     if record:
         gateway_status = (record.get('status') or '').upper()
 
-        if gateway_status == 'SUCCESS':
+        if gateway_status in ('SUCCESS', 'SETTLED'):
             order.status = ExxabayGoOrder.STATUS_PAID
             order.paid_at = timezone.now()
             order.save(update_fields=['status', 'paid_at'])
-        elif gateway_status in ('FAILED', 'CANCELLED', 'REJECTED'):
+        elif gateway_status == 'FAILED':
             order.status = ExxabayGoOrder.STATUS_FAILED
             order.save(update_fields=['status'])
-        # else: still PENDING/PROCESSING on ClickPesa's side — leave as-is, frontend keeps polling
+        # PROCESSING / PENDING → still in flight, leave as-is, frontend keeps polling
 
     return JsonResponse({'status': order.status})

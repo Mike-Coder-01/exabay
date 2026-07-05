@@ -311,7 +311,10 @@ def seller_product_list(request):
 # ----------------------------
 @login_required
 def seller_dashboard(request):
-    seller = get_object_or_404(SellerProfile, user=request.user)
+    seller = SellerProfile.objects.filter(user=request.user).first()
+    if not seller:
+        messages.error(request, "Your're not a seller. Create a seller account first.")
+        return redirect('users:complete_profile')
 
     product_qs = Product.objects.filter(seller=seller).order_by("-id")
 

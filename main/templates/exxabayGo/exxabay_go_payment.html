@@ -30,7 +30,7 @@
   padding:56px 20px;
 }
 .exg-form-wrap *{box-sizing:border-box}
-.exg-form-inner{max-width:560px;margin:0 auto}
+.exg-form-inner{max-width:700px;margin:0 auto}
 
 .exg-form-eyebrow{
   font-size:13px;
@@ -333,9 +333,9 @@
         const paymentLink = await createOrder(amount, phoneDigits);
 
         const message = encodeURIComponent(
-            'You have a payment request from a verified Exxabay seller.\n' +
-            'Amount: ' + formatTsh(amount) + '\n' +
-            'Total to pay: ' + formatTsh(total) + '\n' +
+            'Unaombi la malipo kutoka kwa muuzaji wa Exxabay aliyethibitishwa.\n' +
+            'Kiasi: ' + formatTsh(amount) + '\n' +
+            'Jumla ya kulipa: ' + formatTsh(total) + '\n' +
             paymentLink
         );
 

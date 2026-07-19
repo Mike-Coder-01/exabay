@@ -512,7 +512,7 @@ def search_products_api(request):
     seller = get_object_or_404(SellerProfile, user=request.user)
     query = request.GET.get('query', '').strip()
     
-    products_qs = Product.objects.filter(seller=seller)
+    products_qs = Product.objects.filter(seller=seller, is_available=True)
     
     if query:
         # Order by relevance: exact match first, then starts with, then contains
@@ -555,7 +555,7 @@ def product_search_view(request):
 
     if query:
         queryset = Product.objects.filter(
-            Q(name__icontains=query) | Q(description__icontains=query)
+            Q(name__icontains=query) | Q(description__icontains=query), is_available=True
         ).annotate(
             search_rank=Case(
                 When(name__iexact=query, then=Value(1)),

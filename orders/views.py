@@ -17,7 +17,7 @@ from datetime import timedelta
 
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-
+from users.models import SellerProfile
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
@@ -1101,6 +1101,7 @@ def calculate_fee(amount):
 
 
 def create_exxabay_go_order(request):
+    seller = SellerProfile.objects.filter(user=request.user)
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
 
@@ -1116,6 +1117,7 @@ def create_exxabay_go_order(request):
         total_amount = amount_to_be_paid + fee_amount
 
         exxabay_go_order = ExxabayGoOrder.objects.create(
+            seller_profile=seller,
             amount_to_be_paid=amount_to_be_paid,
             fee_amount=fee_amount,
             total_amount=total_amount,
@@ -1137,10 +1139,6 @@ def create_exxabay_go_order(request):
         logger.exception("Failed to create ExxabayGoOrder")
         return JsonResponse({'success': False, 'error': 'Could not create the order. Please try again.'}, status=400)
     
-
-
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
 
 def order_payment_detail(request, token):
     order = get_object_or_404(ExxabayGoOrder, token=token)

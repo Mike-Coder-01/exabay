@@ -1,5 +1,6 @@
 from django.db import models
 from decimal import Decimal
+from django.urls import reverse
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -25,6 +26,11 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def get_absolute_url(self):
+        return reverse(
+            "products:products"
+        )
     
     def save(self, *args, **kwargs):
         if self._state.adding:  # Only on creation

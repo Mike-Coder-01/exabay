@@ -8,8 +8,8 @@ class UserSitemap(Sitemap):
     def items(self):
         return User.objects.all()
     
-    def lastmod(self, obj):
-        return obj.updated_at
+    # def lastmod(self, obj):
+    #     return obj.updated_at
     
     def location(self, obj):
         return obj.get_absolute_url()

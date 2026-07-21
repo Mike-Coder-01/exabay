@@ -1,11 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.urls import reverse
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     is_seller = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=20)
+
+    def get_absolute_url(self):
+        return reverse(
+            "users:login"
+        )
 
     def __str__(self):
         return self.username

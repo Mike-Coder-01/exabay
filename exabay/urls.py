@@ -20,13 +20,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from products.sitemaps import ProductSitemap
-from orders.sitemaps import OrderSitemap
 from users.sitemaps import UserSitemap
 from main.views import robots_txt
 
 sitemaps = {
     "products": ProductSitemap,
-    "orders": OrderSitemap,
     "users": UserSitemap
 }
 
@@ -40,11 +38,11 @@ urlpatterns = [
     path("control_panel/", include("control_panel.urls", namespace='control_panel')),
 
     path(
-        "sitemap.xml",
-        sitemap,
-        {"sitemaps": sitemap},
-        name="django.contrib.sitemaps.views.sitemap",
-    ),
+    "sitemap.xml",
+    sitemap,
+    {"sitemaps": sitemaps},
+    name="django.contrib.sitemaps.views.sitemap",
+),
 
     path("robots.txt", robots_txt),
 ]

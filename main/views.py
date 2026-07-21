@@ -6,9 +6,19 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.mail import send_mail
 from .forms import ReportSellerForm
-
+from django.views.generic import TemplateView
+from django.http import HttpResponse
 
 # Create your views here.
+def robots_txt(request):
+    return HttpResponse(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Sitemap: https://exxabay.co.tz/sitemap.xml",
+        content_type="text/plain",
+    )
+
+
 def home(request):
     products = Product.objects.filter(is_available=True)\
         .select_related('seller__user', 'category')\

@@ -68,15 +68,15 @@ from control_panel.models import AdminNotification
 
 
 
-# def _get_product_image_url(product):
-#     image_field = getattr(product, "image", None)
-#     if not image_field:
-#         return ""
+def _get_product_image_url(product):
+    image_field = getattr(product, "image", None)
+    if not image_field:
+        return ""
 
-#     try:
-#         return image_field.url
-#     except ValueError:
-#         return ""
+    try:
+        return image_field.url
+    except ValueError:
+        return ""
 
 
 def _get_product_stock(product):

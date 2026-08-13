@@ -18,65 +18,65 @@ from control_panel.models import AdminNotification
 
 
 
-DEFAULT_DASHBOARD_PRODUCTS = [
-    {
-        "id": None,
-        "name": "Artisan Desk Lamp",
-        "price": Decimal("129.00"),
-        "stock": 48,
-        "is_available": True,
-        "is_featured": True,
-        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-    },
-    {
-        "id": None,
-        "name": "Canvas Market Tote",
-        "price": Decimal("44.50"),
-        "stock": 93,
-        "is_available": True,
-        "is_featured": True,
-        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-    },
-    {
-        "id": None,
-        "name": "Stoneware Tea Set",
-        "price": Decimal("86.00"),
-        "stock": 17,
-        "is_available": True,
-        "is_featured": False,
-        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-    },
-    {
-        "id": None,
-        "name": "Minimal Wall Clock",
-        "price": Decimal("64.00"),
-        "stock": 0,
-        "is_available": False,
-        "is_featured": False,
-        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-    },
-    {
-        "id": None,
-        "name": "Nordic Storage Bin",
-        "price": Decimal("32.00"),
-        "stock": 61,
-        "is_available": True,
-        "is_featured": False,
-        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-    },
-]
+# DEFAULT_DASHBOARD_PRODUCTS = [
+#     {
+#         "id": None,
+#         "name": "Artisan Desk Lamp",
+#         "price": Decimal("129.00"),
+#         "stock": 48,
+#         "is_available": True,
+#         "is_featured": True,
+#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+#     },
+#     {
+#         "id": None,
+#         "name": "Canvas Market Tote",
+#         "price": Decimal("44.50"),
+#         "stock": 93,
+#         "is_available": True,
+#         "is_featured": True,
+#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+#     },
+#     {
+#         "id": None,
+#         "name": "Stoneware Tea Set",
+#         "price": Decimal("86.00"),
+#         "stock": 17,
+#         "is_available": True,
+#         "is_featured": False,
+#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+#     },
+#     {
+#         "id": None,
+#         "name": "Minimal Wall Clock",
+#         "price": Decimal("64.00"),
+#         "stock": 0,
+#         "is_available": False,
+#         "is_featured": False,
+#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+#     },
+#     {
+#         "id": None,
+#         "name": "Nordic Storage Bin",
+#         "price": Decimal("32.00"),
+#         "stock": 61,
+#         "is_available": True,
+#         "is_featured": False,
+#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+#     },
+# ]
 
 
 
-def _get_product_image_url(product):
-    image_field = getattr(product, "image", None)
-    if not image_field:
-        return ""
+# def _get_product_image_url(product):
+#     image_field = getattr(product, "image", None)
+#     if not image_field:
+#         return ""
 
-    try:
-        return image_field.url
-    except ValueError:
-        return ""
+#     try:
+#         return image_field.url
+#     except ValueError:
+#         return ""
 
 
 def _get_product_stock(product):
@@ -118,26 +118,26 @@ def _build_featured_slots(featured_products, limit=3):
     return slots
 
 
-def product_view(request):
-    return render(request, "products/products.html")
+# def product_view(request):
+#     return render(request, "products/products.html")
 
 
 # ----------------------------
-# CREATE PRODUCT
+# CREATE PRODUCT             
 # ----------------------------
 @login_required
 def create_product(request):
     seller = get_object_or_404(SellerProfile, user=request.user)
-    products = Product.objects.filter(seller=seller, is_featured=True).count()
+    # products = Product.objects.filter(seller=seller, is_featured=True).count()
 
     if not seller.is_verified:
         return HttpResponseForbidden("Seller not verified")
 
     if request.method == "POST":
         form = ProductCreationForm(request.POST)
-        is_product_featured = form.cleaned_data['is_featured']
-        if is_product_featured  and products >= 3:
-            messages.info(request, "You already have 3 products as featured, unfeature one to feature this.")
+        # is_product_featured = form.cleaned_data['is_featured']
+        # if is_product_featured  and products >= 3:
+        #     messages.info(request, "You already have 3 products as featured, unfeature one to feature this.")
         if form.is_valid():
             product = form.save(commit=False)
             product.seller = seller
@@ -372,45 +372,6 @@ def notification_view (request):
     unread_notifications = AdminNotification.objects.filter(user=user, is_read=False)
     return render (request, 'products/dashboard.html', {'unread_notification':unread_notifications})
 
-# ----------------------------
-# TOGGLE FEATURED API
-# ----------------------------
-@login_required
-def toggle_featured_api(request, pk):
-    """Toggle the is_featured status of a product via AJAX"""
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid method"}, status=400)
-    
-    product = get_object_or_404(Product, pk=pk)
-    seller = get_object_or_404(SellerProfile, user=request.user)
-    
-    # Check ownership
-    if product.seller != seller:
-        return JsonResponse({"error": "Permission denied"}, status=403)
-    
-    # Check featured limit when trying to feature a product
-    if not product.is_featured:
-        featured_count = Product.objects.filter(seller=seller, is_featured=True).count()
-        featured_limit = 3
-        
-        if featured_count >= featured_limit:
-            return JsonResponse({
-                "error": "Featured limit reached. Maximum 3 products can be featured.",
-                "featured_count": featured_count,
-                "featured_limit": featured_limit
-            }, status=400)
-    
-    # Toggle the featured status
-    product.is_featured = not product.is_featured
-    product.save()
-    
-    return JsonResponse({
-        "message": "Featured status updated",
-        "product_id": product.pk,
-        "is_featured": product.is_featured
-    })
-
-
 
 # ----------------------------
 # UPDATE PRODUCT API (for inline editing)
@@ -481,19 +442,19 @@ def toggle_featured_api(request, pk):
         return JsonResponse({"error": "Permission denied"}, status=403)
     
     # Check featured limit when trying to feature a product
-    if not product.is_featured:
-        featured_count = Product.objects.filter(
-            seller=seller, 
-            is_featured=True
-        ).count()
-        featured_limit = 3
+    # if not product.is_featured:
+    #     featured_count = Product.objects.filter(
+    #         seller=seller, 
+    #         is_featured=True
+    #     ).count()
+    #     featured_limit = 3
         
-        if featured_count >= featured_limit:
-            return JsonResponse({
-                "error": "Featured limit reached. Maximum 3 products can be featured.",
-                "featured_count": featured_count,
-                "featured_limit": featured_limit
-            }, status=400)
+    #     if featured_count >= featured_limit:
+    #         return JsonResponse({
+    #             "error": "Featured limit reached. Maximum 3 products can be featured.",
+    #             "featured_count": featured_count,
+    #             "featured_limit": featured_limit
+    #         }, status=400)
     
     # Toggle the featured status
     product.is_featured = not product.is_featured

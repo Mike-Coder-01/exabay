@@ -1,0 +1,31 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Local virtual environment
+venv/
+
+# Git metadata
+.git/
+
+# Environment variables
+.env
+
+# SQLite database
+db.sqlite3
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Python cache
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+
+# Coverage
+.coverage
+htmlcov/

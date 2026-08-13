@@ -277,7 +277,7 @@ def report_seller(request):
             [getattr(settings, "EXABAY_SUPPORT_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", ""))],
             fail_silently=True,
         )
-        messages.success(request, "Your report has been submitted. Exabay support will review it.")
+        messages.success(request, "Your report has been submitted. Exxabay support will review it.")
         return redirect("main:report_seller")
 
     return render(request, "main/report_seller.html", {"form": form})

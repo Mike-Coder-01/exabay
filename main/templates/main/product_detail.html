@@ -149,7 +149,7 @@
               </div>
             </div>
             {% if product.seller.license_document %}
-              <a class="btn btn--outline" href="{{ product.seller.license_document.url }}" target="_blank" rel="noopener" data-i18n="viewDocument">View Document</a>
+              <button class="btn btn--outline" disabled href="{{ product.seller.license_document.url }}" target="_blank" rel="noopener" data-i18n="viewDocument">Available on request</button>
             {% endif %}
           </div>
 
@@ -165,7 +165,7 @@
               </div>
             </div>
             {% if product.seller.tax_clearance_document %}
-              <a class="btn btn--outline" href="{{ product.seller.tax_clearance_document.url }}" target="_blank" rel="noopener" data-i18n="viewDocument">View Document</a>
+              <button class="btn btn--outline" disabled href="{{ product.seller.tax_clearance_document.url }}" target="_blank" rel="noopener" data-i18n="viewDocument">Available on request</button>
             {% endif %}
           </div>
 

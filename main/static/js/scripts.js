@@ -42,7 +42,7 @@ const translations = {
     completedOrders: "Completed orders",
     rating: "Rating",
     closeTrustDetails: "Close seller trust details",
-    viewDocument: "View Document",
+    viewDocument: "Available on request",
     stars: "stars",
     businessLicense: "Business License",
     idVerification: "ID Verification",
@@ -128,7 +128,7 @@ const translations = {
     notSubmittedMissing: "Not submitted - Missing",
     tinOnFile: "TIN on file - Submitted",
     businessProfileOnFile: "Business profile on file - Submitted",
-    viewDocument: "View Document",
+    viewDocument: "Available on request",
     uncategorized: "Uncategorized",
 
     // CART
@@ -403,7 +403,7 @@ const translations = {
     completedOrders: "Completed orders",
     rating: "Rating",
     closeTrustDetails: "Close seller trust details",
-    viewDocument: "View Document",
+    viewDocument: "Available on request",
     stars: "stars",
     businessLicense: "Business License",
     idVerification: "ID Verification",
@@ -697,7 +697,7 @@ const translations = {
     completedOrders: "Oda zilizokamilika",
     rating: "Alama",
     closeTrustDetails: "Funga maelezo ya uaminifu wa muuzaji",
-    viewDocument: "Tazama Nyaraka",
+    viewDocument: "Inapatikana unapohitaji",
     stars: "nyota",
     businessLicense: "Leseni ya Biashara",
     idVerification: "Uthibitisho wa Kitambulisho",
@@ -783,7 +783,7 @@ const translations = {
     notSubmittedMissing: "Haijawasilishwa - Haipo",
     tinOnFile: "TIN ipo - Imewasilishwa",
     businessProfileOnFile: "Wasifu wa biashara ipo - Imewasilishwa",
-    viewDocument: "Tazama Nyaraka",
+    viewDocument: "Inapatikana unapohitaji",
     uncategorized: "Bila Kundi",
 
     // CART
@@ -1056,7 +1056,7 @@ const translations = {
     completedOrders: "Oda zilizokamilika",
     rating: "Alama",
     closeTrustDetails: "Funga maelezo ya uaminifu wa muuzaji",
-    viewDocument: "Tazama Nyaraka",
+    viewDocument: "Inapatikana unapohitaji",
     stars: "nyota",
     businessLicense: "Leseni ya Biashara",
     idVerification: "Uthibitisho wa Kitambulisho",
@@ -1453,7 +1453,7 @@ function renderSellerModal(card) {
 
   document.querySelector("#documents-list").innerHTML = getDocumentsFromCard(card).map((documentItem) => {
     const action = documentItem.url
-      ? `<a class="btn btn--outline" href="${documentItem.url}" target="_blank" rel="noopener">${t("viewDocument")}</a>`
+      ? `<button class="btn btn--outline" type="button" disabled href="${documentItem.url}" target="_blank" rel="noopener">${t("Available on request")}</button>`
       : `<button class="btn btn--outline" type="button" disabled>${t("unavailable")}</button>`;
 
     return `
@@ -1617,7 +1617,7 @@ function updateCartTotals() {
     cartTotal += subtotal;
   });
 
-  // ✅ MUST be HERE (after loop)
+
   const fee = getClickPesaFee(cartTotal);
   const amountPayable = cartTotal + fee;
 
@@ -1796,7 +1796,7 @@ function initializeFooterNewsletter() {
         .find(row => row.startsWith("csrftoken="))
         ?.split("=")[1];
 
-      // show spinner (NO CSS needed)
+      // show spinner 
       button.disabled = true;
       spinner.style.display = "inline-flex";
       buttonText.textContent = "Subscribing...";

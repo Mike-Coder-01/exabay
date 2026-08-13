@@ -10,6 +10,7 @@ cryptography==46.0.7
 dj-database-url==3.1.2
 Django==6.0.4
 django-allauth==65.15.1
+django-axes==8.3.1
 django-environ==0.13.0
 django-filter==25.2
 django-storages==1.14.6

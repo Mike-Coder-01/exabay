@@ -17,7 +17,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, True)
+    DEBUG=(bool, False)
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -235,9 +235,7 @@ STATICFILES_DIRS = [
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "location": "media",
-        },
+        "OPTIONS": {},
     },
 
     "staticfiles": {
@@ -270,7 +268,7 @@ AWS_S3_CUSTOM_DOMAIN = (
 
 
 if not DEBUG:
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}"
 else:
     MEDIA_URL = "/media/"
 

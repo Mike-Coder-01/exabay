@@ -18,53 +18,53 @@ from control_panel.models import AdminNotification
 
 
 
-# DEFAULT_DASHBOARD_PRODUCTS = [
-#     {
-#         "id": None,
-#         "name": "Artisan Desk Lamp",
-#         "price": Decimal("129.00"),
-#         "stock": 48,
-#         "is_available": True,
-#         "is_featured": True,
-#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-#     },
-#     {
-#         "id": None,
-#         "name": "Canvas Market Tote",
-#         "price": Decimal("44.50"),
-#         "stock": 93,
-#         "is_available": True,
-#         "is_featured": True,
-#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-#     },
-#     {
-#         "id": None,
-#         "name": "Stoneware Tea Set",
-#         "price": Decimal("86.00"),
-#         "stock": 17,
-#         "is_available": True,
-#         "is_featured": False,
-#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-#     },
-#     {
-#         "id": None,
-#         "name": "Minimal Wall Clock",
-#         "price": Decimal("64.00"),
-#         "stock": 0,
-#         "is_available": False,
-#         "is_featured": False,
-#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-#     },
-#     {
-#         "id": None,
-#         "name": "Nordic Storage Bin",
-#         "price": Decimal("32.00"),
-#         "stock": 61,
-#         "is_available": True,
-#         "is_featured": False,
-#         "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
-#     },
-# ]
+DEFAULT_DASHBOARD_PRODUCTS = [
+    {
+        "id": None,
+        "name": "Artisan Desk Lamp",
+        "price": Decimal("129.00"),
+        "stock": 48,
+        "is_available": True,
+        "is_featured": True,
+        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+    },
+    {
+        "id": None,
+        "name": "Canvas Market Tote",
+        "price": Decimal("44.50"),
+        "stock": 93,
+        "is_available": True,
+        "is_featured": True,
+        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+    },
+    {
+        "id": None,
+        "name": "Stoneware Tea Set",
+        "price": Decimal("86.00"),
+        "stock": 17,
+        "is_available": True,
+        "is_featured": False,
+        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+    },
+    {
+        "id": None,
+        "name": "Minimal Wall Clock",
+        "price": Decimal("64.00"),
+        "stock": 0,
+        "is_available": False,
+        "is_featured": False,
+        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+    },
+    {
+        "id": None,
+        "name": "Nordic Storage Bin",
+        "price": Decimal("32.00"),
+        "stock": 61,
+        "is_available": True,
+        "is_featured": False,
+        "image_url": "https://via.placeholder.com/300x300/f0f4ff/2f6df6?text=Lamp",
+    },
+]
 
 
 
@@ -118,8 +118,8 @@ def _build_featured_slots(featured_products, limit=3):
     return slots
 
 
-# def product_view(request):
-#     return render(request, "products/products.html")
+def product_view(request):
+    return render(request, "products/products.html")
 
 
 # ----------------------------

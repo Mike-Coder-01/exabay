@@ -268,7 +268,7 @@ AWS_S3_CUSTOM_DOMAIN = (
 
 
 if not DEBUG:
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 else:
     MEDIA_URL = "/media/"
 

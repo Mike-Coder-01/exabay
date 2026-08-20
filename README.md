@@ -451,8 +451,8 @@ The exact structure may differ depending on the project.
 For an experienced developer, the basic setup is:
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
-cd YOUR_PROJECT_DIRECTORY
+git clone git@github.com:Mike-Coder-01/exabay.git
+cd exabay
 
 # Create/configure .env
 

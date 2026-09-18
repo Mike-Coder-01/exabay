@@ -1,5 +1,8 @@
 const translations = {
   en: {
+    reportProblem: "Report a problem",
+    confirmReceived: "Confirm received",
+    orderReceived: "✓ Received",
     navLabel: "Primary navigation",
     searchProducts: "Search Exxabay products",
     navSearchPlaceholder: "Search trusted products, brands, sellers",
@@ -56,6 +59,60 @@ const translations = {
     trustCopyVerified: "This seller has been verified by Exxabay and meets our trust standards.",
     trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exxabay review.",
     trustCopyUnverified: "This seller has not completed Exxabay's verification checks yet.",
+
+    // REFUND POLICY
+
+    refundPolicyTitle: "Refund & Return Policy",
+    refundPolicyEyebrow: "Shop with confidence",
+    refundPolicySummary: "Exxabay protects buyers by keeping the payment process secure and providing a clear process for reporting problems, returning eligible products, and requesting refunds.",
+    refundPolicyBadge: "Buyer protection",
+
+    refundPolicySection1Title: "Payment protection",
+    refundPolicySection1Body: "When you place an order through Exxabay, your payment is held through our secure payment and escrow process while the order is being fulfilled. Seller payout is processed according to the order and confirmation process.",
+
+    refundPolicySection2Title: "Check your order",
+    refundPolicySection2Body: "After receiving your order, carefully check that the product is the correct item, matches the listing, and is not damaged or missing important accessories. If there is a problem, report it through Exxabay before confirming your order.",
+
+    refundPolicySection3Title: "When can I request a refund?",
+    refundPolicySection3Body: "You may be eligible for a refund or other remedy if you receive the wrong product, a product that is materially different from the listing, a damaged or defective product, an incomplete order, or if the seller fails to fulfil your order. Refunds are also subject to any rights provided by applicable Tanzanian law.",
+
+    refundPolicySection4Title: "Report a problem",
+    refundPolicySection4Body: "If there is a problem with your order, open the relevant order in your Exxabay account and select the option to report a problem. You may be asked to provide photos, videos, delivery information, or other evidence to help us review the case.",
+
+    refundPolicySection5Title: "Dispute review",
+    refundPolicySection5Body: "When a buyer reports a problem, Exxabay may temporarily hold the transaction while the issue is reviewed. We may contact the buyer and seller and review the product listing, order information, delivery details, and evidence provided by both parties before determining the appropriate resolution.",
+
+    refundPolicySection6Title: "Possible resolutions",
+    refundPolicySection6Body: "Depending on the circumstances, Exxabay may determine that the appropriate resolution is a replacement, repair, partial refund, full refund, return of the product, or release of the payment to the seller.",
+
+    refundPolicySection7Title: "Product returns",
+    refundPolicySection7Body: "If a return is approved, buyers must follow Exxabay's return instructions. Products should generally be returned in substantially the same condition in which they were received, together with the supplied accessories and packaging where reasonably available.",
+
+    refundPolicySection8Title: "Return delivery costs",
+    refundPolicySection8Body: "Where the seller sent the wrong product, materially misrepresented the product, or the product is defective or damaged due to circumstances attributable to the seller, the seller may be responsible for applicable return costs. Where a return is made because of a buyer's change of mind, the buyer may be responsible for return costs where permitted by applicable law.",
+
+    refundPolicySection9Title: "Change of mind",
+    refundPolicySection9Body: "Changing your mind does not automatically guarantee a refund or free return. Any cancellation or return rights will be handled according to applicable Tanzanian law, the product category, and the applicable seller return terms.",
+
+    refundPolicySection10Title: "Refund processing",
+    refundPolicySection10Body: "Once a refund is approved, Exxabay will initiate the refund through the applicable payment channel. The refund may be full or partial depending on the outcome of the case. The time required for the refunded amount to reach the buyer may depend on the payment provider or financial institution.",
+
+    refundPolicySection11Title: "After confirming your order",
+    refundPolicySection11Body: "Once you confirm that your order has been received satisfactorily, the normal order dispute process may no longer apply to ordinary delivery-related complaints. However, genuine defects or other issues may still be handled under an applicable warranty, seller return policy, consumer protection right, or other applicable remedy.",
+
+    refundPolicySection12Title: "Fraudulent or abusive claims",
+    refundPolicySection12Body: "Exxabay may investigate and take appropriate action where there is reasonable evidence of fraudulent or abusive refund activity, including false non-delivery claims, returning a different product, deliberately damaging a product, or submitting misleading evidence.",
+
+    refundPolicySection13Title: "Seller responsibility",
+    refundPolicySection13Body: "Sellers are responsible for ensuring that their product descriptions, images, specifications, prices, and availability are accurate and that products supplied to buyers match their listings. Sellers must also comply with applicable return, warranty, and consumer protection requirements.",
+
+    refundPolicySection14Title: "Exxabay's role",
+    refundPolicySection14Body: "Exxabay operates the marketplace and provides the systems used to facilitate transactions between buyers and verified sellers. When a dispute occurs, Exxabay may review the available information and administer the applicable buyer-protection and escrow process.",
+
+    refundPolicySection15Title: "Applicable law",
+    refundPolicySection15Body: "This policy is subject to applicable laws and regulations of Tanzania. Nothing in this policy is intended to remove or limit a consumer right or remedy that cannot legally be excluded.",
+
+    refundPolicyAction1: "View products",
 
     // FOOTER
     footerAboutExxabay: "Buy from verified sellers with confidence. Exxabay helps shoppers discover products while keeping seller credibility visible.",
@@ -362,7 +419,7 @@ const translations = {
     // FOOTER PAGES POLICY, TERMS OF SERVICES
 
     navLabel: "Primary navigation",
-    searchProducts: "Search Exabay products",
+    searchProducts: "Search Exxabay products",
     navSearchPlaceholder: "Search trusted products, brands, sellers",
     heroSearchPlaceholder: "What are you looking for today?",
     search: "Search",
@@ -414,11 +471,11 @@ const translations = {
     submitted: "Submitted",
     missing: "Missing",
     unavailable: "Unavailable",
-    trustCopyVerified: "This seller has been verified by Exabay and meets our trust standards.",
-    trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exabay review.",
-    trustCopyUnverified: "This seller has not completed Exabay's verification checks yet.",
-    policyHeroTrustCopy: "Exabay policies are built around safer buyer and seller relationships.",
-    exabayPolicy: "Exabay policy",
+    trustCopyVerified: "This seller has been verified by Exxabay and meets our trust standards.",
+    trustCopyPending: "This seller has submitted the required trust profile information and is waiting for Exxabay review.",
+    trustCopyUnverified: "This seller has not completed Exxabay's verification checks yet.",
+    policyHeroTrustCopy: "Exxabay policies are built around safer buyer and seller relationships.",
+    exabayPolicy: "Exxabay policy",
     sectionsLabel: "sections",
     trustCenter: "Trust center",
     relatedActions: "Related actions",
@@ -426,29 +483,29 @@ const translations = {
     focusLabel: "Focus",
     marketplaceLabel: "Marketplace",
     importantNote: "Important note",
-    policyImportantNoteCopy: "This page gives marketplace guidance. Exabay may update policies as products, payments, and seller requirements evolve.",
+    policyImportantNoteCopy: "This page gives marketplace guidance. Exxabay may update policies as products, payments, and seller requirements evolve.",
     buyerProtectionEyebrow: "Shop with confidence",
     buyerProtectionTitle: "Buyer Protection",
-    buyerProtectionSummary: "Exabay helps buyers shop safely by combining verified seller signals, secure payment flow, and clear order follow-up.",
+    buyerProtectionSummary: "Exxabay helps buyers shop safely by combining verified seller signals, secure payment flow, and clear order follow-up.",
     buyerProtectionBadge: "Buyer safety",
     buyerProtectionSection1Title: "Verified seller visibility",
-    buyerProtectionSection1Body: "Product pages and seller cards show verification status so buyers can quickly understand whether a seller has completed Exabay trust checks.",
+    buyerProtectionSection1Body: "Product pages and seller cards show verification status so buyers can quickly understand whether a seller has completed Exxabay trust checks.",
     buyerProtectionSection2Title: "Secure payment flow",
-    buyerProtectionSection2Body: "Buyers should complete payment only through Exabay-supported checkout channels. Sellers must not request private PINs, passwords, or off-platform payment confirmation.",
+    buyerProtectionSection2Body: "Buyers should complete payment only through Exxabay-supported checkout channels. Sellers must not request private PINs, passwords, or off-platform payment confirmation.",
     buyerProtectionSection3Title: "Order follow-up",
-    buyerProtectionSection3Body: "Paid orders can be monitored by Exabay admins to help sellers and buyers coordinate fulfillment and delivery confirmation.",
+    buyerProtectionSection3Body: "Paid orders can be monitored by Exxabay admins to help sellers and buyers coordinate fulfillment and delivery confirmation.",
     buyerProtectionSection4Title: "Report and review process",
     buyerProtectionSection4Body: "If a product is misleading, not delivered, or connected to suspicious seller behavior, buyers can submit a seller report for review.",
     buyerProtectionAction1: "Report a seller",
     buyerProtectionAction2: "View products",
     sellerVerificationPolicyEyebrow: "Marketplace trust",
     sellerVerificationPolicyTitle: "Seller Verification Policy",
-    sellerVerificationPolicySummary: "Exabay verifies seller identity and business information before giving sellers full trusted marketplace access.",
+    sellerVerificationPolicySummary: "Exxabay verifies seller identity and business information before giving sellers full trusted marketplace access.",
     sellerVerificationPolicyBadge: "Verification",
     sellerVerificationPolicySection1Title: "Required business information",
     sellerVerificationPolicySection1Body: "Sellers may be asked to provide a business name, TIN number, business license document, license expiry date, and other supporting tax or registration details.",
     sellerVerificationPolicySection2Title: "Admin review",
-    sellerVerificationPolicySection2Body: "Exabay admins review submitted seller information and may verify, reject, or request corrections before trust status is shown to buyers.",
+    sellerVerificationPolicySection2Body: "Exxabay admins review submitted seller information and may verify, reject, or request corrections before trust status is shown to buyers.",
     sellerVerificationPolicySection3Title: "Document privacy",
     sellerVerificationPolicySection3Body: "Verification documents are used for marketplace trust review and are not displayed as sensitive previews on public product pages.",
     sellerVerificationPolicySection4Title: "Ongoing trust checks",
@@ -457,32 +514,32 @@ const translations = {
     sellerVerificationPolicyAction2: "Seller guidelines",
     privacyPolicyEyebrow: "Data and trust",
     privacyPolicyTitle: "Privacy Policy",
-    privacyPolicySummary: "Exabay collects only the information needed to operate accounts, orders, seller verification, payments, payouts, and marketplace support.",
+    privacyPolicySummary: "Exxabay collects only the information needed to operate accounts, orders, seller verification, payments, payouts, and marketplace support.",
     privacyPolicyBadge: "Privacy",
     privacyPolicySection1Title: "Information we collect",
     privacyPolicySection1Body: "We may collect account details, contact information, order records, payment references, seller business documents, and support messages.",
     privacyPolicySection2Title: "How information is used",
     privacyPolicySection2Body: "Information is used to manage accounts, process orders, verify sellers, support payments and payouts, prevent fraud, and communicate marketplace updates.",
     privacyPolicySection3Title: "Sharing and security",
-    privacyPolicySection3Body: "Exabay may share required transaction details with payment providers and operational partners. Sensitive seller documents should be protected and accessed only by authorized review users.",
+    privacyPolicySection3Body: "Exxabay may share required transaction details with payment providers and operational partners. Sensitive seller documents should be protected and accessed only by authorized review users.",
     privacyPolicySection4Title: "Your choices",
     privacyPolicySection4Body: "Users can update account details, notification preferences, and seller settings from their account pages where available.",
     privacyPolicyAction1: "Account settings",
     privacyPolicyAction2: "Contact support",
     termsOfServiceEyebrow: "Marketplace rules",
     termsOfServiceTitle: "Terms of Service",
-    termsOfServiceSummary: "These terms explain the responsibilities of buyers, sellers, and Exabay when using the marketplace.",
+    termsOfServiceSummary: "These terms explain the responsibilities of buyers, sellers, and Exxabay when using the marketplace.",
     termsOfServiceBadge: "Terms",
     termsOfServiceSection1Title: "Account responsibility",
     termsOfServiceSection1Body: "Users are responsible for keeping account credentials secure and providing accurate registration, contact, and seller information.",
     termsOfServiceSection2Title: "Marketplace role",
-    termsOfServiceSection2Body: "Exabay provides a marketplace platform for product discovery, checkout, seller verification, order follow-up, and payout support.",
+    termsOfServiceSection2Body: "Exxabay provides a marketplace platform for product discovery, checkout, seller verification, order follow-up, and payout support.",
     termsOfServiceSection3Title: "Seller obligations",
     termsOfServiceSection3Body: "Sellers must list accurate products, maintain stock information, fulfill paid orders, communicate professionally, and comply with verification requirements.",
     termsOfServiceSection4Title: "Buyer obligations",
     termsOfServiceSection4Body: "Buyers must provide accurate order and contact information, complete payments through supported channels, and avoid abusive or fraudulent activity.",
     termsOfServiceSection5Title: "Policy enforcement",
-    termsOfServiceSection5Body: "Exabay may restrict accounts, remove listings, reject verification, pause payouts, or cancel orders when marketplace safety requires action.",
+    termsOfServiceSection5Body: "Exxabay may restrict accounts, remove listings, reject verification, pause payouts, or cancel orders when marketplace safety requires action.",
     termsOfServiceAction1: "Buyer protection",
     termsOfServiceAction2: "Seller guidelines",
     sellerGuidelinesEyebrow: "Sell responsibly",
@@ -503,8 +560,8 @@ const translations = {
     sellerGuidelinesAction2: "Verification policy",
     reportSellerEyebrow: "Marketplace safety",
     reportSellerTitle: "Report a seller",
-    reportSellerSummary: "Tell Exabay about suspicious seller behavior, misleading products, delivery issues, or trust concerns.",
-    reportSellerTrustCopy: "Reports help Exabay review sellers and keep marketplace trust signals meaningful.",
+    reportSellerSummary: "Tell Exxabay about suspicious seller behavior, misleading products, delivery issues, or trust concerns.",
+    reportSellerTrustCopy: "Reports help Exxabay review sellers and keep marketplace trust signals meaningful.",
     safetyReport: "Safety report",
     sellerReportDetails: "Seller report details",
     supportReview: "Support review",
@@ -524,9 +581,9 @@ const translations = {
     avoidLabel: "Avoid",
     avoidReportDetails: "Passwords, PINs, and sensitive payment credentials",
     reviewLabel: "Review",
-    reviewReportDetails: "Exabay support checks reports for marketplace risk",
+    reviewReportDetails: "Exxabay support checks reports for marketplace risk",
     urgentSafetyIssue: "Urgent safety issue?",
-    urgentSafetyIssueCopy: "If money or account access is at immediate risk, contact Exabay support directly in addition to submitting this report.",
+    urgentSafetyIssueCopy: "If money or account access is at immediate risk, contact Exxabay support directly in addition to submitting this report.",
     reportSellerNamePlaceholder: "Seller or store name",
     reportOrderIdPlaceholder: "Order ID, if available",
     reportEmailPlaceholder: "Your email address",
@@ -655,6 +712,9 @@ const translations = {
 
 
   sw: {
+    reportProblem: "Ripoti tatizo",
+    confirmReceived: "Thibitisha kupokea",
+    orderReceived: "✓ Imepokelewa",
     navLabel: "Urambazaji mkuu",
     searchProducts: "Tafuta bidhaa za Exxabay",
     navSearchPlaceholder: "Tafuta bidhaa, chapa, na wauzaji wa kuaminika",
@@ -711,6 +771,60 @@ const translations = {
     trustCopyVerified: "Muuzaji huyu amethibitishwa na Exxabay na anakidhi viwango vyetu vya uaminifu.",
     trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exxabay.",
     trustCopyUnverified: "Muuzaji huyu bado hajakamilisha ukaguzi wa uthibitisho wa Exxabay.",
+
+    // REFUND POLICY
+    
+    refundPolicyTitle: "Sera ya Marejesho na Kurudisha Bidhaa",
+    refundPolicyEyebrow: "Nunua kwa kujiamini",
+    refundPolicySummary: "Exxabay inalinda wanunuzi kwa kuweka mchakato wa malipo katika mfumo salama na kutoa utaratibu wazi wa kuripoti matatizo, kurudisha bidhaa zinazostahili, na kuomba marejesho ya fedha.",
+    refundPolicyBadge: "Ulinzi wa mnunuzi",
+
+    refundPolicySection1Title: "Ulinzi wa malipo",
+    refundPolicySection1Body: "Unapoweka oda kupitia Exxabay, malipo yako yanahifadhiwa kupitia mfumo wetu salama wa malipo na escrow wakati oda yako inatekelezwa. Malipo kwa muuzaji hufanyika kulingana na mchakato wa oda na uthibitisho wa kupokea bidhaa.",
+
+    refundPolicySection2Title: "Kagua oda yako",
+    refundPolicySection2Body: "Baada ya kupokea oda yako, kagua kwa makini ili kuhakikisha kuwa umepewa bidhaa sahihi, inalingana na maelezo ya tangazo, na haijaharibika au kukosa vifaa muhimu. Ikiwa kuna tatizo, liripoti kupitia Exxabay kabla ya kuthibitisha oda yako.",
+
+    refundPolicySection3Title: "Ni wakati gani ninaweza kuomba marejesho ya fedha?",
+    refundPolicySection3Body: "Unaweza kustahili kurejeshewa fedha au kupata suluhisho jingine ikiwa umepokea bidhaa isiyo sahihi, bidhaa ambayo inatofautiana kwa kiasi kikubwa na maelezo ya tangazo, bidhaa iliyoharibika au yenye hitilafu, oda isiyokamilika, au ikiwa muuzaji ameshindwa kutekeleza oda yako. Marejesho ya fedha pia yanategemea haki zinazotolewa chini ya sheria zinazotumika nchini Tanzania.",
+
+    refundPolicySection4Title: "Ripoti tatizo",
+    refundPolicySection4Body: "Ikiwa kuna tatizo na oda yako, fungua oda husika kwenye akaunti yako ya Exxabay na uchague chaguo la kuripoti tatizo. Unaweza kuombwa kutoa picha, video, taarifa za uwasilishaji, au ushahidi mwingine utakaotusaidia kupitia suala hilo.",
+
+    refundPolicySection5Title: "Mapitio ya mgogoro",
+    refundPolicySection5Body: "Mnunuzi anaporipoti tatizo, Exxabay inaweza kusimamisha kwa muda mchakato wa malipo wakati suala hilo linapitiwa. Tunaweza kuwasiliana na mnunuzi na muuzaji na kupitia maelezo ya bidhaa, taarifa za oda, taarifa za uwasilishaji, pamoja na ushahidi uliowasilishwa na pande zote kabla ya kuamua suluhisho linalofaa.",
+
+    refundPolicySection6Title: "Suluhisho zinazowezekana",
+    refundPolicySection6Body: "Kulingana na mazingira ya suala, Exxabay inaweza kuamua kuwa suluhisho linalofaa ni kubadilisha bidhaa, kutengeneza bidhaa, kurejesha sehemu ya fedha, kurejesha fedha zote, kurudisha bidhaa, au kuendelea na malipo kwa muuzaji.",
+
+    refundPolicySection7Title: "Kurudisha bidhaa",
+    refundPolicySection7Body: "Ikiwa ombi la kurudisha bidhaa limekubaliwa, mnunuzi lazima afuate maelekezo ya Exxabay kuhusu namna ya kurudisha bidhaa. Kwa kawaida, bidhaa inapaswa kurudishwa katika hali inayokaribiana na ile ilivyokuwa ilipopokelewa, pamoja na vifaa vilivyotolewa na kifungashio pale inapowezekana.",
+
+    refundPolicySection8Title: "Gharama za kurudisha bidhaa",
+    refundPolicySection8Body: "Ikiwa muuzaji ametuma bidhaa isiyo sahihi, ametoa maelezo yanayopotosha kuhusu bidhaa, au bidhaa ina hitilafu au imeharibika kutokana na mazingira yanayohusishwa na muuzaji, muuzaji anaweza kuwajibika kwa gharama husika za kurudisha bidhaa. Ikiwa bidhaa inarudishwa kwa sababu mnunuzi amebadilisha mawazo yake, mnunuzi anaweza kuwajibika kwa gharama za kuirudisha pale ambapo sheria inaruhusu.",
+
+    refundPolicySection9Title: "Kubadilisha mawazo",
+    refundPolicySection9Body: "Kubadilisha mawazo hakukupi moja kwa moja haki ya kurejeshewa fedha au kurudisha bidhaa bila gharama. Haki zozote za kughairi oda au kurudisha bidhaa zitatekelezwa kwa kuzingatia sheria zinazotumika nchini Tanzania, aina ya bidhaa, na masharti husika ya muuzaji.",
+
+    refundPolicySection10Title: "Mchakato wa kurejesha fedha",
+    refundPolicySection10Body: "Marejesho ya fedha yanapoidhinishwa, Exxabay itaanzisha mchakato wa kurejesha fedha kupitia njia husika ya malipo. Kiasi kinachorejeshwa kinaweza kuwa fedha zote au sehemu ya fedha kulingana na uamuzi wa suala hilo. Muda wa fedha kurejea kwenye akaunti ya mnunuzi unaweza kutegemea mtoa huduma wa malipo au taasisi ya fedha.",
+
+    refundPolicySection11Title: "Baada ya kuthibitisha oda yako",
+    refundPolicySection11Body: "Baada ya kuthibitisha kuwa umepokea oda yako na umeridhika nayo, mchakato wa kawaida wa kushughulikia migogoro ya oda unaweza kutotumika tena kwa malalamiko ya kawaida yanayohusiana na uwasilishaji. Hata hivyo, hitilafu halisi au matatizo mengine yanaweza bado kushughulikiwa chini ya dhamana inayotumika, sera ya muuzaji ya kurudisha bidhaa, haki za mlaji, au suluhisho jingine linalotambuliwa na sheria.",
+
+    refundPolicySection12Title: "Madai ya udanganyifu au matumizi mabaya",
+    refundPolicySection12Body: "Exxabay inaweza kuchunguza na kuchukua hatua stahiki pale ambapo kuna ushahidi wa msingi wa udanganyifu au matumizi mabaya ya mfumo wa marejesho ya fedha, ikiwa ni pamoja na kudai kwa uongo kuwa bidhaa haikufika, kurudisha bidhaa tofauti na iliyonunuliwa, kuharibu bidhaa kwa makusudi, au kuwasilisha ushahidi unaopotosha.",
+
+    refundPolicySection13Title: "Wajibu wa muuzaji",
+    refundPolicySection13Body: "Wauzaji wanawajibika kuhakikisha kuwa maelezo ya bidhaa, picha, vipimo, bei, na upatikanaji wa bidhaa ni sahihi na kwamba bidhaa wanazowapatia wanunuzi zinaendana na matangazo yao. Wauzaji pia wanapaswa kuzingatia masharti yanayotumika kuhusu kurudisha bidhaa, dhamana, na ulinzi wa mlaji.",
+
+    refundPolicySection14Title: "Jukumu la Exxabay",
+    refundPolicySection14Body: "Exxabay inaendesha soko la mtandaoni na hutoa mifumo inayowezesha miamala kati ya wanunuzi na wauzaji waliohakikiwa. Mgogoro unapotokea, Exxabay inaweza kupitia taarifa zilizopo na kusimamia mchakato husika wa ulinzi wa mnunuzi na escrow.",
+
+    refundPolicySection15Title: "Sheria zinazotumika",
+    refundPolicySection15Body: "Sera hii inazingatia sheria na kanuni zinazotumika nchini Tanzania. Hakuna sehemu ya sera hii inayokusudia kuondoa au kupunguza haki au suluhisho la mlaji ambalo kisheria haliwezi kuondolewa au kupunguzwa.",
+
+    refundPolicyAction1: "Angalia bidhaa",
 
     // FOOTER
     footerAboutExxabay: "Nunua kutoka kwa wauzaji waliothibitishwa kwa kujiamini. Exxabay husaidia wanunuzi kugundua bidhaa huku ikiweka uaminifu wa wauzaji wazi.",
@@ -1068,7 +1182,7 @@ const translations = {
     missing: "Haipo",
     unavailable: "Haipatikani",
     trustCopyVerified: "Muuzaji huyu amethibitishwa na Exxabay na anakidhi viwango vyetu vya uaminifu.",
-    trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exabay.",
+    trustCopyPending: "Muuzaji huyu amewasilisha taarifa muhimu za wasifu wa uaminifu na anasubiri ukaguzi wa Exxabay.",
     trustCopyUnverified: "Muuzaji huyu bado hajakamilisha ukaguzi wa uthibitisho wa Exxabay.",
     policyHeroTrustCopy: "Sera za Exxabay zimejengwa kwa ajili ya mahusiano salama kati ya wanunuzi na wauzaji.",
     exabayPolicy: "Sera ya Exxabay",

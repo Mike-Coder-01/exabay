@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path("buyer-protection/", views.buyer_protection, name="buyer_protection"),
     path("seller-verification-policy/", views.seller_verification_policy, name="seller_verification_policy"),
+    path("refund-policy/", views.refund_policy, name="refund_policy"),
     path("privacy-policy/", views.privacy_policy, name="privacy_policy"),
     path("terms-of-service/", views.terms_of_service, name="terms_of_service"),
     path("report-seller/", views.report_seller, name="report_seller"),

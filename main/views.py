@@ -69,6 +69,110 @@ POLICY_PAGES = {
             {"label": "View products", "url": "main:home"},
         ],
     },
+
+
+    "refund_policy": {
+
+        "i18n_prefix": "refundPolicy",
+
+        "title": "Refund & Return Policy",
+
+        "eyebrow": "Shop with confidence",
+
+        "summary": "Exxabay protects buyers by keeping the payment process secure and providing a clear process for reporting problems, returning eligible products, and requesting refunds.",
+
+        "badge": "Buyer protection",
+
+        "sections": [
+
+            {
+                "title": "Payment protection",
+                "body": "When you place an order through Exxabay, your payment is held through our secure payment and escrow process while the order is being fulfilled. Seller payout is processed according to the order and confirmation process.",
+            },
+
+            {
+                "title": "Check your order",
+                "body": "After receiving your order, carefully check that the product is the correct item, matches the listing, and is not damaged or missing important accessories. If there is a problem, report it through Exxabay before confirming your order.",
+            },
+
+            {
+                "title": "When can I request a refund?",
+                "body": "You may be eligible for a refund or other remedy if you receive the wrong product, a product that is materially different from the listing, a damaged or defective product, an incomplete order, or if the seller fails to fulfil your order. Refunds are also subject to any rights provided by applicable Tanzanian law.",
+            },
+
+            {
+                "title": "Report a problem",
+                "body": "If there is a problem with your order, open the relevant order in your Exxabay account and select the option to report a problem. You may be asked to provide photos, videos, delivery information, or other evidence to help us review the case.",
+            },
+
+            {
+                "title": "Dispute review",
+                "body": "When a buyer reports a problem, Exxabay may temporarily hold the transaction while the issue is reviewed. We may contact the buyer and seller and review the product listing, order information, delivery details, and evidence provided by both parties before determining the appropriate resolution.",
+            },
+
+            {
+                "title": "Possible resolutions",
+                "body": "Depending on the circumstances, Exxabay may determine that the appropriate resolution is a replacement, repair, partial refund, full refund, return of the product, or release of the payment to the seller.",
+            },
+
+            {
+                "title": "Product returns",
+                "body": "If a return is approved, buyers must follow Exxabay's return instructions. Products should generally be returned in substantially the same condition in which they were received, together with the supplied accessories and packaging where reasonably available.",
+            },
+
+            {
+                "title": "Return delivery costs",
+                "body": "Where the seller sent the wrong product, materially misrepresented the product, or the product is defective or damaged due to circumstances attributable to the seller, the seller may be responsible for applicable return costs. Where a return is made because of a buyer's change of mind, the buyer may be responsible for return costs where permitted by applicable law.",
+            },
+
+            {
+                "title": "Change of mind",
+                "body": "Changing your mind does not automatically guarantee a refund or free return. Any cancellation or return rights will be handled according to applicable Tanzanian law, the product category, and the applicable seller return terms.",
+            },
+
+            {
+                "title": "Refund processing",
+                "body": "Once a refund is approved, Exxabay will initiate the refund through the applicable payment channel. The refund may be full or partial depending on the outcome of the case. The time required for the refunded amount to reach the buyer may depend on the payment provider or financial institution.",
+            },
+
+            {
+                "title": "After confirming your order",
+                "body": "Once you confirm that your order has been received satisfactorily, the normal order dispute process may no longer apply to ordinary delivery-related complaints. However, genuine defects or other issues may still be handled under an applicable warranty, seller return policy, consumer protection right, or other applicable remedy.",
+            },
+
+            {
+                "title": "Fraudulent or abusive claims",
+                "body": "Exxabay may investigate and take appropriate action where there is reasonable evidence of fraudulent or abusive refund activity, including false non-delivery claims, returning a different product, deliberately damaging a product, or submitting misleading evidence.",
+            },
+
+            {
+                "title": "Seller responsibility",
+                "body": "Sellers are responsible for ensuring that their product descriptions, images, specifications, prices, and availability are accurate and that products supplied to buyers match their listings. Sellers must also comply with applicable return, warranty, and consumer protection requirements.",
+            },
+
+            {
+                "title": "Exxabay's role",
+                "body": "Exxabay operates the marketplace and provides the systems used to facilitate transactions between buyers and verified sellers. When a dispute occurs, Exxabay may review the available information and administer the applicable buyer-protection and escrow process.",
+            },
+
+            {
+                "title": "Applicable law",
+                "body": "This policy is subject to applicable laws and regulations of Tanzania. Nothing in this policy is intended to remove or limit a consumer right or remedy that cannot legally be excluded.",
+            },
+
+        ],
+
+        "actions": [
+
+            {
+                "label": "View products",
+                "url": "main:home"
+            },
+
+        ],
+
+    },
+
     "seller_verification_policy": {
         "i18n_prefix": "sellerVerificationPolicy",
         "title": "Seller Verification Policy",
@@ -234,6 +338,9 @@ def buyer_protection(request):
 
 def seller_verification_policy(request):
     return render_policy_page(request, "seller_verification_policy")
+
+def refund_policy (request):
+    return render_policy_page(request, "refund_policy")
 
 
 def privacy_policy(request):

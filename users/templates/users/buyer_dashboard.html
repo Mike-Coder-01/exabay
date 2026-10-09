@@ -103,8 +103,44 @@
                       <span class="status-badge status-badge--pending" data-i18n="pendingOrders">! Pending</span>
                     {% elif order.status == "shipped" %}
                       <span class="status-badge status-badge--pending" data-i18n="shippedStatus">⟶ Shipped</span>
+                  
                     {% elif order.status == "delivered" %}
-                      <span class="status-badge status-badge--verified" data-i18n="okDelivered">OK Delivered</span>
+                    <span class="status-badge status-badge--verified"
+                          data-i18n="okDelivered">
+                      OK Delivered
+                    </span>
+
+                    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+
+                      <!-- Confirm that the buyer has received the order -->
+                      <form method="post"
+                            action="{% url 'orders:confirm_received' order.id %}">
+                        {% csrf_token %}
+
+                        <button
+                          type="submit"
+                          class="btn btn--primary"
+                          style="font-size:0.78rem; min-height:32px; padding:0 12px;"
+                          data-i18n="confirmReceived">
+                          Confirm received
+                        </button>
+                      </form>
+
+                      <!-- Report a problem with the seller/order -->
+                      <a href="{% url 'main:report_seller' %}"
+                        class="btn btn--outline"
+                        style="font-size:0.78rem; min-height:32px; padding:0 12px;"
+                        data-i18n="reportProblem">
+                        Report a problem
+                      </a>
+
+                    </div>
+
+                  {% elif order.status == "received" %}
+                    <span class="status-badge status-badge--verified"
+                          data-i18n="orderReceived">
+                      ✓ Received
+                    </span>
                     {% else %}
                       <span class="status-badge status-badge--unverified" data-i18n="cancelledStatus">X Cancelled</span>
                     {% endif %}

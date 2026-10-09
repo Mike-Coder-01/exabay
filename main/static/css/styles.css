@@ -16,7 +16,30 @@
   --radius-pill: 999px;
   --container: 1180px;
 }
+.payment-method-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.4em;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-bg);
+}
 
+.toggle-btn {
+  background: linear-gradient(120deg, var(--color-primary), #0f766e);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: white;
+  padding-inline: 1.4em;
+  padding-block: 12px;
+  min-width: 200px;
+  text-align: center;
+  cursor: pointer;
+}
+#phonePaymentId {
+  display: none;
+}
 * {
   box-sizing: border-box;
 }

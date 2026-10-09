@@ -36,6 +36,7 @@ urlpatterns = [
     path('products/', include('products.urls', namespace='products')),
     path('orders/', include('orders.urls', namespace='orders')),
     path("control_panel/", include("control_panel.urls", namespace='control_panel')),
+    # path("exxabay-api/", include("api.urls", namespace="api")),
 
     path(
     "sitemap.xml",

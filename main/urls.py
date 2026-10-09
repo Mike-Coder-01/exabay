@@ -1,4 +1,5 @@
 from django.urls import path
+from orders import views as order_views
 from . import views
 
 app_name = 'main'
@@ -14,4 +15,6 @@ urlpatterns = [
     path("seller-guidelines/", views.seller_guidelines, name="seller_guidelines"),
     path("exxabayGo/", views.exxabay_go_land_page, name='exxabayGo'),
     path('exxabay_go_payment_link_generate/', views.exxabay_go_payment_link_generate, name='payment_link'),
+    # Azampay callback
+    path("api/azampay/callback/", order_views.payment_callback, name="azampay-callback"),
 ]

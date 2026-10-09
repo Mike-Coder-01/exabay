@@ -1,4 +1,5 @@
 from decimal import Decimal
+import requests
 import uuid
 import logging
 import json
@@ -36,10 +37,49 @@ from .services import (
     validate_checksum,
     query_payment_status,
 )
-
+from orders.utility import generate_paybill_number, get_azampay_public_key, token_generation,verify_callback_signature
 
 logger = logging.getLogger(__name__)  
 # __name__ will be 'orders.views' — covered by 'orders' logger above
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _normalize_phone(raw):
+    """
+    Accepts:  0712345678  |  +255712345678  |  255712345678
+    Returns:  255712345678   (E.164 without the '+')
+    """
+    if not raw:
+        return None
+    phone = raw.strip()
+    if phone.startswith("+"):
+        return phone[1:]
+    if phone.startswith("0"):
+        return "255" + phone[1:]
+    return phone
+
+
+def _cancel_order(order, payment, reason=""):
+    """Atomically cancel an order and its payment, leaving the cart intact."""
+    with transaction.atomic():
+        payment.status = "failed"
+        update_fields = ["status"]
+        if hasattr(payment, "gateway_response"):
+            payment.gateway_response = str(reason)[:500]
+            update_fields.append("gateway_response")
+        payment.save(update_fields=update_fields)
+
+        order.status = "cancelled"
+        order.save(update_fields=["status"])
+
+    logger.info("[CANCEL] order=%s reason=%s", order.id, reason)
+
+
+class InsufficientStockError(Exception):
+    pass
 
 
 def orderView(request):
@@ -142,6 +182,7 @@ def update_cart_item(request, item_id):
         "cart_total": str(cart_total),
     })
 
+
 @login_required
 @require_POST
 @transaction.atomic
@@ -163,201 +204,6 @@ def remove_cart_item(request, item_id):
         "cart_total": str(cart_total),
         "cart_count": cart.items.count(),
     })
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _normalize_phone(raw):
-    """
-    Accepts:  0712345678  |  +255712345678  |  255712345678
-    Returns:  255712345678   (E.164 without the '+')
-    """
-    if not raw:
-        return None
-    phone = raw.strip()
-    if phone.startswith("+"):
-        return phone[1:]
-    if phone.startswith("0"):
-        return "255" + phone[1:]
-    return phone
-
-
-def _cancel_order(order, payment, reason=""):
-    """Atomically cancel an order and its payment, leaving the cart intact."""
-    with transaction.atomic():
-        payment.status = "failed"
-        update_fields = ["status"]
-        if hasattr(payment, "gateway_response"):
-            payment.gateway_response = str(reason)[:500]
-            update_fields.append("gateway_response")
-        payment.save(update_fields=update_fields)
-
-        order.status = "cancelled"
-        order.save(update_fields=["status"])
-
-    logger.info("[CANCEL] order=%s reason=%s", order.id, reason)
-
-
-class InsufficientStockError(Exception):
-    pass
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# CHECKOUT
-# ══════════════════════════════════════════════════════════════════════════════
-
-@login_required
-def checkout(request):
-    """
-    POST-only. Flow:
-      1. Validate cart & stock
-      2. Create Order + OrderItems       (stock NOT deducted yet)
-      3. Create pending Payment record
-      4. Get ClickPesa token
-      5. Preview  → validate phone / active channels
-      6. USSD push → prompt customer's handset
-      7. Redirect to order-detail page; stock deducted only on confirmed callback
-    """
-    if request.method != "POST":
-        return redirect("orders:cart")
-    
-    phone = request.POST.get('phone')
-    phone_number = _normalize_phone(phone or getattr(request.user, 'phone_number', None))
-    if not phone_number:
-        messages.error(request, "A valid phone number is required for mobile payment.Update your phone number.")
-        return redirect("users:edit_profile")
-
-    # ── 1. Lock cart rows ────────────────────────────────────────────────────
-    with transaction.atomic():
-        cart = get_object_or_404(
-            Cart.objects.select_for_update(),
-            user=request.user,
-        )
-        items = list(cart.items.select_related("product").select_for_update())
-
-        if not items:
-            messages.error(request, "Your cart is empty.")
-            return redirect("orders:cart")
-
-        total = Decimal("0.00")
-        for item in items:
-            product = item.product
-
-            if not product.is_available:
-                messages.error(request, f"'{product.name}' is no longer available.")
-                return redirect("orders:cart")
-
-            if item.quantity > product.stock:
-                messages.error(
-                    request,
-                    f"Only {product.stock} unit(s) of '{product.name}' in stock.",
-                )
-                return redirect("orders:cart")
-
-            total += product.price * item.quantity
-
-        # ── 2. Create Order ──────────────────────────────────────────────────
-        order = Order.objects.create(
-            user=request.user,
-            total_amount=total,
-            status="pending",
-        )
-
-        OrderItem.objects.bulk_create([
-            OrderItem(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price,
-            )
-            for item in items
-        ])
-
-        # ── 3. Create Payment record ─────────────────────────────────────────
-        order_reference = generate_order_reference()
-
-        payment = Payment.objects.create(
-            order=order,
-            amount=total,
-            method="mobile_money",
-            status="pending",
-            transaction_id=order_reference,
-        )
-
-    # ── 4. ClickPesa token ───────────────────────────────────────────────────
-    # Outside the atomic block — network calls must not hold DB locks
-    token = generate_token()
-    if not token:
-        logger.debug("[CHECKOUT] Token generation failed. order=%s", order.id)
-        _cancel_order(order, payment, "Token generation failed")
-        messages.error(request, "Payment service unavailable. Please try again.")
-        return redirect("orders:cart")
-
-    # ── 5. Preview ───────────────────────────────────────────────────────────
-    preview_resp = preview_payment(token, total, order_reference, phone_number)
-
-    if preview_resp is None:
-        logger.debug("[CHECKOUT] Preview request failed. order=%s", order.id)
-        _cancel_order(order, payment, "Preview request error")
-        messages.error(request, "Could not reach payment gateway. Please try again.")
-        return redirect("orders:cart")
-
-    if preview_resp.status_code != 200:
-        logger.debug(
-            "[CHECKOUT] Preview rejected. order=%s status=%s body=%s",
-            order.id, preview_resp.status_code, preview_resp.text,
-        )
-        _cancel_order(order, payment, preview_resp.text)
-        try:
-            detail = preview_resp.json().get("message", "Payment preview failed.")
-        except Exception:
-            detail = "Payment preview failed."
-        messages.error(request, detail)
-        return redirect("orders:cart")
-
-    active_methods = preview_resp.json().get("activeMethods", [])
-    if not active_methods:
-        logger.debug("[CHECKOUT] No active channels. order=%s phone=%s", order.id, phone_number)
-        _cancel_order(order, payment, "No active payment channels")
-        messages.error(request, "No payment channels available for your number right now.")
-        return redirect("orders:cart")
-
-    # ── 6. USSD push ─────────────────────────────────────────────────────────
-    push_resp = initiate_ussd_push(token, total, order_reference, phone_number)
-
-    if push_resp is None:
-        logger.debug("[CHECKOUT] USSD push request failed. order=%s", order.id)
-        _cancel_order(order, payment, "USSD push request error")
-        messages.error(request, "Could not send payment prompt. Please try again.")
-        return redirect("orders:cart")
-
-    if push_resp.status_code not in (200, 201):
-        logger.debug(
-            "[CHECKOUT] USSD push rejected. order=%s status=%s body=%s",
-            order.id, push_resp.status_code, push_resp.text,
-        )
-        _cancel_order(order, payment, push_resp.text)
-        try:
-            detail = push_resp.json().get("message", "Payment initiation failed.")
-        except Exception:
-            detail = "Payment initiation failed."
-        messages.error(request, detail)
-        return redirect("orders:cart")
-
-    # ── 7. Save gateway response & redirect ──────────────────────────────────
-    with transaction.atomic():
-        if hasattr(payment, "gateway_response"):
-            payment.gateway_response = push_resp.text
-            payment.save(update_fields=["gateway_response"])
-
-    logger.debug("[CHECKOUT] USSD push sent. order=%s reference=%s", order.id, order_reference)
-    messages.success(
-        request,
-        "A payment prompt has been sent to your phone. Please authorise it to complete your order.",
-    )
-    return redirect("orders:order_detail", order_id=order.id)
 
 
 @login_required
@@ -454,105 +300,164 @@ def payment_status(request, order_id):
 
 
 @csrf_exempt
+@require_POST
 def payment_callback(request):
     """
-    Handles two ClickPesa webhook events:
-      • PAYMENT RECEIVED  → mark order paid, deduct stock, clear cart
-      • PAYMENT FAILED    → mark order cancelled
+    Handles AzamPay MNO Checkout callbacks.
 
-    Security:
-      - HMAC checksum validated before any DB writes
-      - select_for_update prevents concurrent callback races
-      - Stock deducted only here, never at checkout time
+    Flow:
+        1. Parse AzamPay callback
+        2. Verify AzamPay RSA signature
+        3. Find the Exxabay payment using utilityref
+        4. Verify the payment amount
+        5. Lock the payment to prevent duplicate processing
+        6. Mark payment/order as paid or failed
+        7. Deduct stock only once after successful payment
+        8. Clear the user's cart
     """
-
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Method not allowed."},
-            status=405,
-        )
 
     # ── Parse JSON body ──────────────────────────────────────────────────────
     try:
         data = json.loads(request.body.decode("utf-8"))
 
     except (json.JSONDecodeError, UnicodeDecodeError):
-        logger.debug("[CALLBACK] Malformed JSON body")
+        logger.warning("[AZAMPAY CALLBACK] Invalid JSON")
 
         return JsonResponse(
             {"error": "Invalid JSON."},
             status=400,
         )
 
-    logger.debug("[CALLBACK] payload=%s", data)
-
-    # ── Extract inner payload ────────────────────────────────────────────────
-    payload_data = data.get("data", {})
-
-    if not isinstance(payload_data, dict):
-        logger.debug("[CALLBACK] Missing or invalid data object") 
-
-        return JsonResponse(
-            {"error": "Invalid payload structure."},
-            status=400,
-        )
-
-    # ── Checksum validation ──────────────────────────────────────────────────
-    # Remove checksum before recomputing signature
-    received_checksum = payload_data.pop("checksum", None)
-
-    if not received_checksum:
-        logger.debug("[CALLBACK] Missing checksum")
-
-        return JsonResponse(
-            {"error": "Missing checksum."},
-            status=400,
-        )
-
-    is_valid = validate_checksum(
-        settings.CLICKPESA_CHECKSUM_KEY,
-        payload_data,
-        received_checksum,
+    logger.info(
+        "[AZAMPAY CALLBACK] Received callback. "
+        "status=%s utilityref=%s transid=%s",
+        data.get("transactionstatus"),
+        data.get("utilityref"),
+        data.get("transid"),
     )
+
+    # ── Extract AzamPay fields ───────────────────────────────────────────────
+    transaction_status = data.get("transactionstatus")
+    utility_ref = data.get("utilityref")
+    external_reference = data.get("externalreference")
+    operator = data.get("operator")
+    amount = data.get("amount")
+    trans_id = data.get("transid")
+    signature = data.get("signature")
+
+    # ── Validate required fields ─────────────────────────────────────────────
+    required_fields = {
+        "transactionstatus": transaction_status,
+        "utilityref": utility_ref,
+        "externalreference": external_reference,
+        "operator": operator,
+        "amount": amount,
+        "signature": signature,
+    }
+
+    missing_fields = [
+        field
+        for field, value in required_fields.items()
+        if value in (None, "")
+    ]
+
+    if missing_fields:
+        logger.warning(
+            "[AZAMPAY CALLBACK] Missing fields: %s",
+            missing_fields,
+        )
+
+        return JsonResponse(
+            {
+                "error": "Missing required fields.",
+                "fields": missing_fields,
+            },
+            status=400,
+        )
+
+    # ── Convert callback amount ──────────────────────────────────────────────
+    try:
+        callback_amount = Decimal(str(amount))
+
+    except (InvalidOperation, TypeError, ValueError):
+        logger.warning(
+            "[AZAMPAY CALLBACK] Invalid amount: %s",
+            amount,
+        )
+
+        return JsonResponse(
+            {"error": "Invalid amount."},
+            status=400,
+        )
+
+    # ── Get AzamPay public key ───────────────────────────────────────────────
+    public_key = get_azampay_public_key(
+        settings.AZAMPAY_PUBLIC_KEY_URL,
+        headers={
+            "Authorization": f"Bearer {token_generation()}",
+        },
+    )
+
+    if not public_key:
+        logger.error(
+            "[AZAMPAY CALLBACK] Could not obtain AzamPay public key."
+        )
+
+        return JsonResponse(
+            {"error": "Unable to verify callback."},
+            status=500,
+        )
+
+    # ── Verify AzamPay signature ─────────────────────────────────────────────
+    is_valid = verify_callback_signature(
+        utility_ref,
+        external_reference,
+        transaction_status,
+        operator,
+        signature,
+        public_key,
+    )
+
+    # If verification fails, refresh the public key once and retry
+    if not is_valid:
+
+        logger.warning(
+            "[AZAMPAY CALLBACK] Signature verification failed. "
+            "Refreshing public key."
+        )
+
+        public_key = get_azampay_public_key(
+            settings.AZAMPAY_PUBLIC_KEY_URL,
+            headers={
+                "Authorization": f"Bearer {token_generation()}",
+            },
+            force_refresh=True,
+        )
+
+        if public_key:
+            is_valid = verify_callback_signature(
+                utility_ref,
+                external_reference,
+                transaction_status,
+                operator,
+                signature,
+                public_key,
+            )
 
     if not is_valid:
-        logger.debug(
-            "[CALLBACK] Checksum mismatch. payload=%s",
-            payload_data,
+
+        logger.warning(
+            "[AZAMPAY CALLBACK] Invalid signature. "
+            "utilityref=%s",
+            utility_ref,
         )
 
         return JsonResponse(
-            {"error": "Invalid checksum."},
+            {"error": "Invalid signature."},
             status=400,
         )
 
-    # ── Extract event & order reference ─────────────────────────────────────
-    event = data.get("event", "").upper()
-
-    order_reference = payload_data.get("orderReference")
-
-    logger.debug(
-        "[CALLBACK] event=%s reference=%s",
-        event,
-        order_reference,
-    )
-
-    if not order_reference:
-        return JsonResponse(
-            {"error": "Missing orderReference."},
-            status=400,
-        )
-
-    # Ignore unrelated events
-    if event not in ("PAYMENT RECEIVED", "PAYMENT FAILED"):
-        logger.debug(
-            "[CALLBACK] Ignoring unhandled event=%s",
-            event,
-        )
-
-        return JsonResponse({"ok": True})
-
-    # ── Process payment safely ───────────────────────────────────────────────
+    # ── Find and lock payment ────────────────────────────────────────────────
     with transaction.atomic():
 
         try:
@@ -560,13 +465,15 @@ def payment_callback(request):
                 Payment.objects
                 .select_for_update()
                 .select_related("order__user")
-                .get(transaction_id=order_reference)
+                .get(transaction_id=utility_ref)
             )
 
         except Payment.DoesNotExist:
-            logger.debug(
-                "[CALLBACK] Payment not found. reference=%s",
-                order_reference,
+
+            logger.warning(
+                "[AZAMPAY CALLBACK] Payment not found. "
+                "utilityref=%s",
+                utility_ref,
             )
 
             return JsonResponse(
@@ -574,27 +481,55 @@ def payment_callback(request):
                 status=404,
             )
 
+        order = payment.order
+
+        # ── Verify amount ────────────────────────────────────────────────────
+        if callback_amount != payment.amount:
+
+            logger.error(
+                "[AZAMPAY CALLBACK] Amount mismatch. "
+                "payment=%s expected=%s received=%s",
+                payment.id,
+                payment.amount,
+                callback_amount,
+            )
+
+            return JsonResponse(
+                {"error": "Payment amount mismatch."},
+                status=400,
+            )
+
         # ── Idempotency ──────────────────────────────────────────────────────
         if payment.status == "paid":
-            logger.debug(
-                "[CALLBACK] Already paid. reference=%s",
-                order_reference,
+
+            logger.info(
+                "[AZAMPAY CALLBACK] Already processed. "
+                "payment=%s utilityref=%s",
+                payment.id,
+                utility_ref,
             )
 
             return JsonResponse({"ok": True})
 
-        order = payment.order
-
-        # ── PAYMENT RECEIVED ─────────────────────────────────────────────────
-        if event == "PAYMENT RECEIVED":
+        # ── Successful payment ───────────────────────────────────────────────
+        if transaction_status.lower() == "success":
 
             payment.status = "paid"
-            payment.save(update_fields=["status"])
+
+            if trans_id:
+                payment.gateway_response = json.dumps(data)
+
+            payment.save(
+                update_fields=[
+                    "status",
+                    "gateway_response",
+                ]
+            )
 
             order.status = "paid"
             order.save(update_fields=["status"])
 
-            # Deduct stock atomically
+            # ── Deduct stock atomically ──────────────────────────────────────
             for item in (
                 order.items
                 .select_related("product")
@@ -608,11 +543,10 @@ def payment_callback(request):
                     stock=F("stock") - item.quantity
                 )
 
-                # Not enough stock
                 if updated == 0:
 
                     logger.error(
-                        "[CALLBACK] Insufficient stock. "
+                        "[AZAMPAY CALLBACK] Insufficient stock. "
                         "product=%s order=%s",
                         item.product_id,
                         order.id,
@@ -622,37 +556,55 @@ def payment_callback(request):
                         item.product.name
                     )
 
-            # Clear user's cart
+            # ── Clear cart ───────────────────────────────────────────────────
             Cart.objects.filter(
                 user=order.user
             ).delete()
 
             logger.info(
-                "[CALLBACK] Order paid. order=%s",
+                "[AZAMPAY CALLBACK] Payment successful. "
+                "order=%s payment=%s",
                 order.id,
+                payment.id,
             )
 
             return JsonResponse({"ok": True})
 
-        # ── PAYMENT FAILED ───────────────────────────────────────────────────
-        if event == "PAYMENT FAILED":
+        # ── Failed payment ───────────────────────────────────────────────────
+        if transaction_status.lower() == "failed":
 
             payment.status = "failed"
-            payment.save(update_fields=["status"])
+            payment.gateway_response = json.dumps(data)
+
+            payment.save(
+                update_fields=[
+                    "status",
+                    "gateway_response",
+                ]
+            )
 
             order.status = "cancelled"
             order.save(update_fields=["status"])
 
             logger.info(
-                "[CALLBACK] Payment failed. order=%s",
+                "[AZAMPAY CALLBACK] Payment failed. "
+                "order=%s payment=%s",
                 order.id,
+                payment.id,
             )
 
-            return JsonResponse({"ok": False})
+            return JsonResponse({"ok": True})
 
-    # Fallback
-    return JsonResponse({"ok": True})
+        # ── Unknown status ────────────────────────────────────────────────────
+        logger.warning(
+            "[AZAMPAY CALLBACK] Unknown transaction status: %s",
+            transaction_status,
+        )
 
+        return JsonResponse(
+            {"error": "Unhandled transaction status."},
+            status=400,
+        )
 
 @login_required
 def order_detail(request, order_id):
@@ -672,6 +624,49 @@ def order_detail(request, order_id):
     return render(request, "orders/order_detail.html", {
         "order": order
     })
+
+
+# CONFIRM ORDER RECEIVED VIEW
+# This view handles the buyer's confirmation that they have received their order.
+# It only accepts POST requests from authenticated users.
+# The view verifies that the order belongs to the logged-in buyer and that
+# the order is currently in "delivered" status before changing it to "received".
+# A database transaction and row lock are used to prevent duplicate or
+# simultaneous confirmation requests from changing the same order incorrectly.
+# AzamPay release will be handled separately after this confirmation step.
+@login_required
+@require_POST
+def confirm_received(request, order_id):
+
+    with transaction.atomic():
+
+        order = get_object_or_404(
+            Order.objects.select_for_update(),
+            id=order_id,
+            user=request.user,
+        )
+
+        if order.status != "delivered":
+            messages.error(
+                request,
+                "This order cannot be confirmed as received."
+            )
+            return redirect(
+                "orders:order_detail",
+                order_id=order.id
+            )
+
+        order.status = "received"
+        order.save(update_fields=["status"])
+
+    messages.success(
+        request,
+        "Order confirmed as received."
+    )
+
+    return redirect(
+        "users:buyer_dashboard"
+    )
 
 
 @seller_onboarding_required
@@ -1244,3 +1239,201 @@ def order_payment_status(request, token):
         # PROCESSING / PENDING → still in flight, leave as-is, frontend keeps polling
 
     return JsonResponse({'status': order.status})
+
+
+from django.http import JsonResponse
+from .utility import generate_paybill_number
+
+
+def generate_billpay_views(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Only POST requests are allowed."
+        }, status=405)
+
+    result = generate_paybill_number()
+
+    if not result["success"]:
+        return JsonResponse({
+            "success": False,
+            "message": "ClickPesa failed to generate the control number.",
+            "clickpesa_response": result["data"]
+        }, status=400)
+
+    data = result["data"]
+
+    return JsonResponse({
+        "success": True,
+        "billPayNumber": data["billPayNumber"]
+    })
+
+def pageView(request):
+    return render(request, 'orders/control_no.html')
+
+from .utility import generate_token
+def token_generation_view (request):
+    if request.method == "POST":
+        token = generate_token()
+
+    return JsonResponse ({
+        "success": True,
+        "token": token
+    }, status=200)
+
+
+
+# AZAMPAY PAYMENT VIEW
+@login_required
+def checkout_azam(request):
+
+    if request.method != "POST":
+        return redirect("orders:cart")
+
+    phone = request.POST.get("phone")
+    # provider = request.POST.get("provider", "")
+
+    phone_number = _normalize_phone(
+        phone or getattr(request.user, "phone_number", None)
+    )
+
+    if not phone_number:
+        messages.error(
+            request,
+            "A valid phone number is required for mobile payment."
+        )
+        return redirect("users:edit_profile")
+
+    with transaction.atomic():
+
+        # 1. Lock cart
+        cart = get_object_or_404(
+            Cart.objects.select_for_update(),
+            user=request.user,
+        )
+
+        items = list(
+            cart.items
+            .select_related("product")
+            .select_for_update()
+        )
+
+        if not items:
+            messages.error(request, "Your cart is empty.")
+            return redirect("orders:cart")
+
+        # 2. Validate stock
+        total = Decimal("0.00")
+
+        for item in items:
+
+            product = item.product
+
+            if not product.is_available:
+                messages.error(
+                    request,
+                    f"'{product.name}' is no longer available."
+                )
+                return redirect("orders:cart")
+
+            if item.quantity > product.stock:
+                messages.error(
+                    request,
+                    f"Only {product.stock} unit(s) of "
+                    f"'{product.name}' in stock."
+                )
+                return redirect("orders:cart")
+
+            total += product.price * item.quantity
+
+        # 3. Create order
+        order = Order.objects.create(
+            user=request.user,
+            total_amount=total,
+            status="pending",
+        )
+
+        # 4. Create order items
+        OrderItem.objects.bulk_create([
+            OrderItem(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price,
+            )
+            for item in items
+        ])
+
+        # 5. Create payment
+        order_reference = generate_order_reference()
+
+        payment = Payment.objects.create(
+            order=order,
+            amount=total,
+            method="mobile_money",
+            status="pending",
+            transaction_id=order_reference
+        )
+
+        # 6. Initiate AzamPay payment
+        from .utility import Payments, token_generation
+        data = {
+            "accountNumber": phone_number,
+            "amount": int(total),
+            "currency": "TZS",
+            "externalId": order_reference,
+            "provider": "Halopesa"
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token_generation()}",
+        }
+
+        print(headers)
+
+        url = "https://checkout.azampay.co.tz/azampay/mno/checkout"
+
+        # Creating payment instance
+        payment_object = Payments(
+            webhook=url,
+            headers=headers,
+            body=data,
+        )
+
+        # Call the request payment method to AzamPay
+        azampay_response = payment_object.make_azam_pesa_post_request()
+
+        if not azampay_response["success"]:
+            transaction.set_rollback(True)
+
+            messages.error(
+                request,
+                azampay_response["message"]
+            )
+
+            return redirect("orders:cart")
+
+        # from main.messaging.service import MessagingClass
+        # url = 'https://messaging-service.co.tz/api/sms/v2/text/single'
+        # headers = {
+        #     'Authorization': 'Bearer cedcce9becad866f59beac1fd5a235bc',
+        #     'Content-Type': 'application/json',
+        #     'Accept': 'application/json'
+        # }
+        # data = {
+        #     "from": "MUST",
+        #     "to": "255612350807",
+        #     "text": f"Umelipa jumla ya {total} Tsh ",
+        #     "flash": 0,
+        #     "reference": "xaefcgt"
+        # }
+
+        # send_sms_instance = MessagingClass(url, headers, data)
+        # send_sms_instance.send_sms()
+        
+    # Payment request was successfully sent
+    return redirect(
+        "orders:order_detail",
+        order_id=order.id
+    )

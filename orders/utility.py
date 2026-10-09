@@ -1,3 +1,184 @@
+from .services import generate_token
+import requests
+from django.conf import settings
+from orders.models import Payment
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+import base64
+from django.core.cache import cache
+from django.http import JsonResponse
+
+# GLOBAL VARIABLES
+url = "https://api.clickpesa.com/third-parties/billpay/create-order-control-number"
+TOKEN_URL = " https://authenticator.azampay.co.tz/AppRegistration/GenerateToken"
+
+AZAMPAY_PUBLIC_KEY_CACHE = "azampay_public_key"
+AZAMPAY_PUBLIC_KEY_CACHE_TTL = 60 * 60 * 24  
+
+# AZAMPAY PAYMENT FLOW
+def token_generation():
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "appName": "Exxabay",
+        "clientId": settings.AZAM_CLIENT_ID,
+        "clientSecret": settings.AZAM_CLIENT_SECRET
+    }
+
+    response = requests.post(
+        TOKEN_URL,
+        headers=headers,
+        json=payload
+    )
+
+    print("TOKEN STATUS:", response.status_code)
+    print("TOKEN HEADERS:", response.headers)
+    print("TOKEN BODY:", response.text)
+
+    response.raise_for_status()
+
+    response_data = response.json()
+
+    access_token = response_data["data"]["accessToken"]
+
+    print("TOKEN RECEIVED:", bool(access_token))
+    print("TOKEN LENGTH:", len(access_token))
+
+    return access_token
+
+
+def fetch_azampay_public_key(url, headers=None):
+    try:
+        response = requests.get(
+            url,
+            headers=headers or {},
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        response_dict = response.json()
+
+        if response_dict.get("success"):
+            public_key = response_dict.get("publicKey")
+
+            if public_key:
+                return public_key
+
+        return None
+
+    except (requests.RequestException, ValueError):
+        return None
+
+
+def get_azampay_public_key(url, headers=None, force_refresh=False):
+    """
+    Get AzamPay public key.
+
+    Normally:
+        Return cached key.
+
+    If force_refresh=True:
+        Fetch a fresh key from AzamPay and update cache.
+    """
+
+    if not force_refresh:
+        cached_key = cache.get(AZAMPAY_PUBLIC_KEY_CACHE)
+
+        if cached_key:
+            return cached_key
+
+    # Cache missing, expired, or force_refresh=True
+    public_key = fetch_azampay_public_key(
+        url,
+        headers
+    )
+
+    if public_key:
+        cache.set(
+            AZAMPAY_PUBLIC_KEY_CACHE,
+            public_key,
+            AZAMPAY_PUBLIC_KEY_CACHE_TTL
+        )
+
+    return public_key
+
+# Verifying callback signature
+def verify_callback_signature(utility_ref: str, external_reference: str,
+                               transaction_status: str, operator_name: str,
+                               signature_b64: str, public_key_pem: str) -> bool:
+    data_to_verify = f"{utility_ref}{external_reference}{transaction_status}{operator_name}".encode("utf-8")
+    signature_bytes = base64.b64decode(signature_b64)
+
+    public_key = serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
+
+    try:
+        public_key.verify(
+            signature_bytes,
+            data_to_verify,
+            padding.PKCS1v15(),
+            hashes.SHA256()
+        )
+        return True
+    except Exception:
+        return False
+
+# Usage:
+# is_valid = verify_callback_signature(
+#     callback["utilityref"],
+#     callback["externalreference"],
+#     callback["transactionstatus"],
+#     callback["operator"],
+#     callback["signature"],
+#     cached_public_key_pem
+# )
+
+
+class Payments():
+    def __init__(self, webhook, headers, body):
+        self.webhook = webhook
+        self.headers = headers
+        self.body = body
+
+    def make_azam_pesa_post_request(self):
+        response = requests.post(
+            self.webhook,
+            headers=self.headers,
+            json=self.body
+        )
+
+        print("STATUS:", response.status_code)
+        print("HEADERS:", response.headers)
+        print("BODY:", response.text)
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            return {
+                "success": False,
+                "message": "AzamPay request failed",
+                "status_code": response.status_code,
+                "body": response.text
+            }
+
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError:
+            return {
+                "success": False,
+                "message": "AzamPay returned a non-JSON response",
+                "status_code": response.status_code,
+                "body": response.text
+            }
+
+
+
+
+# CLICKPESA PAYMENT UTILITIES
+
+# Function to calculate charges before payment and add to the billAmount
 def get_click_pesa_fee(amount):
     if 500 <= amount <= 999:
         return 54
@@ -39,4 +220,46 @@ def get_click_pesa_fee(amount):
         return 7960
 
     return 0
+
+
+def generate_paybill_number(descriptions, price, bill_reference):
+    
+    headers = {
+        "Authorization": "Bearer " + generate_token(),
+        "Content-Type": "application/json",
+    }
+
+    body = {
+        "billDescription": descriptions,
+        "billPaymentMode": "EXACT",
+        "billAmount": price + get_click_pesa_fee(price),
+        "billReference": bill_reference
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=body
+    )
+
+    # DEBUG
+    print("================================")
+    print("CLICKPESA STATUS:", response.status_code)
+    print("CLICKPESA HEADERS:", response.headers)
+    print("CLICKPESA BODY:", repr(response.text))
+    print("================================")
+
+    try:
+        data = response.json()
+    except ValueError:
+        data = {
+            "raw_response": response.text
+        }
+
+    return {
+        "success": response.ok,
+        "status_code": response.status_code,
+        "data": data.get("billPayNumber"),
+    }
+
 

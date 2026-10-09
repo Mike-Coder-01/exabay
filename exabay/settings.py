@@ -39,6 +39,7 @@ ALLOWED_HOSTS = [
     "www.exxabay.co.tz",
     "127.0.0.1",
     "localhost",
+    "c992-196-249-93-122.ngrok-free.app",
 ]
 
 
@@ -84,6 +85,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
 
     "axes",
+    "api",
 ]
 
 
@@ -419,3 +421,11 @@ LOGGING = {
         },
     },
 }
+
+
+# ===================================================
+# AZAMPESA API
+# ===================================================
+
+AZAM_CLIENT_ID = env("AZAM_CLIENT_ID")
+AZAM_CLIENT_SECRET = env("AZAM_CLIENT_SECRET")

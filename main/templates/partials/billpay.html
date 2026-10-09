@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BillPay Control Number</title>
+<style>
+  :root {
+    --color-primary: #1e3a8a;
+    --color-primary-dark: #172554;
+    --color-secondary: #14b8a6;
+    --color-success: #16a34a;
+    --color-warning: #f59e0b;
+    --color-danger: #dc2626;
+    --color-bg: #f5f7fb;
+    --color-surface: #ffffff;
+    --color-text: #111827;
+    --color-muted: #64748b;
+    --color-border: #e2e8f0;
+    --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 12px 28px rgba(15, 23, 42, 0.08);
+    --radius-card: 8px;
+    --radius-pill: 999px;
+    --container: 1180px;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--color-bg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--color-text); }
+
+  .bp-wrap { display: none; max-width:640px; margin:32px auto; padding:0 16px; }
+
+  .bp-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card); box-shadow:var(--shadow-card); overflow:hidden; }
+
+  /* --- Generator --- */
+  .bp-gen { padding:20px 20px 18px; border-bottom:1px solid var(--color-border); }
+  .bp-gen h2 { font-size:16px; margin:0 0 4px; }
+  .bp-gen p.bp-sub { margin:0 0 14px; font-size:13px; color:var(--color-muted); line-height:1.4; }
+  .bp-gen-row { display:flex; gap:8px; }
+  .bp-gen-row input { flex:1; min-width:0; padding:10px 12px; border:1px solid var(--color-border); border-radius:6px; font-size:14px; }
+  .bp-gen-row input:focus { outline:2px solid var(--color-primary); outline-offset:1px; }
+  .bp-btn { background:var(--color-primary); color:#fff; border:none; border-radius:6px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .bp-btn:hover { background:var(--color-primary-dark); }
+  .bp-btn:focus-visible { outline:2px solid var(--color-secondary); outline-offset:2px; }
+
+  .bp-result { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:#eef2ff; border:1px dashed var(--color-primary); border-radius:6px; }
+  .bp-result .bp-num { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px; font-weight:700; letter-spacing:.5px; color:var(--color-muted); }
+  .bp-result.filled .bp-num { color:var(--color-primary-dark); }
+  .bp-result-actions { display:flex; gap:8px; flex:0 0 auto; }
+  .bp-copy { background:transparent; border:1px solid var(--color-primary); color:var(--color-primary); border-radius:var(--radius-pill); padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer; }
+  .bp-copy:hover:not(:disabled) { background:var(--color-primary); color:#fff; }
+  .bp-copy:disabled { opacity:.4; cursor:not-allowed; }
+  .bp-copy.copied { background:var(--color-success); border-color:var(--color-success); color:#fff; }
+
+  /* --- Method tabs --- */
+  .bp-methods { display:flex; gap:6px; padding:12px 12px 0; overflow-x:auto; scrollbar-width:none; }
+  .bp-methods::-webkit-scrollbar { display:none; }
+  .bp-method-btn { flex:0 0 auto; padding:8px 14px; border-radius:var(--radius-pill); border:1px solid var(--color-border); background:var(--color-bg); font-size:13px; font-weight:600; color:var(--color-muted); cursor:pointer; }
+  .bp-method-btn.active { background:var(--color-primary); border-color:var(--color-primary); color:#fff; }
+
+  /* --- Channel sub-tabs --- */
+  .bp-channels { display:flex; gap:4px; padding:14px 20px 0; flex-wrap:wrap; }
+  .bp-chan-btn { padding:5px 10px; font-size:12px; border-radius:6px; border:1px solid var(--color-border); background:#fff; color:var(--color-text); cursor:pointer; }
+  .bp-chan-btn.active { background:var(--color-secondary); border-color:var(--color-secondary); color:#fff; }
+
+  /* --- Steps --- */
+  .bp-steps { padding:14px 20px 20px; }
+  .bp-steps ol { list-style:none; margin:0; padding:0; counter-reset:bp-step; }
+  .bp-steps li { counter-increment:bp-step; display:flex; gap:10px; padding:6px 0; font-size:13.5px; line-height:1.45; }
+  .bp-steps li::before { content:counter(bp-step); flex:0 0 20px; height:20px; border-radius:50%; background:var(--color-primary); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .bp-steps code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .bp-cn { background:#fff7ed; color:var(--color-warning); border:1px solid var(--color-warning); border-radius:4px; padding:0 5px; font-weight:700; font-family:ui-monospace,monospace; }
+  .bp-cn.filled { background:#ecfdf5; color:var(--color-success); border-color:var(--color-success); }
+
+  .bp-foot { padding:0 20px 18px; font-size:12px; color:var(--color-muted); }
+
+  @media (max-width:480px){
+    .bp-result{ flex-direction:column; align-items:stretch; }
+    .bp-result-actions{ justify-content:stretch; }
+    .bp-result-actions .bp-btn{ flex:1; }
+    .bp-result-actions .bp-copy{ flex:1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bp-wrap" id="billPayBlockId">
+  <div class="bp-card">
+
+    <div class="bp-gen">
+      {% csrf_token %}
+      <h2>Get your Control Number</h2>
+      <p class="bp-sub">Generate your BillPay control number, then follow the steps for your preferred payment method below.</p>
+      <div class="bp-result show" id="bpResult">
+        <span class="bp-num" id="bpNum">Your control number will appear here</span>
+        <div class="bp-result-actions">
+          <button class="bp-copy" id="bpCopyBtn" disabled>Copy</button>
+          <button class="bp-btn" id="bpGenBtn">Generate</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bp-methods" id="bpMethods" role="tablist" aria-label="Payment method"></div>
+    <div class="bp-channels" id="bpChannels" role="tablist" aria-label="Payment channel"></div>
+    <div class="bp-steps" id="bpSteps"></div>
+    <p class="bp-foot">Namba ya Kampuni/Wakala: <strong>CLICKPESA (889999)</strong> · Airtel Money: chagua kampuni <strong>47</strong>.</p>
+
+  </div>
+</div>
+
+<script>
+const CN_PLACEHOLDER = "[Control Number]";
+
+const DATA = {
+  "Airtel Money": {
+    "USSD": [
+      "Piga <code>*150*60#</code>",
+      "Chagua <b>5</b> — Lipia Bili",
+      "Chagua <b>2</b> — Chagua Kampuni",
+      "Chagua <b>7</b> — Chagua Kampuni",
+      "Weka Namba — <b>47</b>",
+      `Ingiza namba ya Kumbukumbu — ${CN_PLACEHOLDER}`,
+      "Weka Kiasi",
+      "Chagua <b>1</b> (Ndio) kuthibitisha",
+      "Weka PIN"
+    ],
+    "App": [
+      "Fungua Airtel Money App",
+      "Bonyeza <b>Lipa Bili</b>",
+      "Bonyeza <b>Ingiza jina la biashara au namba</b>",
+      "Andika “clickpesa”",
+      "Chagua <b>CLICKPESA TANZANIA</b>",
+      `Weka Kumbukumbu ya Malipo — ${CN_PLACEHOLDER}`,
+      "Weka Kiasi",
+      "Bonyeza Endelea",
+      "Weka Namba ya Siri"
+    ]
+  },
+  "Mixx By Yas": {
+    "USSD": [
+      "Piga <code>*150*01#</code>",
+      "Chagua <b>4</b> — Lipia Bili",
+      "Chagua <b>3</b> — Ingiza Namba ya Kampuni",
+      "Ingiza Namba ya Kampuni — <b>889999</b>",
+      `Weka Kumbukumbu ya Malipo — ${CN_PLACEHOLDER}`,
+      "Ingiza Kiasi",
+      "Ingiza Namba ya Siri"
+    ],
+    "App": [
+      "Fungua Mixx By Yas App",
+      "Bonyeza <b>Kulipa Bili</b>",
+      "Andika “clickpesa” kwenye Tafuta",
+      "Chagua <b>ClickPesa-889999</b> kwenye listi",
+      `Weka Namba ya kumbukumbu — ${CN_PLACEHOLDER}`,
+      "Weka kiasi",
+      "Bonyeza Endelea",
+      "Ingiza Namba ya Siri",
+      "Bonyeza Thibitisha"
+    ]
+  },
+  "Halopesa": {
+    "USSD": [
+      "Piga <code>*150*88#</code>",
+      "Chagua <b>4</b> — Lipia Bili",
+      "Chagua <b>3</b> — Ingiza Namba ya Kampuni",
+      "Ingiza Namba ya Kampuni — <b>889999</b>",
+      `Weka Kumbukumbu ya Malipo — ${CN_PLACEHOLDER}`,
+      "Ingiza Kiasi",
+      "Ingiza Namba ya Siri",
+      "Chagua <b>1</b> (Ndio) kuthibitisha"
+    ],
+    "App": [
+      "Fungua Halopesa App",
+      "Bonyeza <b>Lipia Bili</b>",
+      "Bonyeza Chagua Namba ya biashara",
+      "Andika “889999” kwenye utafutaji",
+      "Bonyeza Endelea",
+      `Weka kumbukumbu namba — ${CN_PLACEHOLDER}`,
+      "Weka kiasi",
+      "Bonyeza Endelea",
+      "Ingiza Namba ya Siri",
+      "Ingiza OTP"
+    ]
+  },
+  "CRDB": {
+    "SimBanking USSD": [
+      "Piga <code>*150*03#</code>",
+      "Chagua <b>1</b> — SimBanking",
+      "Weka Namba ya Siri",
+      "Chagua <b>4</b> — Pay Bills",
+      "Chagua <b>6</b> — Taasisi",
+      "Chagua <b>7</b> — Nyinginezo",
+      "Chagua N — Next (mara mbili)",
+      "Chagua <b>CLICKPESA</b>",
+      `Weka Namba ya Malipo — ${CN_PLACEHOLDER}`,
+      "Ingiza Kiasi",
+      "Thibitisha Malipo"
+    ],
+    "SimBanking App": [
+      "Fungua CRDB SimBanking App",
+      "Weka Namba ya Siri",
+      "Bonyeza <b>Malipo Zaidi</b>",
+      "Chagua/Tafuta <b>CLICKPESA</b>",
+      `Weka Namba ya Malipo — ${CN_PLACEHOLDER}`,
+      "Bonyeza PATA TAARIFA",
+      "Chagua Akaunti, Weka Kiasi",
+      "Bonyeza ENDELEA, kisha THIBITISHA"
+    ],
+    "Internet Banking": [
+      "Login kwenye CRDB Internet Banking",
+      "Chagua <b>Payment → Bill Payment</b>",
+      "Company Category — Others",
+      "Company Name — <b>CLICKPESA</b>",
+      `Enter Reference Number — ${CN_PLACEHOLDER}`
+    ],
+    "Wakala": [
+      "Tembelea wakala wa CRDB aliye karibu nawe",
+      "Omba kulipia bili kwa namba ya malipo",
+      "Toa jina la taasisi — <b>CLICKPESA</b>",
+      `Toa namba ya malipo — ${CN_PLACEHOLDER}`,
+      "Toa kiasi"
+    ],
+    "Branch (OTC)": [
+      "Tembelea tawi la CRDB lililo karibu nawe",
+      "Omba kulipia bili kwa namba ya malipo",
+      "Toa jina la taasisi — <b>CLICKPESA</b>",
+      `Toa namba ya malipo — ${CN_PLACEHOLDER}`,
+      "Toa kiasi"
+    ]
+  }
+};
+
+let currentMethod = "Airtel Money";
+let currentChannel = "USSD";
+let controlNumber = null;
+
+const methodsEl = document.getElementById('bpMethods');
+const channelsEl = document.getElementById('bpChannels');
+const stepsEl = document.getElementById('bpSteps');
+
+function renderMethods(){
+  methodsEl.innerHTML = Object.keys(DATA).map(m =>
+    `<button class="bp-method-btn ${m===currentMethod?'active':''}" data-method="${m}">${m}</button>`
+  ).join('');
+}
+
+function renderChannels(){
+  const channels = Object.keys(DATA[currentMethod]);
+  if(!channels.includes(currentChannel)) currentChannel = channels[0];
+  channelsEl.innerHTML = channels.map(c =>
+    `<button class="bp-chan-btn ${c===currentChannel?'active':''}" data-channel="${c}">${c}</button>`
+  ).join('');
+}
+
+function renderSteps(){
+  const steps = DATA[currentMethod][currentChannel];
+  stepsEl.innerHTML = '<ol>' + steps.map(s => {
+    const filled = s.replace(CN_PLACEHOLDER,
+      controlNumber ? `<span class="bp-cn filled">${controlNumber}</span>` : `<span class="bp-cn">your control number</span>`);
+    return `<li>${filled}</li>`;
+  }).join('') + '</ol>';
+}
+
+function renderAll(){ renderMethods(); renderChannels(); renderSteps(); }
+
+methodsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.bp-method-btn');
+  if(!btn) return;
+  currentMethod = btn.dataset.method;
+  currentChannel = Object.keys(DATA[currentMethod])[0];
+  renderAll();
+});
+
+channelsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.bp-chan-btn');
+  if(!btn) return;
+  currentChannel = btn.dataset.channel;
+  renderChannels();
+  renderSteps();
+});
+
+//API call to backend 
+document.getElementById('bpGenBtn').addEventListener('click', async () => {
+  const res = await fetch('/orders/checkout/', {
+    method:'POST',
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
+    },
+    body: JSON.stringify({"billPayCheck": true})
+  });
+  controlNumber = (await res.json()).controlNumber;
+
+  // controlNumber = String(Math.floor(100000 + Math.random()*899999));
+  document.getElementById('bpNum').textContent = controlNumber;
+  document.getElementById('bpResult').classList.add('filled');
+  document.getElementById('bpCopyBtn').disabled = false;
+  renderSteps();
+});
+
+document.getElementById('bpCopyBtn').addEventListener('click', async (e) => {
+  if(!controlNumber) return;
+  await navigator.clipboard.writeText(controlNumber);
+  e.target.textContent = 'Copied';
+  e.target.classList.add('copied');
+  setTimeout(() => { e.target.textContent = 'Copy'; e.target.classList.remove('copied'); }, 1500);
+});
+
+renderAll();
+</script>
+</body>
+</html>

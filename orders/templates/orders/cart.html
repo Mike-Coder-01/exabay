@@ -135,8 +135,13 @@
             <span data-i18n="Amount payable">Amount payable</span>
             <strong>Tsh<span data-amount-payable>0.00</span></strong>
           </div><br> -->
+          <h3>Choose payment method</h3>
+          <div class="payment-method-block">
+            <div class="phone_no_payment toggle-btn" id="PhoneNumberPaymentId"><b>Pay by Phone number</b></div>
+            <div class="billpay toggle-btn" id="BillPayId"><b>Pay by BillPay</b></div>
+          </div> <br>
 
-          <form method="post" action="{% url 'orders:checkout' %}">
+          <form method="post" action="{% url 'orders:checkout' %}" id="phonePaymentId">
             {% csrf_token %}
             <label class="auth-field">
               <span data-i18n="PaymentPhoneNumber">Payment phone number</span>
@@ -146,6 +151,8 @@
               Proceed to Checkout
             </button>
           </form>
+
+          {% include 'partials/billpay.html' %}
 
           <div class="mobile-money-note">
             <strong data-i18n="mobileMoneySupported">Mobile money supported</strong>
@@ -167,5 +174,31 @@
   {% include 'partials/footer.html' %}
   
   <script src="{% static 'js/scripts.js' %}"></script>
+
+<script>
+  const button_1 = document.getElementById("PhoneNumberPaymentId");
+  const button_2 = document.getElementById("BillPayId");
+
+  
+  button_1.addEventListener('click', () => {
+    if (document.getElementById("billPayBlockId").style.display == "block") {
+      document.getElementById("billPayBlockId").style.display = "none"
+      button_2.style.borderColor = "#e2e8f0"
+    }
+
+    document.getElementById("phonePaymentId").style.display = "block"
+    button_1.style.borderColor = "blue"
+  })
+
+  button_2.addEventListener('click', () => {
+    if (document.getElementById("phonePaymentId").style.display == "block") {
+      document.getElementById("phonePaymentId").style.display = "none"
+      button_1.style.borderColor = "#e2e8f0"
+    }
+
+    document.getElementById("billPayBlockId").style.display = "block"
+    button_2.style.borderColor = "blue"
+  })
+</script>
 
 {% endblock %}

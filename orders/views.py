@@ -303,138 +303,145 @@ def payment_status(request, order_id):
 @require_POST
 def payment_callback(request):
     """
-    Handles AzamPay MNO Checkout callbacks.
-
-    Flow:
-        1. Parse AzamPay callback
-        2. Verify AzamPay RSA signature
-        3. Find the Exxabay payment using utilityref
-        4. Verify the payment amount
-        5. Lock the payment to prevent duplicate processing
-        6. Mark payment/order as paid or failed
-        7. Deduct stock only once after successful payment
-        8. Clear the user's cart
+    AzamPay callback with detailed diagnostic logging.
     """
 
-    # ── Parse JSON body ──────────────────────────────────────────────────────
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        logger.warning("[AZAMPAY CALLBACK] Invalid JSON")
-
-        return JsonResponse(
-            {"error": "Invalid JSON."},
-            status=400,
-        )
-
     logger.info(
-        "[AZAMPAY CALLBACK] Received callback. "
-        "status=%s utilityref=%s transid=%s",
-        data.get("transactionstatus"),
-        data.get("utilityref"),
-        data.get("transid"),
+        "[AZAMPAY CALLBACK] ===== CALLBACK STARTED ====="
     )
 
-    # ── Extract AzamPay fields ───────────────────────────────────────────────
-    transaction_status = data.get("transactionstatus")
-    utility_ref = data.get("utilityref")
-    external_reference = data.get("externalreference")
-    operator = data.get("operator")
-    amount = data.get("amount")
-    trans_id = data.get("transid")
-    signature = data.get("signature")
-
-    # ── Validate required fields ─────────────────────────────────────────────
-    required_fields = {
-        "transactionstatus": transaction_status,
-        "utilityref": utility_ref,
-        "externalreference": external_reference,
-        "operator": operator,
-        "amount": amount,
-        "signature": signature,
-    }
-
-    missing_fields = [
-        field
-        for field, value in required_fields.items()
-        if value in (None, "")
-    ]
-
-    if missing_fields:
-        logger.warning(
-            "[AZAMPAY CALLBACK] Missing fields: %s",
-            missing_fields,
-        )
-
-        return JsonResponse(
-            {
-                "error": "Missing required fields.",
-                "fields": missing_fields,
-            },
-            status=400,
-        )
-
-    # ── Convert callback amount ──────────────────────────────────────────────
     try:
-        callback_amount = Decimal(str(amount))
+        # 1. Parse callback JSON
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            logger.warning(
+                "[AZAMPAY CALLBACK] Invalid JSON body"
+            )
+            return JsonResponse(
+                {"error": "Invalid JSON."}, status=400
+            )
 
-    except (InvalidOperation, TypeError, ValueError):
-        logger.warning(
-            "[AZAMPAY CALLBACK] Invalid amount: %s",
-            amount,
+        if not isinstance(data, dict):
+            logger.warning(
+                "[AZAMPAY CALLBACK] JSON body is not an object"
+            )
+            return JsonResponse(
+                {"error": "Invalid callback format."}, status=400
+            )
+
+        logger.info(
+            "[AZAMPAY CALLBACK] JSON parsed successfully"
         )
 
-        return JsonResponse(
-            {"error": "Invalid amount."},
-            status=400,
+        transaction_status = data.get("transactionstatus")
+        utility_ref = data.get("utilityref")
+        external_reference = data.get("externalreference")
+        operator = data.get("operator")
+        amount = data.get("amount")
+        trans_id = data.get("transid")
+        signature = data.get("signature")
+
+        logger.info(
+            "[AZAMPAY CALLBACK] Fields received: "
+            "status=%s utilityref=%s transid=%s operator=%s",
+            transaction_status,
+            utility_ref,
+            trans_id,
+            operator,
         )
 
-    # ── Get AzamPay public key ───────────────────────────────────────────────
-    public_key = get_azampay_public_key(
-        settings.AZAMPAY_PUBLIC_KEY_URL,
-        headers={
-            "Authorization": f"Bearer {token_generation()}",
-        },
-    )
+        # 2. Validate required fields
+        required_fields = {
+            "transactionstatus": transaction_status,
+            "utilityref": utility_ref,
+            "externalreference": external_reference,
+            "operator": operator,
+            "amount": amount,
+            "signature": signature,
+        }
 
-    if not public_key:
-        logger.error(
-            "[AZAMPAY CALLBACK] Could not obtain AzamPay public key."
+        missing_fields = [
+            field for field, value in required_fields.items()
+            if value is None or value == ""
+        ]
+
+        if missing_fields:
+            logger.warning(
+                "[AZAMPAY CALLBACK] Missing fields: %s",
+                missing_fields,
+            )
+            return JsonResponse(
+                {
+                    "error": "Missing required fields.",
+                    "fields": missing_fields,
+                },
+                status=400,
+            )
+
+        # 3. Convert amount
+        try:
+            callback_amount = Decimal(str(amount))
+        except (InvalidOperation, TypeError, ValueError):
+            logger.exception(
+                "[AZAMPAY CALLBACK] Amount conversion failed"
+            )
+            return JsonResponse(
+                {"error": "Invalid amount."}, status=400
+            )
+
+        if not callback_amount.is_finite() or callback_amount <= 0:
+            logger.warning(
+                "[AZAMPAY CALLBACK] Invalid numeric amount"
+            )
+            return JsonResponse(
+                {"error": "Invalid amount."}, status=400
+            )
+
+        # 4. Obtain AzamPay public key
+        logger.info(
+            "[AZAMPAY CALLBACK] STEP 1: Fetching public key"
         )
 
-        return JsonResponse(
-            {"error": "Unable to verify callback."},
-            status=500,
+        try:
+            auth_token = token_generation()
+
+            logger.info(
+                "[AZAMPAY CALLBACK] Token generation completed"
+            )
+
+            public_key = get_azampay_public_key(
+                settings.AZAMPAY_PUBLIC_KEY_URL,
+                headers={
+                    "Authorization": f"Bearer {auth_token}",
+                },
+            )
+
+        except Exception:
+            logger.exception(
+                "[AZAMPAY CALLBACK] FAILED at public-key/token retrieval"
+            )
+            raise
+
+        if not public_key:
+            logger.error(
+                "[AZAMPAY CALLBACK] Public key is empty"
+            )
+            return JsonResponse(
+                {"error": "Unable to verify callback."},
+                status=500,
+            )
+
+        logger.info(
+            "[AZAMPAY CALLBACK] Public key retrieved successfully"
         )
 
-    # ── Verify AzamPay signature ─────────────────────────────────────────────
-    is_valid = verify_callback_signature(
-        utility_ref,
-        external_reference,
-        transaction_status,
-        operator,
-        signature,
-        public_key,
-    )
-
-    # If verification fails, refresh the public key once and retry
-    if not is_valid:
-
-        logger.warning(
-            "[AZAMPAY CALLBACK] Signature verification failed. "
-            "Refreshing public key."
+        # 5. Verify callback signature
+        logger.info(
+            "[AZAMPAY CALLBACK] STEP 2: Verifying signature"
         )
 
-        public_key = get_azampay_public_key(
-            settings.AZAMPAY_PUBLIC_KEY_URL,
-            headers={
-                "Authorization": f"Bearer {token_generation()}",
-            },
-            force_refresh=True,
-        )
-
-        if public_key:
+        try:
             is_valid = verify_callback_signature(
                 utility_ref,
                 external_reference,
@@ -444,166 +451,208 @@ def payment_callback(request):
                 public_key,
             )
 
-    if not is_valid:
+            if not is_valid:
+                logger.warning(
+                    "[AZAMPAY CALLBACK] First signature check failed; "
+                    "refreshing public key"
+                )
 
-        logger.warning(
-            "[AZAMPAY CALLBACK] Invalid signature. "
-            "utilityref=%s",
-            utility_ref,
-        )
+                public_key = get_azampay_public_key(
+                    settings.AZAMPAY_PUBLIC_KEY_URL,
+                    headers={
+                        "Authorization": (
+                            f"Bearer {token_generation()}"
+                        ),
+                    },
+                    force_refresh=True,
+                )
 
-        return JsonResponse(
-            {"error": "Invalid signature."},
-            status=400,
-        )
+                if public_key:
+                    is_valid = verify_callback_signature(
+                        utility_ref,
+                        external_reference,
+                        transaction_status,
+                        operator,
+                        signature,
+                        public_key,
+                    )
 
-    # ── Find and lock payment ────────────────────────────────────────────────
-    with transaction.atomic():
-
-        try:
-            payment = (
-                Payment.objects
-                .select_for_update()
-                .select_related("order__user")
-                .get(transaction_id=utility_ref)
+        except Exception:
+            logger.exception(
+                "[AZAMPAY CALLBACK] FAILED during signature verification"
             )
+            raise
 
-        except Payment.DoesNotExist:
-
+        if not is_valid:
             logger.warning(
-                "[AZAMPAY CALLBACK] Payment not found. "
+                "[AZAMPAY CALLBACK] Signature invalid; "
                 "utilityref=%s",
                 utility_ref,
             )
-
             return JsonResponse(
-                {"error": "Payment not found."},
-                status=404,
+                {"error": "Invalid signature."}, status=400
             )
 
-        order = payment.order
+        logger.info(
+            "[AZAMPAY CALLBACK] Signature verified successfully"
+        )
 
-        # ── Verify amount ────────────────────────────────────────────────────
-        if callback_amount != payment.amount:
+        # 6. Find payment and process within a transaction
+        logger.info(
+            "[AZAMPAY CALLBACK] STEP 3: Looking up payment"
+        )
 
-            logger.error(
-                "[AZAMPAY CALLBACK] Amount mismatch. "
-                "payment=%s expected=%s received=%s",
+        with transaction.atomic():
+            try:
+                payment = (
+                    Payment.objects
+                    .select_for_update()
+                    .select_related("order__user")
+                    .get(transaction_id=utility_ref)
+                )
+
+            except Payment.DoesNotExist:
+                logger.warning(
+                    "[AZAMPAY CALLBACK] Payment not found: %s",
+                    utility_ref,
+                )
+                return JsonResponse(
+                    {"error": "Payment not found."}, status=404
+                )
+
+            order = payment.order
+
+            logger.info(
+                "[AZAMPAY CALLBACK] Payment found: "
+                "payment_id=%s order_id=%s",
                 payment.id,
-                payment.amount,
-                callback_amount,
+                order.id,
             )
 
+            # 7. Verify amount
+            if callback_amount != payment.amount:
+                logger.error(
+                    "[AZAMPAY CALLBACK] AMOUNT MISMATCH: "
+                    "payment_id=%s expected=%s received=%s",
+                    payment.id,
+                    payment.amount,
+                    callback_amount,
+                )
+                return JsonResponse(
+                    {"error": "Payment amount mismatch."},
+                    status=400,
+                )
+
+            # 8. Prevent duplicate processing
+            if payment.status == "paid":
+                logger.info(
+                    "[AZAMPAY CALLBACK] Already processed: %s",
+                    payment.id,
+                )
+                return JsonResponse({"ok": True})
+
+            status = transaction_status.strip().lower()
+
+            # 9. Successful payment
+            if status == "success":
+                logger.info(
+                    "[AZAMPAY CALLBACK] STEP 4: Processing success"
+                )
+
+                # Deduct stock before marking the payment as paid.
+                # Any raised exception rolls back the database transaction.
+                for item in (
+                    order.items
+                    .select_related("product")
+                    .select_for_update()
+                ):
+                    updated = Product.objects.filter(
+                        pk=item.product_id,
+                        stock__gte=item.quantity,
+                    ).update(
+                        stock=F("stock") - item.quantity
+                    )
+
+                    if updated == 0:
+                        logger.error(
+                            "[AZAMPAY CALLBACK] INSUFFICIENT STOCK: "
+                            "product_id=%s order_id=%s quantity=%s",
+                            item.product_id,
+                            order.id,
+                            item.quantity,
+                        )
+                        raise InsufficientStockError(
+                            item.product.name
+                        )
+
+                payment.status = "paid"
+                payment.gateway_response = json.dumps(data)
+                payment.save(
+                    update_fields=["status", "gateway_response"]
+                )
+
+                order.status = "paid"
+                order.save(update_fields=["status"])
+
+                Cart.objects.filter(user=order.user).delete()
+
+                logger.info(
+                    "[AZAMPAY CALLBACK] SUCCESS: "
+                    "order_id=%s payment_id=%s transid=%s",
+                    order.id,
+                    payment.id,
+                    trans_id,
+                )
+
+                return JsonResponse({"ok": True})
+
+            # 10. Failed payment
+            if status == "failed":
+                logger.info(
+                    "[AZAMPAY CALLBACK] Processing failed payment"
+                )
+
+                payment.status = "failed"
+                payment.gateway_response = json.dumps(data)
+                payment.save(
+                    update_fields=["status", "gateway_response"]
+                )
+
+                order.status = "cancelled"
+                order.save(update_fields=["status"])
+
+                logger.info(
+                    "[AZAMPAY CALLBACK] Payment marked failed: "
+                    "order_id=%s payment_id=%s",
+                    order.id,
+                    payment.id,
+                )
+
+                return JsonResponse({"ok": True})
+
+            logger.warning(
+                "[AZAMPAY CALLBACK] Unknown transaction status: %s",
+                transaction_status,
+            )
             return JsonResponse(
-                {"error": "Payment amount mismatch."},
+                {"error": "Unhandled transaction status."},
                 status=400,
             )
 
-        # ── Idempotency ──────────────────────────────────────────────────────
-        if payment.status == "paid":
-
-            logger.info(
-                "[AZAMPAY CALLBACK] Already processed. "
-                "payment=%s utilityref=%s",
-                payment.id,
-                utility_ref,
-            )
-
-            return JsonResponse({"ok": True})
-
-        # ── Successful payment ───────────────────────────────────────────────
-        if transaction_status.lower() == "success":
-
-            payment.status = "paid"
-
-            if trans_id:
-                payment.gateway_response = json.dumps(data)
-
-            payment.save(
-                update_fields=[
-                    "status",
-                    "gateway_response",
-                ]
-            )
-
-            order.status = "paid"
-            order.save(update_fields=["status"])
-
-            # ── Deduct stock atomically ──────────────────────────────────────
-            for item in (
-                order.items
-                .select_related("product")
-                .select_for_update()
-            ):
-
-                updated = Product.objects.filter(
-                    pk=item.product_id,
-                    stock__gte=item.quantity,
-                ).update(
-                    stock=F("stock") - item.quantity
-                )
-
-                if updated == 0:
-
-                    logger.error(
-                        "[AZAMPAY CALLBACK] Insufficient stock. "
-                        "product=%s order=%s",
-                        item.product_id,
-                        order.id,
-                    )
-
-                    raise InsufficientStockError(
-                        item.product.name
-                    )
-
-            # ── Clear cart ───────────────────────────────────────────────────
-            Cart.objects.filter(
-                user=order.user
-            ).delete()
-
-            logger.info(
-                "[AZAMPAY CALLBACK] Payment successful. "
-                "order=%s payment=%s",
-                order.id,
-                payment.id,
-            )
-
-            return JsonResponse({"ok": True})
-
-        # ── Failed payment ───────────────────────────────────────────────────
-        if transaction_status.lower() == "failed":
-
-            payment.status = "failed"
-            payment.gateway_response = json.dumps(data)
-
-            payment.save(
-                update_fields=[
-                    "status",
-                    "gateway_response",
-                ]
-            )
-
-            order.status = "cancelled"
-            order.save(update_fields=["status"])
-
-            logger.info(
-                "[AZAMPAY CALLBACK] Payment failed. "
-                "order=%s payment=%s",
-                order.id,
-                payment.id,
-            )
-
-            return JsonResponse({"ok": True})
-
-        # ── Unknown status ────────────────────────────────────────────────────
-        logger.warning(
-            "[AZAMPAY CALLBACK] Unknown transaction status: %s",
-            transaction_status,
+    except Exception:
+        # Prints the exception type, message, and traceback.
+        # Do not return the exception details to the payment gateway.
+        logger.exception(
+            "[AZAMPAY CALLBACK] UNHANDLED EXCEPTION — HTTP 500"
+        )
+        return JsonResponse(
+            {"error": "Internal callback processing error."},
+            status=500,
         )
 
-        return JsonResponse(
-            {"error": "Unhandled transaction status."},
-            status=400,
+    finally:
+        logger.info(
+            "[AZAMPAY CALLBACK] ===== CALLBACK FINISHED ====="
         )
 
 @login_required

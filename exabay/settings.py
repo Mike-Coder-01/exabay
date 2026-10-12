@@ -429,3 +429,7 @@ LOGGING = {
 
 AZAM_CLIENT_ID = env("AZAM_CLIENT_ID")
 AZAM_CLIENT_SECRET = env("AZAM_CLIENT_SECRET")
+
+AZAMPAY_PUBLIC_KEY_URL = (
+    "https://checkout.azampay.co.tz/azampay/v1/public-key?format=Pem"
+)

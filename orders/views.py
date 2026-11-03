@@ -1,8 +1,8 @@
-from decimal import Decimal
 import requests
 import uuid
 import logging
 import json
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -22,13 +22,9 @@ from users.models import SellerProfile
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
-
-from users.decorators import seller_onboarding_required
-
 from decimal import Decimal, InvalidOperation
 from django.urls import reverse
-
-logger = logging.getLogger(__name__)
+from orders.models import SellerFulfillment
 from .services import (
     generate_order_reference,
     generate_token,
@@ -39,8 +35,29 @@ from .services import (
 )
 from orders.utility import generate_paybill_number, get_azampay_public_key, token_generation,verify_callback_signature
 
-logger = logging.getLogger(__name__)  
-# __name__ will be 'orders.views' — covered by 'orders' logger above
+logger = logging.getLogger(__name__)
+
+
+import logging
+from decimal import Decimal
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import F
+from django.shortcuts import redirect, get_object_or_404
+
+from .models import (
+    Cart,
+    Order,
+    OrderItem,
+    Payment,
+    SellerFulfillment,
+)
+from products.models import Product
+from .utility import Payments, token_generation
+
+logger = logging.getLogger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -59,6 +76,8 @@ def _normalize_phone(raw):
         return phone[1:]
     if phone.startswith("0"):
         return "255" + phone[1:]
+    if phone.startswith("1"):
+        return phone
     return phone
 
 
@@ -84,6 +103,7 @@ class InsufficientStockError(Exception):
 
 def orderView(request):
     return render(request, "orders/orders.html")
+
 
 @login_required
 def cart_view(request):
@@ -206,6 +226,9 @@ def remove_cart_item(request, item_id):
     })
 
 
+# ============================================================================
+# THIS BLOCK TO BE DELETED
+# ============================================================================
 @login_required
 def payment_status(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -297,6 +320,10 @@ def payment_status(request, order_id):
         "order_status": order.status,
         "message":      "Waiting for payment confirmation...",
     })
+
+# =======================================================================================
+# END OF BLOCK TO BE DELETED
+# =======================================================================================
 
 
 @csrf_exempt
@@ -675,128 +702,348 @@ def order_detail(request, order_id):
     })
 
 
-# CONFIRM ORDER RECEIVED VIEW
-# This view handles the buyer's confirmation that they have received their order.
-# It only accepts POST requests from authenticated users.
-# The view verifies that the order belongs to the logged-in buyer and that
-# the order is currently in "delivered" status before changing it to "received".
-# A database transaction and row lock are used to prevent duplicate or
-# simultaneous confirmation requests from changing the same order incorrectly.
-# AzamPay release will be handled separately after this confirmation step.
+
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
+
+from orders.models import SellerFulfillment
+
+
 @login_required
 @require_POST
-def confirm_received(request, order_id):
+def confirm_received(request, fulfillment_id):
 
     with transaction.atomic():
 
-        order = get_object_or_404(
-            Order.objects.select_for_update(),
-            id=order_id,
-            user=request.user,
+        # 1. Lock the seller's fulfillment
+        fulfillment = get_object_or_404(
+            SellerFulfillment.objects
+            .select_for_update()
+            .select_related("order", "seller"),
+            pk=fulfillment_id,
+            order__user=request.user,
         )
 
-        if order.status != "delivered":
+        # 2. Confirm receipt using the model method
+        try:
+            fulfillment.confirm_received()
+
+        except ValidationError as error:
             messages.error(
                 request,
-                "This order cannot be confirmed as received."
+                "; ".join(error.messages),
             )
+
             return redirect(
                 "orders:order_detail",
-                order_id=order.id
+                order_id=fulfillment.order_id,
             )
 
-        order.status = "received"
-        order.save(update_fields=["status"])
+        order_id = fulfillment.order_id
 
+    # 3. Confirmation saved successfully
     messages.success(
         request,
-        "Order confirmed as received."
+        "You have confirmed receipt of this seller's "
+        "products successfully.",
     )
 
     return redirect(
-        "users:buyer_dashboard"
+        "orders:order_detail",
+        order_id=order_id,
     )
 
+
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.views.decorators.http import require_POST
+from orders.models import SellerFulfillment
+from orders.models import (
+    SellerFulfillment,
+    FulfillmentDispute,
+)
+from control_panel.models import SellerPayout
 
 @seller_onboarding_required
-def seller_orders(request):
-    seller = request.user.sellerprofile
-    status = request.GET.get("status", "all")
+@require_POST
+def mark_order_shipped(request, fulfillment_id):
 
-    line_total = ExpressionWrapper(
-        F("quantity") * F("price"),
-        output_field=DecimalField(max_digits=12, decimal_places=2),
-    )
+    with transaction.atomic():
 
-    seller_items = (
-        OrderItem.objects
-        .filter(product__seller=seller)
-        .select_related(
-            "order",
-            "order__user",
-            "product",
-            "product__category",
-            "product__seller",
+        fulfillment = get_object_or_404(
+            SellerFulfillment.objects
+            .select_for_update()
+            .select_related("order", "seller"),
+            pk=fulfillment_id,
+            seller__user=request.user,
         )
-        .prefetch_related("product__images")
-        .annotate(line_total=line_total)
-        .order_by("-order_id", "-id")
+
+        try:
+            fulfillment.mark_shipped()
+
+        except ValidationError as error:
+            messages.error(
+                request,
+                "; ".join(error.messages),
+            )
+            return redirect("orders:seller_orders")
+
+    messages.success(
+        request,
+        "Order marked as shipped successfully. "
+        "The 60-hour payout countdown has started.",
     )
 
-    if status != "all":
-        seller_items = seller_items.filter(order__status=status)
+    return redirect("orders:seller_orders")
 
-    base_items = OrderItem.objects.filter(product__seller=seller)
 
-    paid_statuses = ["paid", "processing"]
-    pending_statuses = ["pending", "paid", "processing"]
-    completed_statuses = ["completed"]
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
 
-    summary = base_items.aggregate(
-        total_revenue=Sum(line_total),
-        total_units=Sum("quantity"),
-        total_orders=Count("order", distinct=True),
-        pending_orders=Count(
+from orders.models import (
+    SellerFulfillment,
+    FulfillmentDispute,
+)
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def report_fulfillment_problem(request, fulfillment_id):
+
+    # --------------------------------------------------
+    # STEP 1: Retrieve the buyer's fulfillment
+    # --------------------------------------------------
+
+    fulfillment = get_object_or_404(
+        SellerFulfillment.objects.select_related(
             "order",
-            filter=Q(order__status__in=pending_statuses),
-            distinct=True,
+            "seller",
         ),
-        paid_orders=Count(
-            "order",
-            filter=Q(order__status__in=paid_statuses),
-            distinct=True,
-        ),
-        completed_orders=Count(
-            "order",
-            filter=Q(order__status__in=completed_statuses),
-            distinct=True,
-        ),
+        pk=fulfillment_id,
+        order__user=request.user,
     )
 
-    summary["total_revenue"] = summary["total_revenue"] or Decimal("0.00")
-    summary["total_units"] = summary["total_units"] or 0
-    summary["total_orders"] = summary["total_orders"] or 0
-    summary["pending_orders"] = summary["pending_orders"] or 0
-    summary["paid_orders"] = summary["paid_orders"] or 0
-    summary["completed_orders"] = summary["completed_orders"] or 0
+    if request.method == "POST":
 
-    status_filters = [
-        ("all", "All orders"),
-        ("pending", "Pending"),
-        ("paid", "Paid"),
-        ("processing", "Processing"),
-        ("completed", "Completed"),
-        ("cancelled", "Cancelled"),
-    ]
+        reason = request.POST.get("reason", "").strip()
 
-    return render(request, "orders/seller_orders.html", {
-        "seller": seller,
-        "order_items": seller_items,
-        "summary": summary,
-        "status": status,
-        "status_filters": status_filters,
-    })
+        if len(reason) < 10:
+            messages.error(
+                request,
+                "Please describe the problem in at least 10 characters."
+            )
+            return redirect(
+                "orders:report_fulfillment_problem",
+                fulfillment_id=fulfillment.id,
+            )
 
+        if len(reason) > 5000:
+            messages.error(
+                request,
+                "Your description cannot exceed 5000 characters."
+            )
+            return redirect(
+                "orders:report_fulfillment_problem",
+                fulfillment_id=fulfillment.id,
+            )
+
+        # --------------------------------------------------
+        # STEP 2: Lock seller and fulfillment
+        # --------------------------------------------------
+
+        with transaction.atomic():
+
+            # Identify the seller without locking fulfillment.
+            fulfillment_info = get_object_or_404(
+                SellerFulfillment.objects.only(
+                    "id",
+                    "seller_id",
+                    "order_id",
+                ),
+                pk=fulfillment_id,
+                order__user=request.user,
+            )
+
+            # Lock seller first, matching payout confirmation.
+            SellerProfile.objects.select_for_update().get(
+                pk=fulfillment_info.seller_id
+            )
+
+            # Lock the fulfillment after locking seller.
+            fulfillment = get_object_or_404(
+                SellerFulfillment.objects
+                .select_for_update()
+                .select_related("order"),
+                pk=fulfillment_id,
+                order__user=request.user,
+            )
+
+            # --------------------------------------------------
+            # STEP 3: Validate payment and shipment
+            # --------------------------------------------------
+
+            if not fulfillment.is_payment_paid:
+                messages.error(
+                    request,
+                    "You cannot report a problem for an unpaid order."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            if fulfillment.shipped_at is None:
+                messages.error(
+                    request,
+                    "This fulfillment has not been shipped."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            # --------------------------------------------------
+            # STEP 4: Check existing dispute or confirmation
+            # --------------------------------------------------
+
+            if fulfillment.dispute_status != "none":
+                messages.error(
+                    request,
+                    "This fulfillment already has a dispute "
+                    "or resolution recorded."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            if fulfillment.buyer_confirmed_at is not None:
+                messages.error(
+                    request,
+                    "This fulfillment has already been "
+                    "confirmed received."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            # --------------------------------------------------
+            # STEP 5: Enforce the 60-hour dispute deadline
+            # --------------------------------------------------
+
+            if (
+                fulfillment.release_at is None
+                or timezone.now() >= fulfillment.release_at
+            ):
+                messages.error(
+                    request,
+                    "The 60-hour dispute period has expired. "
+                    "You can no longer open a dispute "
+                    "for this delivery."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            # --------------------------------------------------
+            # STEP 6: Prevent disputes after payout reservation
+            # --------------------------------------------------
+
+            active_payout_exists = SellerPayout.objects.filter(
+                order_items__fulfillment=fulfillment,
+                status__in=[
+                    SellerPayout.STATUS_AUTHORIZED,
+                    SellerPayout.STATUS_PENDING,
+                    SellerPayout.STATUS_PROCESSING,
+                    SellerPayout.STATUS_SUCCESS,
+                    SellerPayout.STATUS_REFUNDED,
+                ],
+            ).exists()
+
+            if active_payout_exists:
+                messages.error(
+                    request,
+                    "A payout has already been reserved "
+                    "or processed for this delivery. "
+                    "You cannot open a new dispute."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            # --------------------------------------------------
+            # STEP 7: Prevent duplicate disputes
+            # --------------------------------------------------
+
+            if FulfillmentDispute.objects.filter(
+                fulfillment=fulfillment
+            ).exists():
+                messages.error(
+                    request,
+                    "A dispute already exists for this fulfillment."
+                )
+                return redirect(
+                    "orders:order_detail",
+                    order_id=fulfillment.order_id,
+                )
+
+            # --------------------------------------------------
+            # STEP 8: Create dispute and block payout
+            # --------------------------------------------------
+
+            FulfillmentDispute.objects.create(
+                fulfillment=fulfillment,
+                reason=reason,
+            )
+
+            fulfillment.dispute_status = "open"
+
+            fulfillment.save(
+                update_fields=[
+                    "dispute_status",
+                    "updated_at",
+                ]
+            )
+
+        # --------------------------------------------------
+        # STEP 9: Confirm submission
+        # --------------------------------------------------
+
+        messages.success(
+            request,
+            "Your report has been submitted successfully. "
+            "The seller's payout has been placed on hold "
+            "while Exxabay reviews the issue."
+        )
+
+        return redirect(
+            "orders:order_detail",
+            order_id=fulfillment.order_id,
+        )
+
+    # --------------------------------------------------
+    # STEP 10: Display the report form
+    # --------------------------------------------------
+
+    return render(
+        request,
+        "orders/report_problem.html",
+        {
+            "fulfillment": fulfillment,
+        },
+    )
 
 
 @seller_onboarding_required
@@ -809,18 +1056,23 @@ def seller_orders(request):
         ("all", "All orders"),
         ("pending", "Pending"),
         ("paid", "Paid"),
-        ("processing", "Processing"),
-        ("completed", "Completed"),
+        ("shipped", "Shipped"),
+        ("received", "Received"),
         ("cancelled", "Cancelled"),
     ]
-    valid_statuses = {value for value, _label in status_filters}
+
+    valid_statuses = {value for value, _ in status_filters}
 
     if status not in valid_statuses:
         status = "all"
 
-    line_total = ExpressionWrapper(
-        F("quantity") * F("price"),
-        output_field=DecimalField(max_digits=12, decimal_places=2),
+    # Seller earnings, excluding Exxabay's markup
+    seller_line_total = ExpressionWrapper(
+        F("quantity") * F("seller_price"),
+        output_field=DecimalField(
+            max_digits=14,
+            decimal_places=2,
+        ),
     )
 
     seller_items = (
@@ -829,71 +1081,81 @@ def seller_orders(request):
         .select_related(
             "order",
             "order__user",
+            "order__payment",
+            "fulfillment",
             "product",
             "product__category",
             "product__seller",
         )
         .prefetch_related("product__images")
-        .annotate(line_total=line_total)
+        .annotate(line_total=seller_line_total)
         .order_by("-order_id", "-id")
     )
 
-    if status != "all":
-        seller_items = seller_items.filter(order__status=status)
+    # Filter using seller fulfillment where applicable
+    if status == "pending":
+        seller_items = seller_items.filter(
+            order__payment__status="pending"
+        )
+
+    elif status == "paid":
+        seller_items = seller_items.filter(
+            order__payment__status="paid",
+            fulfillment__shipped_at__isnull=True,
+            fulfillment__dispute_status="none",
+        )
+
+    elif status == "shipped":
+        seller_items = seller_items.filter(
+            fulfillment__shipped_at__isnull=False,
+            fulfillment__buyer_confirmed_at__isnull=True,
+        )
+
+    elif status == "received":
+        seller_items = seller_items.filter(
+            fulfillment__buyer_confirmed_at__isnull=False,
+        )
+
+    elif status == "cancelled":
+        seller_items = seller_items.filter(
+            order__status="cancelled"
+        )
 
     paginator = Paginator(seller_items, 10)
     page_obj = paginator.get_page(page_number)
 
-    base_items = OrderItem.objects.filter(product__seller=seller)
-
-    revenue_statuses = ["paid", "processing", "completed"]
-    paid_statuses = ["paid"]
-    pending_statuses = ["pending"]
-    completed_statuses = ["completed"]
-    cancelled_statuses = ["cancelled", "refunded"]
+    base_items = OrderItem.objects.filter(
+        product__seller=seller
+    )
 
     summary = base_items.aggregate(
         total_revenue=Sum(
-            line_total,
-            filter=Q(order__status__in=revenue_statuses),
+            seller_line_total,
+            filter=Q(order__payment__status="paid"),
         ),
         total_units=Sum("quantity"),
         total_orders=Count("order", distinct=True),
         pending_orders=Count(
             "order",
-            filter=Q(order__status__in=pending_statuses),
+            filter=Q(order__payment__status="pending"),
             distinct=True,
         ),
         paid_orders=Count(
             "order",
-            filter=Q(order__status__in=paid_statuses),
+            filter=Q(order__payment__status="paid"),
             distinct=True,
         ),
         completed_orders=Count(
             "order",
-            filter=Q(order__status__in=completed_statuses),
-            distinct=True,
-        ),
-        cancelled_orders=Count(
-            "order",
-            filter=Q(order__status__in=cancelled_statuses),
-            distinct=True,
-        ),
-        processing_orders=Count(
-            "order",
-            filter=Q(order__status="processing"),
+            filter=Q(
+                fulfillment__buyer_confirmed_at__isnull=False
+            ),
             distinct=True,
         ),
     )
 
-    summary["total_revenue"] = summary["total_revenue"] or Decimal("0.00")
-    summary["total_units"] = summary["total_units"] or 0
-    summary["total_orders"] = summary["total_orders"] or 0
-    summary["pending_orders"] = summary["pending_orders"] or 0
-    summary["paid_orders"] = summary["paid_orders"] or 0
-    summary["completed_orders"] = summary["completed_orders"] or 0
-    summary["cancelled_orders"] = summary["cancelled_orders"] or 0
-    summary["processing_orders"] = summary["processing_orders"] or 0
+    for key in summary:
+        summary[key] = summary[key] or 0
 
     return render(request, "orders/seller_orders.html", {
         "seller": seller,
@@ -903,6 +1165,7 @@ def seller_orders(request):
         "status": status,
         "status_filters": status_filters,
     })
+
 
 
 @seller_onboarding_required
@@ -1133,6 +1396,10 @@ def seller_analytics(request):
 
 
 
+
+# ===============================================================================
+# THESE IS FOR EXXABAYGO
+# ==============================================================================
 BASE_FEE = Decimal('1500')
 FEE_RATE = Decimal('0.01')
 
@@ -1189,158 +1456,21 @@ def order_payment_detail(request, token):
     context = {'order': order}
     return render(request, 'orders/order_payment_detail.html', context)
 
-
-from . import services as cp
-import re
-def initiate_order_payment(request, token):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
-
-    order = get_object_or_404(ExxabayGoOrder, token=token)
-
-    if order.status == ExxabayGoOrder.STATUS_PAID:
-        return JsonResponse({'success': False, 'error': 'This order has already been paid.'}, status=400)
-
-    try:
-        data = json.loads(request.body)
-        raw_phone = data.get('phone', '')
-    except (json.JSONDecodeError, AttributeError):
-        raw_phone = ''
-
-    payer_phone = _normalize_phone(raw_phone)
-
-    if not payer_phone or not re.match(r'^255[67]\d{8}$', payer_phone):
-        return JsonResponse({'success': False, 'error': 'Please enter a valid phone number.'}, status=400)
-
-    if not order.order_reference:
-        order.order_reference = cp.generate_order_reference()
-        order.save(update_fields=['order_reference'])
-
-    auth_token = cp.generate_token()
-    if not auth_token:
-        logger.error("ClickPesa token generation failed for order %s", order.token)
-        return JsonResponse({'success': False, 'error': 'Could not start payment. Please try again.'}, status=502)
-
-    response = cp.initiate_ussd_push(
-        token=auth_token,
-        amount=order.total_amount,
-        order_reference=order.order_reference,
-        phone_number=payer_phone,
-    )
-
-    if response is None:
-        return JsonResponse({'success': False, 'error': 'Could not reach the payment gateway. Please try again.'}, status=502)
-
-    if response.status_code not in (200, 201):
-        gateway_message = None
-        try:
-            gateway_body = response.json()
-            raw_message = gateway_body.get('message')
-            if isinstance(raw_message, list):
-                gateway_message = '; '.join(str(m) for m in raw_message)
-            elif isinstance(raw_message, str):
-                gateway_message = raw_message
-        except ValueError:
-            pass
-
-        logger.error("ClickPesa push failed for order %s: %s %s", order.token, response.status_code, response.text)
-
-        order.status = ExxabayGoOrder.STATUS_FAILED
-        order.save(update_fields=['status'])
-
-        SAFE_GATEWAY_ERROR_HINTS = ('insufficient', 'balance', 'phone', 'number', 'invalid')
-
-        if gateway_message and any(hint in gateway_message.lower() for hint in SAFE_GATEWAY_ERROR_HINTS):
-            buyer_message = gateway_message
-        else:
-            buyer_message = 'Payment request was rejected. Please try again.'
-
-        return JsonResponse({'success': False, 'error': buyer_message}, status=400)
-
-    return JsonResponse({'success': True, 'message': 'Payment prompt sent to your phone.'})
-
-
-def order_payment_status(request, token):
-    order = get_object_or_404(ExxabayGoOrder, token=token)
-
-    if order.status in (ExxabayGoOrder.STATUS_PAID, ExxabayGoOrder.STATUS_FAILED):
-        return JsonResponse({'status': order.status})
-
-    if not order.order_reference:
-        return JsonResponse({'status': order.status})
-
-    auth_token = cp.generate_token()
-    if not auth_token:
-        return JsonResponse({'status': order.status})
-
-    record = cp.query_payment_status(auth_token, order.order_reference)
-
-    if record:
-        gateway_status = (record.get('status') or '').upper()
-
-        if gateway_status in ('SUCCESS', 'SETTLED'):
-            order.status = ExxabayGoOrder.STATUS_PAID
-            order.paid_at = timezone.now()
-            order.save(update_fields=['status', 'paid_at'])
-        elif gateway_status == 'FAILED':
-            order.status = ExxabayGoOrder.STATUS_FAILED
-            order.save(update_fields=['status'])
-        # PROCESSING / PENDING → still in flight, leave as-is, frontend keeps polling
-
-    return JsonResponse({'status': order.status})
-
-
-from django.http import JsonResponse
-from .utility import generate_paybill_number
-
-
-def generate_billpay_views(request):
-    if request.method != "POST":
-        return JsonResponse({
-            "success": False,
-            "message": "Only POST requests are allowed."
-        }, status=405)
-
-    result = generate_paybill_number()
-
-    if not result["success"]:
-        return JsonResponse({
-            "success": False,
-            "message": "ClickPesa failed to generate the control number.",
-            "clickpesa_response": result["data"]
-        }, status=400)
-
-    data = result["data"]
-
-    return JsonResponse({
-        "success": True,
-        "billPayNumber": data["billPayNumber"]
-    })
-
-def pageView(request):
-    return render(request, 'orders/control_no.html')
-
-from .utility import generate_token
-def token_generation_view (request):
-    if request.method == "POST":
-        token = generate_token()
-
-    return JsonResponse ({
-        "success": True,
-        "token": token
-    }, status=200)
+# PAYMENT PROCESSING FOR EXXABAYGO ORDER
+# GOES HERE
+# =========================================================================================
 
 
 
-# AZAMPAY PAYMENT VIEW
 @login_required
 def checkout_azam(request):
 
+    # Only allow POST requests
     if request.method != "POST":
         return redirect("orders:cart")
 
+    # 1. Validate customer's phone number
     phone = request.POST.get("phone")
-    # provider = request.POST.get("provider", "")
 
     phone_number = _normalize_phone(
         phone or getattr(request.user, "phone_number", None)
@@ -1353,9 +1483,9 @@ def checkout_azam(request):
         )
         return redirect("users:edit_profile")
 
+    # 2. Create pending order inside a database transaction
     with transaction.atomic():
 
-        # 1. Lock cart
         cart = get_object_or_404(
             Cart.objects.select_for_update(),
             user=request.user,
@@ -1363,25 +1493,38 @@ def checkout_azam(request):
 
         items = list(
             cart.items
-            .select_related("product")
             .select_for_update()
+            .order_by("pk")
         )
 
         if not items:
             messages.error(request, "Your cart is empty.")
             return redirect("orders:cart")
 
-        # 2. Validate stock
+        # Lock the products in a consistent order
+        product_ids = [item.product_id for item in items]
+
+        products = {
+            product.pk: product
+            for product in (
+                Product.objects
+                .select_for_update()
+                .filter(pk__in=product_ids)
+                .order_by("pk")
+            )
+        }
+
+        # 3. Validate products and calculate total
         total = Decimal("0.00")
 
         for item in items:
 
-            product = item.product
+            product = products.get(item.product_id)
 
-            if not product.is_available:
+            if product is None or not product.is_available:
                 messages.error(
                     request,
-                    f"'{product.name}' is no longer available."
+                    "One of your products is no longer available."
                 )
                 return redirect("orders:cart")
 
@@ -1389,31 +1532,60 @@ def checkout_azam(request):
                 messages.error(
                     request,
                     f"Only {product.stock} unit(s) of "
-                    f"'{product.name}' in stock."
+                    f"'{product.name}' are available."
+                )
+                return redirect("orders:cart")
+
+            if (
+                product.seller_price is None
+                or product.seller_price <= 0
+                or product.price <= 0
+            ):
+                messages.error(
+                    request,
+                    f"'{product.name}' has invalid pricing."
                 )
                 return redirect("orders:cart")
 
             total += product.price * item.quantity
 
-        # 3. Create order
+        # 4. Create one order
         order = Order.objects.create(
             user=request.user,
             total_amount=total,
             status="pending",
         )
 
-        # 4. Create order items
-        OrderItem.objects.bulk_create([
-            OrderItem(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price,
-            )
-            for item in items
-        ])
+        # 5. Create one fulfillment per seller
+        seller_fulfillments = {}
 
-        # 5. Create payment
+        for item in items:
+
+            product = products[item.product_id]
+            seller_id = product.seller_id
+
+            if seller_id not in seller_fulfillments:
+
+                fulfillment = SellerFulfillment.objects.create(
+                    order=order,
+                    seller_id=seller_id,
+                )
+
+                seller_fulfillments[seller_id] = fulfillment
+
+            fulfillment = seller_fulfillments[seller_id]
+
+            # Save prices at checkout
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                fulfillment=fulfillment,
+                quantity=item.quantity,
+                price=product.price,
+                seller_price=product.seller_price,
+            )
+
+        # 6. Create pending payment
         order_reference = generate_order_reference()
 
         payment = Payment.objects.create(
@@ -1421,68 +1593,89 @@ def checkout_azam(request):
             amount=total,
             method="mobile_money",
             status="pending",
-            transaction_id=order_reference
+            transaction_id=order_reference,
         )
 
-        # 6. Initiate AzamPay payment
-        from .utility import Payments, token_generation
-        data = {
-            "accountNumber": phone_number,
-            "amount": int(total),
-            "currency": "TZS",
-            "externalId": order_reference,
-            "provider": "Halopesa"
-        }
+    # Database transaction has now committed.
+    # The callback can find the pending payment.
+
+    # 7. Prepare AzamPay collection request
+    data = {
+        "accountNumber": phone_number,
+        "amount": int(total),
+        "currency": "TZS",
+        "externalId": order_reference,
+        "provider": "Halopesa",
+    }
+
+    try:
+        token = token_generation()
+
+        if not token:
+            raise ValueError("AzamPay authentication failed.")
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {token_generation()}",
+            "Authorization": f"Bearer {token}",
         }
 
-        print(headers)
-
-        url = "https://checkout.azampay.co.tz/azampay/mno/checkout"
-
-        # Creating payment instance
         payment_object = Payments(
-            webhook=url,
+            webhook="https://checkout.azampay.co.tz/azampay/mno/checkout",
             headers=headers,
             body=data,
         )
 
-        # Call the request payment method to AzamPay
-        azampay_response = payment_object.make_azam_pesa_post_request()
+        # 8. Send payment request
+        azampay_response = (
+            payment_object.make_azam_pesa_post_request()
+        )
 
-        if not azampay_response["success"]:
-            transaction.set_rollback(True)
-
-            messages.error(
-                request,
-                azampay_response["message"]
+        if not azampay_response.get("success"):
+            logger.warning(
+                "AzamPay checkout initiation unsuccessful. "
+                "Order=%s Response=%s",
+                order.id,
+                azampay_response,
             )
 
-            return redirect("orders:cart")
+            messages.warning(
+                request,
+                "Payment could not be initiated or its status "
+                "could not be confirmed. Please check your order "
+                "before trying again.",
+            )
 
-        # from main.messaging.service import MessagingClass
-        # url = 'https://messaging-service.co.tz/api/sms/v2/text/single'
-        # headers = {
-        #     'Authorization': 'Bearer cedcce9becad866f59beac1fd5a235bc',
-        #     'Content-Type': 'application/json',
-        #     'Accept': 'application/json'
-        # }
-        # data = {
-        #     "from": "MUST",
-        #     "to": "255612350807",
-        #     "text": f"Umelipa jumla ya {total} Tsh ",
-        #     "flash": 0,
-        #     "reference": "xaefcgt"
-        # }
+            return redirect(
+                "orders:order_detail",
+                order_id=order.id,
+            )
 
-        # send_sms_instance = MessagingClass(url, headers, data)
-        # send_sms_instance.send_sms()
-        
-    # Payment request was successfully sent
+    except Exception:
+        logger.exception(
+            "AzamPay initiation error for order %s",
+            order.id,
+        )
+
+        messages.warning(
+            request,
+            "We could not confirm whether the payment request "
+            "was sent. Please check your order status before "
+            "attempting another payment.",
+        )
+
+        return redirect(
+            "orders:order_detail",
+            order_id=order.id,
+        )
+
+    # 9. Payment request accepted, but not yet paid
+    messages.success(
+        request,
+        "Payment request sent. Complete the payment "
+        "on your phone.",
+    )
+
     return redirect(
         "orders:order_detail",
-        order_id=order.id
+        order_id=order.id,
     )

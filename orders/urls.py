@@ -7,8 +7,8 @@ urlpatterns = [
     path('orders/', views.orderView, name='orders'),
     path('create_exxabay_go_order/', views.create_exxabay_go_order, name='exxabay_Go_Order'),
     path('order-payment/<uuid:token>/', views.order_payment_detail, name='order_payment_detail'),
-    path('order-payment/<uuid:token>/pay/', views.initiate_order_payment, name='initiate_order_payment'),
-    path('order-payment/<uuid:token>/status/', views.order_payment_status, name='order_payment_status'),
+    # path('order-payment/<uuid:token>/pay/', views.initiate_order_payment, name='initiate_order_payment'),
+    # path('order-payment/<uuid:token>/status/', views.order_payment_status, name='order_payment_status'),
     path('checkout/', views.checkout_azam, name='checkout'),
     path("orders/<order_id>/confirm-received/", views.confirm_received, name="confirm_received"),
     # path('payment/callback/', views.payment_callback, name='payment_callback'),
@@ -19,12 +19,13 @@ urlpatterns = [
     path("orders/<int:order_id>/", views.order_detail, name="order_detail"),
     path("seller_orders/", views.seller_orders, name="seller_orders"),
     path("seller/analytics/", views.seller_analytics, name="seller_analytics"),
-
     path("payment-status/<int:order_id>/", views.payment_status, name="payment_status"),
+    path("fulfillments/<int:fulfillment_id>/confirm-received/", views.confirm_received, name="confirm_received"),
+    path("fulfillments/<int:fulfillment_id>/report/",views.report_fulfillment_problem,name="report_fulfillment_problem"),
     # path("payment-callback/", views.payment_callback, name="payment_callback"),
     # path("api/azampay/callback/", views.payment_callback, name="azampay-callback"),
 
-    path('generate_control_number/', views.token_generation_view, name='generate_control_number'),
+    # path('generate_control_number/', views.token_generation_view, name='generate_control_number'),
 
-    path('page/', views.pageView, name='page'),
+    # path('page/', views.pageView, name='page'),
 ]

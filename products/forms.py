@@ -6,7 +6,7 @@ class ProductCreationForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = [
-            'category', 'name', 'description', 'price', 'stock', 'is_featured'
+            'category', 'name', 'description', 'seller_price', 'stock', 'is_featured'
         ]
         widgets = {
             'category': forms.Select(attrs={
@@ -22,10 +22,10 @@ class ProductCreationForm(forms.ModelForm):
                 'placeholder': 'Write a short, compelling product description',
                 'rows': '5',
             }),
-            'price': forms.NumberInput(attrs={
+            'seller_price': forms.NumberInput(attrs={
                 'class': 'form-input',
-                'placeholder': '0.00',
-                'min': '0',
+                'placeholder': 'Enter your selling price',
+                'min': '0.01',
                 'step': '0.01',
             }),
             'stock': forms.NumberInput(attrs={
@@ -44,7 +44,7 @@ class ProductCreationForm(forms.ModelForm):
 class ProductUpdateForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['category', 'name', 'description', 'price', 'stock', 'is_available', 'is_featured']
+        fields = ['category', 'name', 'description', 'seller_price', 'stock', 'is_available', 'is_featured']
         widgets = {
             'category': forms.Select(attrs={
                 'class': 'form-input',
@@ -59,10 +59,10 @@ class ProductUpdateForm(forms.ModelForm):
                 'placeholder': 'Write a short, compelling product description',
                 'rows': '5',
             }),
-            'price': forms.NumberInput(attrs={
+            'seller_price': forms.NumberInput(attrs={
                 'class': 'form-input',
-                'placeholder': '0.00',
-                'min': '0',
+                'placeholder': 'Enter your selling price',
+                'min': '0.01',
                 'step': '0.01',
             }),
             'stock': forms.NumberInput(attrs={

@@ -1,0 +1,96 @@
+
+{% extends 'main/base.html' %}
+
+{% block title %}
+Report a Problem | Exxabay
+{% endblock %}
+
+{% block content %}
+
+{% include 'partials/header_bar.html' %}
+
+<main class="cart-page">
+
+    {% include 'partials/messages.html' %}
+
+    <section class="cart-hero">
+
+        <div>
+            <p class="cart-hero__eyebrow">
+                Buyer protection
+            </p>
+
+            <h1 class="cart-hero__title">
+                Report a Problem
+            </h1>
+
+            <p class="cart-hero__copy">
+                Tell us what went wrong with your order.
+                Our team will review your report.
+            </p>
+        </div>
+
+    </section>
+
+    <section class="cart-items">
+
+        <h2>
+            Order #{{ fulfillment.order.id }}
+        </h2>
+
+        <p>
+            Seller:
+            <strong>
+                {{ fulfillment.seller.business_name }}
+            </strong>
+        </p>
+
+        {% if fulfillment.dispute_status == "none" %}
+
+        <form method="post" class="auth-form">
+
+            {% csrf_token %}
+
+            <label class="auth-field">
+
+                <span>
+                    Describe the problem
+                </span>
+
+                <textarea
+                    name="reason"
+                    class="auth-field__input"
+                    rows="6"
+                    minlength="10"
+                    maxlength="5000"
+                    required
+                    placeholder="Explain what happened with your order..."
+                ></textarea>
+
+            </label>
+
+            <button
+                type="submit"
+                class="btn btn--primary"
+            >
+                Submit Report
+            </button>
+
+        </form>
+
+        {% else %}
+
+        <p>
+            This fulfillment already has a dispute
+            or resolution recorded.
+        </p>
+
+        {% endif %}
+
+    </section>
+
+</main>
+
+{% include 'partials/footer.html' %}
+
+{% endblock %}

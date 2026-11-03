@@ -181,8 +181,310 @@ class SellerPayout(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # AzamPay transaction identifiers
+    pg_reference_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    fsp_reference_id = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    # Last verified transaction status
+    gateway_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.seller} payout {self.order_reference}"
+
+
+
+
+class SellerPayoutReservation(models.Model):
+
+    payout = models.ForeignKey(
+        "SellerPayout",
+        on_delete=models.PROTECT,
+        related_name="reservations",
+    )
+
+    order_item = models.OneToOneField(
+        "orders.OrderItem",
+        on_delete=models.PROTECT,
+        related_name="payout_reservation",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        verbose_name = "Seller Payout Reservation"
+        verbose_name_plural = "Seller Payout Reservations"
+
+    def __str__(self):
+        return (
+            f"Order item #{self.order_item_id} "
+            f"reserved for payout #{self.payout_id}"
+        )
+
+
+from django.conf import settings
+from django.db import models
+
+
+class SellerPayoutInvestigation(models.Model):
+
+    OUTCOME_UNKNOWN = "unknown"
+    OUTCOME_CONFIRMED_PAID = "confirmed_paid"
+    OUTCOME_CONFIRMED_FAILED = "confirmed_failed"
+
+    OUTCOME_CHOICES = [
+        (OUTCOME_UNKNOWN, "Outcome unknown"),
+        (OUTCOME_CONFIRMED_PAID, "Confirmed paid"),
+        (OUTCOME_CONFIRMED_FAILED, "Confirmed failed"),
+    ]
+
+    payout = models.ForeignKey(
+        "SellerPayout",
+        on_delete=models.PROTECT,
+        related_name="investigations",
+    )
+
+    investigated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="payout_investigations",
+    )
+
+    reason = models.TextField()
+
+    provider_reference = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+    findings = models.TextField(
+        blank=True,
+    )
+
+    outcome = models.CharField(
+        max_length=30,
+        choices=OUTCOME_CHOICES,
+        default=OUTCOME_UNKNOWN,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Seller payout investigation"
+        verbose_name_plural = "Seller payout investigations"
+
+    def __str__(self):
+        return (
+            f"Investigation #{self.pk} - "
+            f"{self.payout.order_reference} - "
+            f"{self.get_outcome_display()}"
+        )
+
+
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils import timezone
+
+
+class SellerPayoutResolution(models.Model):
+
+    # Proposed payment outcomes
+    OUTCOME_PAID = "confirmed_paid"
+    OUTCOME_FAILED = "confirmed_failed"
+
+    OUTCOME_CHOICES = [
+        (OUTCOME_PAID, "Confirmed paid"),
+        (OUTCOME_FAILED, "Confirmed failed"),
+    ]
+
+    # Approval statuses
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending approval"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    payout = models.ForeignKey(
+        "SellerPayout",
+        on_delete=models.PROTECT,
+        related_name="resolutions",
+    )
+
+    investigation = models.ForeignKey(
+        "SellerPayoutInvestigation",
+        on_delete=models.PROTECT,
+        related_name="resolutions",
+    )
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_payout_resolutions",
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="approved_payout_resolutions",
+        null=True,
+        blank=True,
+    )
+
+    proposed_outcome = models.CharField(
+        max_length=30,
+        choices=OUTCOME_CHOICES,
+    )
+
+    provider_reference = models.CharField(
+        max_length=150,
+    )
+
+    evidence = models.TextField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+
+    approval_notes = models.TextField(
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+        verbose_name = "Seller payout resolution"
+        verbose_name_plural = "Seller payout resolutions"
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["payout"],
+                condition=models.Q(status="pending"),
+                name="unique_pending_payout_resolution",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        errors = {}
+
+        if self.investigation_id and self.payout_id:
+            if self.investigation.payout_id != self.payout_id:
+                errors["investigation"] = (
+                    "Investigation must belong to the same payout."
+                )
+
+        if self.requested_by_id and self.approved_by_id:
+            if self.requested_by_id == self.approved_by_id:
+                errors["approved_by"] = (
+                    "The requester cannot approve their own resolution."
+                )
+
+        if self.status == self.STATUS_PENDING:
+            if self.approved_by_id or self.decided_at:
+                errors["status"] = (
+                    "Pending resolutions cannot have approval details."
+                )
+        else:
+            if not self.approved_by_id:
+                errors["approved_by"] = (
+                    "An approving administrator is required."
+                )
+
+            if not self.decided_at:
+                errors["decided_at"] = (
+                    "A decision timestamp is required."
+                )
+
+        if not self.provider_reference.strip():
+            errors["provider_reference"] = (
+                "AzamPay evidence reference is required."
+            )
+
+        if not self.evidence.strip():
+            errors["evidence"] = (
+                "Supporting evidence is required."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"Resolution #{self.pk} - "
+            f"{self.payout.order_reference} - "
+            f"{self.get_status_display()}"
+        )
+
+
+class SellerPayoutFinalization(models.Model):
+    payout = models.OneToOneField(
+        "SellerPayout",
+        on_delete=models.PROTECT,
+        related_name="manual_finalization",
+    )
+
+    resolution = models.OneToOneField(
+        "SellerPayoutResolution",
+        on_delete=models.PROTECT,
+        related_name="finalization",
+    )
+
+    finalized_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="manual_payout_finalizations",
+    )
+
+    outcome = models.CharField(
+        max_length=30,
+        choices=SellerPayoutResolution.OUTCOME_CHOICES,
+    )
+
+    provider_reference = models.CharField(max_length=150)
+    verification_method = models.CharField(max_length=100)
+    verification_evidence = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Manual finalization for payout {self.payout_id}"

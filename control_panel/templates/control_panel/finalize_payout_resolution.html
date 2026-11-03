@@ -1,0 +1,57 @@
+
+{% extends "main/base.html" %}
+
+{% block content %}
+<main class="container" style="max-width: 760px; margin: 40px auto; padding: 20px;">
+
+    <h1>Manual payout finalization</h1>
+
+    <p>
+        Payout reference:
+        <strong>{{ resolution.payout.order_reference }}</strong>
+    </p>
+
+    <p>
+        Approved outcome:
+        <strong>{{ resolution.get_proposed_outcome_display }}</strong>
+    </p>
+
+    <p>
+        Requested by: {{ resolution.requested_by }}
+    </p>
+
+    <p>
+        Approved by: {{ resolution.approved_by }}
+    </p>
+
+    <p>
+        Current payout status:
+        <strong>{{ resolution.payout.get_status_display }}</strong>
+    </p>
+
+    <p>
+        This action records a final payout outcome.
+        It does not send money to the seller.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn--primary">
+            Confirm manual finalization
+        </button>
+
+        <a
+            href="{% url 'control_panel:seller_payouts' %}"
+            class="btn btn--outline"
+        >
+            Cancel
+        </a>
+    </form>
+
+</main>
+{% endblock %}

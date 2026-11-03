@@ -15,4 +15,11 @@ urlpatterns = [
     path("admin-panel/sellers/<int:seller_id>/reject/", views.reject_seller, name="reject_seller"),
     path("admin-panel/orders/<int:order_id>/status/", views.update_order_status, name="update_order_status"),
     path("admin-panel/users/<int:user_id>/contact/", views.contact_user, name="contact_user"),
+    path("orders/fulfillment/<int:fulfillment_id>/ship/", views.mark_order_shipped, name="mark_order_shipped"),
+    path("azampay/disbursement/callback/", views.azampay_disbursement_callback, name="azampay_disbursement_callback"),
+    path("seller-payouts/<int:payout_id>/reconcile/", views.reconcile_payout_view, name="reconcile_payout"),
+    path("seller-payouts/<int:payout_id>/investigate/", views.investigate_seller_payout, name="investigate_seller_payout"),
+    path("seller-payouts/<int:payout_id>/request-resolution/", views.request_seller_payout_resolution, name="request_seller_payout_resolution"),
+    path("seller-payout-resolutions/<int:resolution_id>/review/", views.review_payout_resolution, name="review_payout_resolution"),
+    path("seller-payout-resolutions/<int:resolution_id>/finalize/", views.finalize_payout_resolution_view, name="finalize_payout_resolution"),
 ]

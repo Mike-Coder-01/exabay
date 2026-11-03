@@ -84,14 +84,27 @@
             </div>
 
             <!-- Price -->
+            <!-- Seller Price -->
             <div class="form-group form-group--price">
-              <label class="form-group__label" for="{{ form.price.id_for_label }}">Price</label>
-              {{ form.price }}
-              {% if form.price.errors %}
+              <label
+                class="form-group__label"
+                for="{{ form.seller_price.id_for_label }}"
+              >
+                Your Selling Price (TZS)
+              </label>
+
+              {{ form.seller_price }}
+
+              {% if form.seller_price.errors %}
                 <div class="status-banner status-banner--warning" role="alert">
-                  {{ form.price.errors }}
+                  {{ form.seller_price.errors }}
                 </div>
               {% endif %}
+
+              <small class="form-group__hint">
+                Exxabay adds 10% to your selling price.
+                Current customer price: TSh {{ product.price }}
+              </small>
             </div>
 
             <!-- Stock -->

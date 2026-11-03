@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Request Payout Resolution</title>
+</head>
+<body>
+
+<h2>Request Manual Payout Resolution</h2>
+
+<p>
+    <strong>Reference:</strong>
+    {{ payout.order_reference }}
+</p>
+
+<p>
+    <strong>Amount:</strong>
+    {{ payout.amount }} {{ payout.currency }}
+</p>
+
+<p>
+    <strong>Current Status:</strong>
+    {{ payout.get_status_display }}
+</p>
+
+{% if pending_resolution %}
+    <p>
+        A resolution request is already awaiting approval.
+        Reference #{{ pending_resolution.pk }}.
+    </p>
+{% endif %}
+
+{% if investigations and not pending_resolution %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <label for="investigation">
+            Select Investigation
+        </label>
+
+        <select
+            id="investigation"
+            name="investigation_id"
+            required
+        >
+            <option value="">Select investigation</option>
+
+            {% for investigation in investigations %}
+                <option value="{{ investigation.pk }}">
+                    #{{ investigation.pk }} —
+                    {{ investigation.get_outcome_display }}
+                    — {{ investigation.created_at }}
+                </option>
+            {% endfor %}
+        </select>
+
+        {{ form.investigation_id.errors }}
+
+        <p>
+            {{ form.proposed_outcome.label_tag }}
+            {{ form.proposed_outcome }}
+            {{ form.proposed_outcome.errors }}
+        </p>
+
+        <p>
+            {{ form.provider_reference.label_tag }}
+            {{ form.provider_reference }}
+            {{ form.provider_reference.errors }}
+        </p>
+
+        <p>
+            {{ form.evidence.label_tag }}
+            {{ form.evidence }}
+            {{ form.evidence.errors }}
+        </p>
+
+        <button type="submit">
+            Submit Resolution Request
+        </button>
+    </form>
+
+{% elif not pending_resolution %}
+
+    <p>
+        No investigation with a confirmed outcome is available.
+        Investigate this payout first.
+    </p>
+
+{% endif %}
+
+<p>
+    <a href="{% url 'control_panel:seller_payouts' %}">
+        Back to Seller Payouts
+    </a>
+</p>
+
+</body>
+</html>

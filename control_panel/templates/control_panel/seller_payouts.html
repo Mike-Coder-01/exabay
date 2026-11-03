@@ -12,7 +12,7 @@
         <p class="cart-hero__eyebrow">Admin payouts</p>
         <h1 id="payout-title" class="cart-hero__title">Seller payout center</h1>
         <p class="cart-hero__copy">
-          Review completed seller earnings, preview provider mobile money fees, and confirm payouts only after fulfillment is safe.
+          Review eligible seller earnings, confirm mobile money payouts, and reconcile existing AzamPay transactions safely.
         </p>
       </div>
 
@@ -77,11 +77,11 @@
                 <strong>Tsh {{ preview_payout.amount|floatformat:"0"|intcomma }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Provider fee</span>
+                <span class="metric__label">Gateway fee</span>
                 <strong>Tsh {{ preview_payout.clickpesa_fee|floatformat:"0"|intcomma }}</strong>
               </div>
               <div class="metric">
-                <span class="metric__label">Total deducted</span>
+                <span class="metric__label">Total gateway deduction</span>
                 <strong>Tsh {{ preview_payout.clickpesa_total_deducted|floatformat:"0"|intcomma }}</strong>
               </div>
               <div class="metric">
@@ -224,6 +224,51 @@
           </div>
         {% endif %}
 
+        {% if pending_resolutions %}
+          <section class="vendor-group" aria-label="Pending payout resolutions">
+            <div class="cart-items__header">
+              <div>
+                <p class="section-heading__eyebrow">Manual payout resolution</p>
+                <h2>Awaiting administrator review</h2>
+              </div>
+              <span class="cart-items__count">{{ pending_resolutions|length }} pending</span>
+            </div>
+
+            {% for resolution in pending_resolutions %}
+              <article class="detail-panel">
+                <div class="cart-items__header">
+                  <div>
+                    <p class="section-heading__eyebrow">Reference {{ resolution.payout.order_reference }}</p>
+                    <h3>{{ resolution.payout.seller.business_name|default:resolution.payout.seller.user.username }}</h3>
+                    <p class="detail-panel__muted">Requested by {{ resolution.requested_by.username }} on {{ resolution.created_at|date:"M d, Y H:i" }}</p>
+                  </div>
+                  <span class="status-badge status-badge--pending">Awaiting review</span>
+                </div>
+                <div class="metrics-grid detail-panel__metrics">
+                  <div class="metric">
+                    <span class="metric__label">Seller amount</span>
+                    <strong>Tsh {{ resolution.payout.amount|floatformat:"2"|intcomma }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Proposed outcome</span>
+                    <strong>{{ resolution.get_proposed_outcome_display }}</strong>
+                  </div>
+                  <div class="metric">
+                    <span class="metric__label">Provider evidence reference</span>
+                    <strong>{{ resolution.provider_reference }}</strong>
+                  </div>
+                </div>
+                <div class="product-detail__actions">
+                  <a class="btn btn--outline" href="{% url 'control_panel:review_payout_resolution' resolution.pk %}">
+                    <i class="fa-solid fa-clipboard-check" style="margin-right: 5px;" aria-hidden="true"></i>
+                    <span>Review resolution</span>
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </section>
+        {% endif %}
+
         <div class="cart-items__header">
           <div>
             <p class="section-heading__eyebrow">Payout history</p>
@@ -279,6 +324,29 @@
                 </div>
               </div>
 
+              <div class="mobile-money-note">
+                <strong>AzamPay transaction reference</strong>
+                <span>
+                  {% if payout.pg_reference_id %}
+                    {{ payout.pg_reference_id }}
+                  {% else %}
+                    Not yet available
+                  {% endif %}
+                </span>
+              </div>
+
+              {% if payout.status == "pending" or payout.status == "processing" %}
+                {% if not payout.pg_reference_id %}
+                  <div class="mobile-money-note" role="status">
+                    <strong>Manual reconciliation required</strong>
+                    <span>
+                      The AzamPay gateway reference is missing. Do not initiate another transfer.
+                      Investigate this payout using its Exxabay reference {{ payout.order_reference }}.
+                    </span>
+                  </div>
+                {% endif %}
+              {% endif %}
+
               {% if payout.failure_reason %}
                 <div class="mobile-money-note">
                   <strong>Failure reason</strong>
@@ -287,6 +355,29 @@
               {% endif %}
 
               <div class="product-detail__actions">
+                {% if payout.status == "pending" or payout.status == "processing" or payout.status == "failed" %}
+                  <a class="btn btn--outline" href="{% url 'control_panel:investigate_seller_payout' payout.id %}">
+                    <i class="fa-solid fa-magnifying-glass" style="margin-right: 5px;" aria-hidden="true"></i>
+                    <span>Investigate payout</span>
+                  </a>
+                {% endif %}
+                {% if payout.status == "pending" or payout.status == "processing" %}
+                  <a class="btn btn--outline" href="{% url 'control_panel:request_seller_payout_resolution' payout.id %}">
+                    <i class="fa-solid fa-file-circle-question" style="margin-right: 5px;" aria-hidden="true"></i>
+                    <span>Request resolution</span>
+                  </a>
+                {% endif %}
+                {% if payout.status == "pending" or payout.status == "processing" %}
+                  {% if payout.pg_reference_id %}
+                    <form method="post" action="{% url 'control_panel:reconcile_payout' payout.id %}">
+                      {% csrf_token %}
+                      <button class="btn btn--primary" type="submit">
+                        <i class="fa-solid fa-shield-halved" style="margin-right: 5px;" aria-hidden="true"></i>
+                        <span>Reconcile payout</span>
+                      </button>
+                    </form>
+                  {% endif %}
+                {% endif %}
                 {% if payout.status != "previewed" %}
                   <form method="post" action="{% url 'control_panel:refresh_seller_payout_status' payout.id %}">
                     {% csrf_token %}
@@ -377,7 +468,7 @@
 
         <div class="mobile-money-note">
           <strong>Payout safety</strong>
-          <span>Only completed, unpaid seller order items are eligible. Failed or reversed payouts can be retried after status review.</span>
+          <span>Only eligible, unpaid seller order items may be paid. An unknown outcome must be investigated; never initiate another transfer until the original outcome is confirmed. Failed or reversed payouts require an authorized recovery process before any new attempt.</span>
         </div>
       </aside>
     </section>

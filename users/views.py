@@ -181,18 +181,47 @@ def edit_profile_view(request):
     return render(request, "users/buyer_dashboard.html")
 
 
+
 # ---------------------------------------------------------------------------
 # Dashboards
 # ---------------------------------------------------------------------------
 
 @login_required
 def buyer_dashboard(request):
-    orders = Order.objects.filter(user=request.user).order_by("-created_at")
-    return render(request, "users/buyer_dashboard.html", {
-        "orders":         orders,
-        "orders_paid":    orders.filter(status__in=["paid", "delivered", "shipped"]),
-        "orders_pending": orders.filter(status="pending", payment__status="pending"),
-    })
+
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .select_related("payment")
+        .prefetch_related(
+            "seller_fulfillments__seller",
+            "seller_fulfillments__items__product",
+        )
+        .order_by("-created_at")
+    )
+
+    # Orders with confirmed payments
+    orders_paid = orders.filter(
+        payment__status="paid"
+    ).exclude(
+        status="cancelled"
+    )
+
+    # Orders awaiting payment
+    orders_pending = orders.filter(
+        status="pending",
+        payment__status="pending"
+    )
+
+    return render(
+        request,
+        "users/buyer_dashboard.html",
+        {
+            "orders": orders,
+            "orders_paid": orders_paid,
+            "orders_pending": orders_pending,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

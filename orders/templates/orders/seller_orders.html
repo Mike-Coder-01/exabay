@@ -66,6 +66,67 @@
                       <span class="status-badge status-badge--pending">! {{ order.status|title }}</span>
                     {% endif %}
                   </div>
+                  
+                  {% if item.fulfillment %}
+
+                    <div class="cart-item__meta">
+
+                      {% if item.fulfillment.dispute_status == "open" %}
+
+                        <span class="status-badge status-badge--unverified">
+                          Dispute under review
+                        </span>
+
+                      {% elif item.fulfillment.shipped_at %}
+
+                        <span class="status-badge status-badge--verified">
+                          Shipped
+                        </span>
+
+                        {% if item.fulfillment.buyer_confirmed_at %}
+
+                          <span class="badge">
+                            Buyer confirmed receipt
+                          </span>
+
+                        {% else %}
+
+                          <span class="badge">
+                            Release deadline:
+                            {{ item.fulfillment.release_at|date:"d M Y, H:i" }}
+                          </span>
+
+                        {% endif %}
+
+                      {% elif order.payment.status == "paid" and item.fulfillment.dispute_status == "none" %}
+
+                        <form
+                          method="post"
+                          action="{% url 'orders:mark_order_shipped' item.fulfillment.id %}"
+                        >
+                          {% csrf_token %}
+
+                          <button
+                            type="submit"
+                            class="btn btn--primary"
+                          >
+                            Mark as Shipped
+                          </button>
+
+                        </form>
+
+                      {% else %}
+
+                        <span class="badge">
+                          Awaiting payment or fulfillment review
+                        </span>
+
+                      {% endif %}
+
+                    </div>
+
+                  {% endif %}
+
                   {% if order.status == "paid" or order.status == "processing" %}
                     <div class="cart-item__meta">
                       {% if order.user.email %}
@@ -82,7 +143,13 @@
 
                 <div class="cart-item__price">
                   <span data-i18n="unitPrice">Unit price</span>
-                  <strong>Tsh{{ item.price|floatformat:"0"|intcomma }}</strong>
+                  <strong>
+                    {% if item.seller_price is not None %}
+                      Tsh {{ item.seller_price|floatformat:"0"|intcomma }}
+                    {% else %}
+                      Price unavailable
+                    {% endif %}
+                  </strong>
                 </div>
 
                 <div class="cart-item__price">
@@ -92,7 +159,13 @@
 
                 <div class="cart-item__subtotal">
                   <span data-i18n="sellerSubtotal">Seller subtotal</span>
-                  <strong>Tsh {{ item.line_total|floatformat:"0"|intcomma }}</strong>
+                  <strong>
+                    {% if item.line_total is not None %}
+                      Tsh {{ item.line_total|floatformat:"0"|intcomma }}
+                    {% else %}
+                      Unavailable
+                    {% endif %}
+                  </strong>
                 </div>
               </article>
             {% endwith %}

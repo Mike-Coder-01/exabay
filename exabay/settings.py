@@ -433,3 +433,95 @@ AZAM_CLIENT_SECRET = env("AZAM_CLIENT_SECRET")
 AZAMPAY_PUBLIC_KEY_URL = (
     "https://checkout.azampay.co.tz/azampay/v1/public-key?format=Pem"
 )
+
+
+# ==========================================
+# AZAMPAY DISBURSEMENT CONFIGURATION
+# ==========================================
+
+AZAMPAY_DISBURSEMENT_BASE_URL = env(
+    "AZAMPAY_DISBURSEMENT_BASE_URL"
+).rstrip("/")
+
+AZAMPAY_DISBURSEMENT_AUTH_URL = env(
+    "AZAMPAY_DISBURSEMENT_AUTH_URL"
+)
+
+AZAMPAY_DISBURSEMENT_APP_NAME = env(
+    "AZAMPAY_DISBURSEMENT_APP_NAME"
+)
+
+AZAMPAY_DISBURSEMENT_CLIENT_ID = env(
+    "AZAMPAY_DISBURSEMENT_CLIENT_ID"
+)
+
+AZAMPAY_DISBURSEMENT_CLIENT_SECRET = env(
+    "AZAMPAY_DISBURSEMENT_CLIENT_SECRET"
+)
+
+
+# ==========================================
+# PRODUCTION API ENDPOINTS
+# ==========================================
+
+AZAMPAY_DISBURSEMENT_BALANCE_URL = (
+    f"{AZAMPAY_DISBURSEMENT_BASE_URL}"
+    "/api/v1/azampay/checkbalance/azampesa"
+)
+
+AZAMPAY_DISBURSEMENT_STATUS_URL = (
+    f"{AZAMPAY_DISBURSEMENT_BASE_URL}"
+    "/api/v1/azampay/transactionstatus"
+)
+
+AZAMPAY_DISBURSEMENT_BANK_NAMES_URL = (
+    f"{AZAMPAY_DISBURSEMENT_BASE_URL}"
+    "/api/v1/azampay/BankNames"
+)
+
+
+# ==========================================
+# PUBLIC KEY
+# ==========================================
+
+import textwrap
+
+raw_public_key = env(
+    "AZAMPAY_DISBURSEMENT_PUBLIC_KEY"
+).strip()
+
+# Accept either a full PEM key or base64 key body.
+if "-----BEGIN PUBLIC KEY-----" in raw_public_key:
+    AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
+        raw_public_key.replace("\\n", "\n").strip() + "\n"
+    )
+else:
+    AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
+        "-----BEGIN PUBLIC KEY-----\n"
+        + "\n".join(
+            textwrap.wrap(
+                "".join(raw_public_key.split()),
+                64,
+            )
+        )
+        + "\n-----END PUBLIC KEY-----\n"
+    )
+
+
+# ==========================================
+# SOURCE WALLET
+# ==========================================
+
+AZAMPAY_DISBURSEMENT_SOURCE = {
+    "countryCode": "TZ",
+    "fullName": env(
+        "AZAMPAY_DISBURSEMENT_SOURCE_NAME"
+    ),
+    "bankName": env(
+        "AZAMPAY_DISBURSEMENT_SOURCE_BANK"
+    ),
+    "accountNumber": env(
+        "AZAMPAY_DISBURSEMENT_SOURCE_NUMBER"
+    ),
+    "currency": "TZS",
+}

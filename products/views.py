@@ -200,7 +200,7 @@ def create_product_api(request):
                 category=category,
                 name=name,
                 description=request.POST.get(f"{prefix}[description]", ""),
-                price=request.POST.get(f"{prefix}[price]", 0),
+                seller_price=request.POST.get(f"{prefix}[seller_price]", 0),
                 stock=request.POST.get(f"{prefix}[stock]", 0),
                 is_featured=is_featured,
             )
@@ -242,7 +242,11 @@ def product_update(request, pk):
         raise PermissionDenied("You are not allowed to edit this product.")
 
     if request.method == "POST":
-        form = ProductUpdateForm(request.POST, instance=product)
+        form = ProductUpdateForm(
+        request.POST,
+        instance=product,
+        user=request.user,
+    )
 
         if form.is_valid():
             form.save()
@@ -250,7 +254,10 @@ def product_update(request, pk):
         else:
             messages.error(request, 'Please correct the errors below. Or turn off  is featured because it exceed limit')
     else:
-        form = ProductUpdateForm(instance=product)
+        form = ProductUpdateForm(
+        instance=product,
+        user=request.user,
+    )
 
     return render(
         request,
@@ -396,11 +403,27 @@ def update_product_api(request, pk):
     if "description" in request.POST:
         product.description = request.POST["description"]
     
-    if "price" in request.POST:
+
+    if "seller_price" in request.POST:
         try:
-            product.price = Decimal(request.POST["price"])
+            seller_price = Decimal(
+                request.POST["seller_price"]
+            )
+
+            if not seller_price.is_finite() or seller_price <= 0:
+                return JsonResponse(
+                    {"error": "Seller price must be greater than zero."},
+                    status=400
+                )
+
+            product.seller_price = seller_price
+
         except (ValueError, InvalidOperation):
-            return JsonResponse({"error": "Invalid price format"}, status=400)
+            return JsonResponse(
+                {"error": "Invalid seller price format"},
+                status=400
+            )
+
     
     if "stock" in request.POST:
         try:
@@ -508,15 +531,30 @@ def search_products_api(request):
 
 
 def product_search_view(request):
-    if request.method != 'GET':
-        return redirect(reverse('main:home'))
+    if request.method != "GET":
+        return redirect(reverse("main:home"))
 
-    query = request.GET.get('search_filter')
-    queryset = Product.objects.none()  # safe default
+    query = request.GET.get("search_filter", "").strip()
+    category_id = request.GET.get("category", "").strip()
 
+    queryset = Product.objects.filter(
+        is_available=True
+    )
+
+    # 1. Filter products by category
+    if category_id:
+        if not category_id.isdigit():
+            queryset = queryset.none()
+        else:
+            queryset = queryset.filter(
+                category_id=category_id
+            )
+
+    # 2. Search products and rank results
     if query:
-        queryset = Product.objects.filter(
-            Q(name__icontains=query) | Q(description__icontains=query), is_available=True
+        queryset = queryset.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
         ).annotate(
             search_rank=Case(
                 When(name__iexact=query, then=Value(1)),
@@ -526,14 +564,26 @@ def product_search_view(request):
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('search_rank', '-id')
+        ).order_by("search_rank", "-id")
+
+    # 3. Default: show featured products
+    elif not category_id:
+        queryset = queryset.filter(
+            is_featured=True
+        ).order_by("-id")
+
+    else:
+        queryset = queryset.order_by("-id")
 
     context = {
-        'products': queryset,
-        'scroll_to_products': bool(query),
+        "products": queryset,
+        "categories": Category.objects.all().order_by("name"),
+        "selected_category": category_id,
+        "search_query": query,
+        "scroll_to_products": bool(query or category_id),
     }
 
-    return render(request, 'main/index.html', context)
+    return render(request, "main/index.html", context)
 
 
 def product_detail(request, pk):

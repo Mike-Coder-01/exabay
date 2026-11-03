@@ -17,11 +17,17 @@
           <button class="btn btn--primary" type="submit" data-i18n="search">Search</button>
         </form>
 
-        <div class="hero__categories" aria-label="Popular categories" data-i18n-attr="aria-label:popularCategories">
-          <a class="category-pill" href="#products" data-i18n="catElectronics">Electronics</a>
-          <!-- <a class="category-pill" href="#products" data-i18n="catHome">Home</a>
-          <a class="category-pill" href="#products" data-i18n="catFashion">Fashion</a>
-          <a class="category-pill" href="#products" data-i18n="catBeauty">Beauty</a> -->
+        <div class="hero__categories" aria-label="Popular categories">
+
+            {% for category in categories %}
+                <a
+                    class="category-pill {% if selected_category == category.id|stringformat:'s' %}active{% endif %}"
+                    href="{% url 'products:filter_product' %}?category={{ category.id }}#products"
+                >
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+
         </div>
       </div>
 
@@ -55,7 +61,7 @@
 
       <div id="product-grid" class="product-grid" aria-live="polite">
         {% for product in products %}
-        {% if request.GET.search_filter or product.is_featured %}
+        
           {% with seller=product.seller first_image=product.images.first %}
             {% if seller.is_verified %}
               {% with trust_status="verified" trust_label="Verified" trust_copy="This seller has been verified by Exxabay and meets our trust standards." %}
@@ -71,7 +77,7 @@
               {% endwith %}
             {% endif %}
           {% endwith %}
-        {% endif %}
+        
         {% empty %}
           <div class="product-empty">
             <h3 data-i18n="noProductsTitle">No products available</h3>

@@ -10,7 +10,7 @@ from django.http import JsonResponse
 
 # GLOBAL VARIABLES
 url = "https://api.clickpesa.com/third-parties/billpay/create-order-control-number"
-TOKEN_URL = " https://authenticator.azampay.co.tz/AppRegistration/GenerateToken"
+TOKEN_URL = "https://authenticator.azampay.co.tz/AppRegistration/GenerateToken"
 
 AZAMPAY_PUBLIC_KEY_CACHE = "azampay_public_key"
 AZAMPAY_PUBLIC_KEY_CACHE_TTL = 60 * 60 * 24  

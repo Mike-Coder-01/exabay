@@ -1,6 +1,9 @@
 from django.db import models
 from decimal import Decimal
 from django.urls import reverse
+from decimal import Decimal, ROUND_HALF_UP
+from django.core.exceptions import ValidationError
+
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -17,6 +20,12 @@ class Product(models.Model):
     description = models.TextField()
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    seller_price = models.DecimalField(
+    max_digits=10,
+    decimal_places=2,
+    null=True,
+    blank=True,
+)
     stock = models.PositiveIntegerField()
 
     is_available = models.BooleanField(default=True)
@@ -33,11 +42,56 @@ class Product(models.Model):
         )
     
     def save(self, *args, **kwargs):
-        if self._state.adding:  # Only on creation
-            if not self.seller.is_verified:
-                raise ValueError("Seller is not verified and cannot create products.")
-            self.price = Decimal(self.price) * Decimal("1.10")
+
+        # 1. Check seller verification when creating a product
+        if self._state.adding and not self.seller.is_verified:
+            raise ValidationError(
+                "Seller is not verified and cannot create products."
+            )
+
+        # 2. New products must have a seller price
+        if self._state.adding and self.seller_price is None:
+            raise ValidationError(
+                "Seller price is required."
+            )
+
+        # 3. Validate and calculate prices
+        if self.seller_price is not None:
+
+            seller_price = Decimal(str(self.seller_price))
+
+            if not seller_price.is_finite() or seller_price <= 0:
+                raise ValidationError(
+                    "Seller price must be greater than zero."
+                )
+
+            # Store seller price to two decimal places
+            self.seller_price = seller_price.quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
+            # Calculate buyer-facing price
+            self.price = (
+                self.seller_price * Decimal("1.10")
+            ).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
+            # Ensure both fields are saved when using update_fields
+            if kwargs.get("update_fields") is not None:
+                update_fields = set(kwargs["update_fields"])
+
+                if update_fields and (
+                    "seller_price" in update_fields
+                    or "price" in update_fields
+                ):
+                    update_fields.update({"seller_price", "price"})
+                    kwargs["update_fields"] = update_fields
+
         super().save(*args, **kwargs)
+
 
 
 class ProductImage(models.Model):

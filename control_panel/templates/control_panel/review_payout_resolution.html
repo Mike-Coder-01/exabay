@@ -1,0 +1,308 @@
+
+{% extends 'main/base.html' %}
+{% load humanize %}
+
+{% block title %}
+Review Payout Resolution | Exxabay
+{% endblock %}
+
+{% block content %}
+
+{% include 'partials/header_bar.html' %}
+
+<main class="cart-page">
+
+    <section class="cart-hero">
+        <div>
+            <p class="cart-hero__eyebrow">
+                Payout administration
+            </p>
+
+            <h1 class="cart-hero__title">
+                Review payout resolution
+            </h1>
+
+            <p class="cart-hero__copy">
+                Review provider evidence before making a decision.
+                Approval and manual finalization do not initiate
+                another AzamPay transfer.
+            </p>
+        </div>
+    </section>
+
+    <section class="cart-layout">
+        <div class="cart-items">
+
+            <article class="detail-panel">
+
+                <h2>Resolution #{{ resolution.pk }}</h2>
+
+                <div class="metrics-grid detail-panel__metrics">
+
+                    <div class="metric">
+                        <span class="metric__label">
+                            Payout reference
+                        </span>
+                        <strong>
+                            {{ resolution.payout.order_reference }}
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span class="metric__label">
+                            Seller amount
+                        </span>
+                        <strong>
+                            Tsh {{ resolution.payout.amount|floatformat:"2"|intcomma }}
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span class="metric__label">
+                            Proposed outcome
+                        </span>
+                        <strong>
+                            {{ resolution.get_proposed_outcome_display }}
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span class="metric__label">
+                            Request status
+                        </span>
+                        <strong>
+                            {{ resolution.get_status_display }}
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span class="metric__label">
+                            Current payout status
+                        </span>
+                        <strong>
+                            {{ resolution.payout.get_status_display }}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <h3>Investigation evidence</h3>
+
+                <p>
+                    <strong>Requested by:</strong>
+                    {{ resolution.requested_by }}
+                </p>
+
+                <p>
+                    <strong>Provider reference:</strong>
+                    {{ resolution.provider_reference }}
+                </p>
+
+                <p>
+                    <strong>Investigation findings:</strong>
+                    {{ resolution.investigation.findings|linebreaksbr }}
+                </p>
+
+                <p>
+                    <strong>Supporting evidence:</strong>
+                    {{ resolution.evidence|linebreaksbr }}
+                </p>
+
+                {% if resolution.status != "pending" %}
+
+                    <div class="onboarding-section">
+
+                        <h3>Administrator decision</h3>
+
+                        <p>
+                            <strong>Decision:</strong>
+                            {{ resolution.get_status_display }}
+                        </p>
+
+                        <p>
+                            <strong>Reviewed by:</strong>
+                            {{ resolution.approved_by }}
+                        </p>
+
+                        <p>
+                            <strong>Decision date:</strong>
+                            {{ resolution.decided_at|date:"M d, Y H:i" }}
+                        </p>
+
+                        <p>
+                            <strong>Approval notes:</strong>
+                            {{ resolution.approval_notes|linebreaksbr }}
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+                {% if can_decide %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {{ form.non_field_errors }}
+
+                        <div class="onboarding-section">
+
+                            <h3>Decision</h3>
+
+                            {{ form.decision }}
+                            {{ form.decision.errors }}
+
+                            <p>
+                                {{ form.approval_notes.label_tag }}
+                                {{ form.approval_notes }}
+                                {{ form.approval_notes.errors }}
+                            </p>
+
+                        </div>
+
+                        <div class="product-detail__actions">
+                            <button
+                                type="submit"
+                                class="btn btn--primary"
+                            >
+                                Submit decision
+                            </button>
+                        </div>
+
+                    </form>
+
+                {% elif resolution.status == "pending" %}
+
+                    <div class="mobile-money-note">
+                        <strong>Decision unavailable</strong>
+
+                        <span>
+                            You cannot review your own resolution
+                            request, or the payout is no longer
+                            eligible for approval.
+                        </span>
+                    </div>
+
+                {% endif %}
+
+                {% if resolution.status == "approved" %}
+
+                    <div class="onboarding-section">
+
+                        <h3>Manual payout finalization</h3>
+
+                        {% if resolution.finalization %}
+
+                            <div class="mobile-money-note">
+                                <strong>
+                                    Payout manually finalized
+                                </strong>
+
+                                <span>
+                                    Finalized by:
+                                    {{ resolution.finalization.finalized_by }}
+                                </span>
+
+                                <span>
+                                    Finalized on:
+                                    {{ resolution.finalization.created_at|date:"M d, Y H:i" }}
+                                </span>
+
+                                <span>
+                                    Final outcome:
+                                    {{ resolution.finalization.get_outcome_display }}
+                                </span>
+                            </div>
+
+                        {% elif resolution.payout.status == "pending" or resolution.payout.status == "processing" %}
+
+                            <p>
+                                This resolution has been approved.
+                                Before finalization, independently
+                                verify the transaction outcome with
+                                AzamPay and retain supporting evidence.
+                            </p>
+
+                            {% if request.user.is_superuser and request.user.pk != resolution.requested_by_id %}
+
+                                <div class="product-detail__actions">
+
+                                    <a
+                                        class="btn btn--primary"
+                                        href="{% url 'control_panel:finalize_payout_resolution' resolution.pk %}"
+                                    >
+                                        Finalize payout
+                                    </a>
+
+                                </div>
+
+                            {% else %}
+
+                                <div class="mobile-money-note">
+                                    <strong>
+                                        Finalization unavailable
+                                    </strong>
+
+                                    <span>
+                                        Only an authorized administrator
+                                        other than the requesting
+                                        administrator may finalize
+                                        this payout.
+                                    </span>
+                                </div>
+
+                            {% endif %}
+
+                        {% else %}
+
+                            <div class="mobile-money-note">
+                                <strong>
+                                    Finalization unavailable
+                                </strong>
+
+                                <span>
+                                    This payout is no longer pending
+                                    or processing. Review its current
+                                    status before taking further action.
+                                </span>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% elif resolution.status == "rejected" %}
+
+                    <div class="mobile-money-note">
+                        <strong>Resolution rejected</strong>
+
+                        <span>
+                            This resolution cannot be used to finalize
+                            the payout. The existing payout status and
+                            reservations remain unchanged.
+                        </span>
+                    </div>
+
+                {% endif %}
+
+                <div class="product-detail__actions">
+
+                    <a
+                        class="btn btn--outline"
+                        href="{% url 'control_panel:seller_payouts' %}"
+                    >
+                        Back to payouts
+                    </a>
+
+                </div>
+
+            </article>
+
+        </div>
+    </section>
+
+</main>
+
+{% include 'partials/footer.html' %}
+
+{% endblock %}

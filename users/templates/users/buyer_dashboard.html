@@ -88,69 +88,70 @@
           {% if orders %}
             <div class="vendor-group">
               {% for order in orders %}
-                <div class="cart-item" style="grid-template-columns: minmax(0,1fr) auto auto auto;">
-                  <div>
+                <article class="cart-item" style="grid-template-columns:minmax(0,1fr) auto auto; align-items:start;">
+                  <div style="min-width:0;">
                     <a class="cart-item__name" href="{% url 'orders:order_detail' order.id %}">Order #{{ order.id }}</a>
                     <p class="cart-item__seller">
                       {{ order.created_at|date:"d M Y" }} &middot;
                       {{ order.items.count }} item{{ order.items.count|pluralize }}
                     </p>
-                  </div>
-                  <div>
-                    {% if order.status == "paid" %}
-                      <span class="status-badge status-badge--verified" data-i18n="okPaid">OK Paid</span>
-                    {% elif order.status == "pending" %}
-                      <span class="status-badge status-badge--pending" data-i18n="pendingOrders">! Pending</span>
-                    {% elif order.status == "shipped" %}
-                      <span class="status-badge status-badge--pending" data-i18n="shippedStatus">⟶ Shipped</span>
-                  
-                    {% elif order.status == "delivered" %}
-                    <span class="status-badge status-badge--verified"
-                          data-i18n="okDelivered">
-                      OK Delivered
-                    </span>
 
-                    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
-
-                      <!-- Confirm that the buyer has received the order -->
-                      <form method="post"
-                            action="{% url 'orders:confirm_received' order.id %}">
-                        {% csrf_token %}
-
-                        <button
-                          type="submit"
-                          class="btn btn--primary"
-                          style="font-size:0.78rem; min-height:32px; padding:0 12px;"
-                          data-i18n="confirmReceived">
-                          Confirm received
-                        </button>
-                      </form>
-
-                      <!-- Report a problem with the seller/order -->
-                      <a href="{% url 'main:report_seller' %}"
-                        class="btn btn--outline"
-                        style="font-size:0.78rem; min-height:32px; padding:0 12px;"
-                        data-i18n="reportProblem">
-                        Report a problem
-                      </a>
-
+                    <div class="cart-item__meta" style="margin-top:8px;">
+                      {% if order.status == "cancelled" or order.status == "refunded" %}
+                        <span class="status-badge status-badge--unverified">{{ order.status|title }}</span>
+                      {% elif order.payment.status == "paid" %}
+                        <span class="status-badge status-badge--verified" data-i18n="okPaid">Paid</span>
+                      {% elif order.payment.status == "failed" %}
+                        <span class="status-badge status-badge--unverified">Payment failed</span>
+                      {% elif order.payment.status == "pending" %}
+                        <span class="status-badge status-badge--pending" data-i18n="pendingOrders">Payment pending</span>
+                      {% else %}
+                        <span class="status-badge status-badge--pending">{{ order.status|title }}</span>
+                      {% endif %}
                     </div>
 
-                  {% elif order.status == "received" %}
-                    <span class="status-badge status-badge--verified"
-                          data-i18n="orderReceived">
-                      ✓ Received
-                    </span>
-                    {% else %}
-                      <span class="status-badge status-badge--unverified" data-i18n="cancelledStatus">X Cancelled</span>
-                    {% endif %}
+                    {% for fulfillment in order.seller_fulfillments.all %}
+                      <div class="mobile-money-note" style="margin-top:12px; padding:12px;">
+                        <strong>{{ fulfillment.seller.business_name|default:"Seller" }}</strong>
+                        <div class="cart-item__meta" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                          {% if fulfillment.dispute_status == "open" %}
+                            <span class="status-badge status-badge--unverified">Dispute under review</span>
+                          {% elif fulfillment.dispute_status == "refund" %}
+                            <span class="status-badge status-badge--unverified">Refund decision recorded</span>
+                          {% elif fulfillment.dispute_status == "release" %}
+                            <span class="status-badge status-badge--verified">Admin approved release</span>
+                          {% elif fulfillment.buyer_confirmed_at %}
+                            <span class="status-badge status-badge--verified" data-i18n="orderReceived">Received</span>
+                            <span class="badge">{{ fulfillment.buyer_confirmed_at|date:"d M Y, H:i" }}</span>
+                          {% elif fulfillment.shipped_at %}
+                            <span class="status-badge status-badge--pending" data-i18n="shippedStatus">Shipped</span>
+                            {% if order.payment.status == "paid" %}
+                              <form method="post" action="{% url 'orders:confirm_received' fulfillment.id %}" style="margin:0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--primary" style="font-size:0.78rem; min-height:32px; padding:0 12px;" data-i18n="confirmReceived">
+                                  Confirm received
+                                </button>
+                              </form>
+                              <a href="{% url 'orders:report_fulfillment_problem' fulfillment.id %}" class="btn btn--outline">
+                                Report a Problem
+                              </a>
+                            {% endif %}
+                          {% else %}
+                            <span class="status-badge status-badge--pending">Awaiting shipment</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% empty %}
+                      <p class="cart-item__seller" style="margin-top:10px;">Fulfillment tracking is not available for this order.</p>
+                    {% endfor %}
                   </div>
+
                   <div class="cart-item__subtotal">
                     <span data-i18n="totalLabel">Total</span>
                     <strong>Tsh{{ order.total_amount|floatformat:"0"|intcomma }}</strong>
                   </div>
                   <a href="{% url 'orders:order_detail' order.id %}" class="btn btn--outline" style="font-size:0.82rem; min-height:34px;" data-i18n="viewOrder">View</a>
-                </div>
+                </article>
               {% endfor %}
             </div>
           {% else %}

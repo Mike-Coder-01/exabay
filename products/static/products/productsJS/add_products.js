@@ -33,7 +33,7 @@ class ProductCreationUI {
     const category = card.querySelector("[data-field='category']");
     const name = card.querySelector("[data-field='name']");
     const description = card.querySelector("[data-field='description']");
-    const price = card.querySelector("[data-field='price']");
+    const sellerPrice = card.querySelector("[data-field='seller_price']");
     const stock = card.querySelector("[data-field='stock']");
     const isFeatured = card.querySelector("[data-field='is_featured']"); // Fixed: was 'featured'
 
@@ -41,7 +41,7 @@ class ProductCreationUI {
     formData.append(`${prefix}[category]`, category ? category.value : '');
     formData.append(`${prefix}[name]`, name ? name.value : '');
     formData.append(`${prefix}[description]`, description ? description.value : '');
-    formData.append(`${prefix}[price]`, price ? price.value : '');
+    formData.append(`${prefix}[seller_price]`, sellerPrice ? sellerPrice.value : '');
     formData.append(`${prefix}[stock]`, stock ? stock.value : '');
     formData.append(`${prefix}[is_featured]`, isFeatured ? isFeatured.checked : false);
 

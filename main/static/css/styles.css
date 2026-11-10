@@ -16,6 +16,51 @@
   --radius-pill: 999px;
   --container: 1180px;
 }
+
+
+/* Mobile money checkout */
+
+.payment-method-block {
+    width: 100%;
+    align-items: stretch;
+    padding: 16px;
+}
+
+.payment-method-block .auth-form {
+    width: 100%;
+    display: grid;
+    gap: 16px;
+}
+
+.payment-method-block select.auth-field__input {
+    cursor: pointer;
+    appearance: auto;
+}
+
+.payment-method-block .auth-field small {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.cart-summary .mobile-money-note {
+    margin-top: 16px;
+}
+
+.cart-summary .mobile-money-note span {
+    display: block;
+    line-height: 1.6;
+}
+
+.cart-summary .mobile-money-note span + span {
+    margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+    .payment-method-block {
+        padding: 12px;
+    }
+}
+
 .payment-method-block {
   display: flex;
   flex-direction: column;

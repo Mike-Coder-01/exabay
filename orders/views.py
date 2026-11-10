@@ -1465,25 +1465,48 @@ def order_payment_detail(request, token):
 @login_required
 def checkout_azam(request):
 
+    ALLOWED_PROVIDERS = {
+    "Mpesa",
+    "Tigo",
+    "Airtel",
+    "Halopesa",
+    }
     # Only allow POST requests
     if request.method != "POST":
         return redirect("orders:cart")
 
     # 1. Validate customer's phone number
     phone = request.POST.get("phone")
+    # 2. Get selected provider
+    provider = request.POST.get(
+        "provider", ""
+    ).strip()
 
-    phone_number = _normalize_phone(
-        phone or getattr(request.user, "phone_number", None)
-    )
+    # 3. Validate provider
+    if provider not in ALLOWED_PROVIDERS:
+        messages.error(
+            request,
+            "Please select a valid mobile money provider."
+        )
+        return redirect("orders:cart")
 
+    # 4. Get payment phone number
+    phone = request.POST.get(
+        "phone", ""
+    ).strip()
+
+    # 5. Normalize phone number
+    phone_number = _normalize_phone(phone)
+
+    # 6. Validate phone number
     if not phone_number:
         messages.error(
             request,
-            "A valid phone number is required for mobile payment."
+            "Please enter a valid mobile money phone number."
         )
-        return redirect("users:edit_profile")
+        return redirect("orders:cart")
 
-    # 2. Create pending order inside a database transaction
+    # 7. Create pending order inside a database transaction
     with transaction.atomic():
 
         cart = get_object_or_404(
@@ -1514,7 +1537,7 @@ def checkout_azam(request):
             )
         }
 
-        # 3. Validate products and calculate total
+        # 8. Validate products and calculate total
         total = Decimal("0.00")
 
         for item in items:
@@ -1549,14 +1572,14 @@ def checkout_azam(request):
 
             total += product.price * item.quantity
 
-        # 4. Create one order
+        # 9. Create one order
         order = Order.objects.create(
             user=request.user,
             total_amount=total,
             status="pending",
         )
 
-        # 5. Create one fulfillment per seller
+        # 10. Create one fulfillment per seller
         seller_fulfillments = {}
 
         for item in items:
@@ -1585,7 +1608,7 @@ def checkout_azam(request):
                 seller_price=product.seller_price,
             )
 
-        # 6. Create pending payment
+        # 11. Create pending payment
         order_reference = generate_order_reference()
 
         payment = Payment.objects.create(
@@ -1599,13 +1622,13 @@ def checkout_azam(request):
     # Database transaction has now committed.
     # The callback can find the pending payment.
 
-    # 7. Prepare AzamPay collection request
+    # 12. Prepare AzamPay collection request
     data = {
         "accountNumber": phone_number,
         "amount": int(total),
         "currency": "TZS",
         "externalId": order_reference,
-        "provider": "Halopesa",
+        "provider": provider,
     }
 
     try:
@@ -1625,7 +1648,7 @@ def checkout_azam(request):
             body=data,
         )
 
-        # 8. Send payment request
+        # 13. Send payment request
         azampay_response = (
             payment_object.make_azam_pesa_post_request()
         )
@@ -1668,7 +1691,7 @@ def checkout_azam(request):
             order_id=order.id,
         )
 
-    # 9. Payment request accepted, but not yet paid
+    # 14. Payment request accepted, but not yet paid
     messages.success(
         request,
         "Payment request sent. Complete the payment "

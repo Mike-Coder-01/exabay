@@ -1,204 +1,611 @@
+
 {% extends 'main/base.html' %}
 {% load static %}
 {% load humanize %}
-{% block title %} Your Cart | Exxabay {% endblock %}
+
+{% block title %}Your Cart | Exxabay{% endblock %}
+
 {% block content %}
 
 {% include 'partials/header_bar.html' %}
 {% include 'partials/messages.html' %}
-  <main class="cart-page" data-cart-page>
-    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" data-csrf-token>
+
+<main class="cart-page" data-cart-page>
+
+    <input
+        type="hidden"
+        name="csrfmiddlewaretoken"
+        value="{{ csrf_token }}"
+        data-csrf-token
+    >
+
+    <!-- CART HEADER -->
     <section class="cart-hero" aria-labelledby="cart-title">
-      <div>
-        <p class="cart-hero__eyebrow" data-i18n="secureMarketplaceCart">Secure marketplace cart</p>
-        <h1 id="cart-title" class="cart-hero__title" data-i18n="yourShoppingCart">Your shopping cart</h1>
-        <p class="cart-hero__copy" data-i18n="cartHeroCopy">Review seller details, quantities, and totals before moving to mobile money checkout.</p>
-      </div>
-      <div class="cart-hero__trust">
-        <span class="trust-card__icon">OK</span>
+
         <div>
-          <strong data-i18n="trustProtectedCheckout">Trust-protected checkout</strong>
-          <span data-i18n="trustProtectedCheckoutCopy">Seller verification remains visible throughout your order journey.</span>
+            <p class="cart-hero__eyebrow"
+               data-i18n="secureMarketplaceCart">
+                Secure marketplace cart
+            </p>
+
+            <h1 id="cart-title"
+                class="cart-hero__title"
+                data-i18n="yourShoppingCart">
+                Your shopping cart
+            </h1>
+
+            <p class="cart-hero__copy"
+               data-i18n="cartHeroCopy">
+                Review seller details, quantities,
+                and totals before moving to
+                mobile money checkout.
+            </p>
         </div>
-      </div>
+
+        <div class="cart-hero__trust">
+            <span class="trust-card__icon">OK</span>
+
+            <div>
+                <strong data-i18n="trustProtectedCheckout">
+                    Trust-protected checkout
+                </strong>
+
+                <span data-i18n="trustProtectedCheckoutCopy">
+                    Seller verification remains visible
+                    throughout your order journey.
+                </span>
+            </div>
+        </div>
+
     </section>
 
+
     {% if cart and cart.items.all %}
-      <section class="cart-layout" aria-label="Cart details">
+
+    <section class="cart-layout" aria-label="Cart details">
+
+        <!-- CART PRODUCTS -->
         <div class="cart-items" aria-label="Cart items">
-          <div class="cart-items__header">
-            <div>
-              <p class="section-heading__eyebrow" data-i18n="marketplaceOrder">Marketplace order</p>
-              <h2 data-i18n="itemsInYourCart">Items in your cart</h2>
+
+            <div class="cart-items__header">
+
+                <div>
+                    <p class="section-heading__eyebrow"
+                       data-i18n="marketplaceOrder">
+                        Marketplace order
+                    </p>
+
+                    <h2 data-i18n="itemsInYourCart">
+                        Items in your cart
+                    </h2>
+                </div>
+
+                <span class="cart-items__count"
+                      data-cart-count>
+                    {{ cart.items.all|length }}
+                    item{{ cart.items.all|length|pluralize }}
+                </span>
+
             </div>
-            <span class="cart-items__count" data-cart-count>{{ cart.items.all|length }} item{{ cart.items.all|length|pluralize }}</span>
-          </div>
 
-          <section class="vendor-group" aria-label="Cart products by marketplace sellers">
-            {% for item in cart_items %}
-              {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
+
+            <section class="vendor-group"
+                     aria-label="Cart products by marketplace sellers">
+
+                {% for item in cart_items %}
+
+                {% with product=item.product first_image=item.product.images.first seller=item.product.seller %}
+
                 <article
-                  class="cart-item"
-                  data-cart-item
-                  data-price="{{ product.price }}"
-                  data-quantity="{{ item.quantity }}"
-                  data-update-url="{% url 'orders:cart_update_item' item.pk %}"
-                  data-remove-url="{% url 'orders:cart_remove_item' item.pk %}"
+                    class="cart-item"
+                    data-cart-item
+                    data-price="{{ product.price }}"
+                    data-quantity="{{ item.quantity }}"
+                    data-update-url="{% url 'orders:cart_update_item' item.pk %}"
+                    data-remove-url="{% url 'orders:cart_remove_item' item.pk %}"
                 >
-                  <a class="cart-item__media" href="{% url 'products:product_detail' product.pk %}">
-                    {% if first_image %}
-                      <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
-                    {% else %}
-                      <span>{{ product.name|first }}</span>
-                    {% endif %}
-                  </a>
 
-                  <div class="cart-item__info">
-                    <a class="cart-item__name" href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a>
-                    <p class="cart-item__seller"><span data-i18n="sellerLabel">Seller:</span> <strong>{{ seller.business_name|default:seller.user.username }}</strong></p>
-                    <div class="cart-item__meta">
-                      <span class="badge">{{ product.category.name|default:"Uncategorized" }}</span>
-                      {% if seller.is_verified %}
-                        <span class="status-badge status-badge--verified" data-i18n="okVerified">OK Verified</span>
-                      {% elif seller.is_profile_complete %}
-                        <span class="status-badge status-badge--pending" data-i18n="pendingStatus">! Pending</span>
-                      {% else %}
-                        <span class="status-badge status-badge--unverified" data-i18n="unverifiedStatus">X Unverified</span>
-                      {% endif %}
-                      {% if product.stock <= 5 %}
-                        <span class="stock stock--low" data-i18n="lowStock">Low Stock</span>
-                      {% else %}
-                        <span class="stock stock--in" data-i18n="inStock">In Stock</span>
-                      {% endif %}
+                    <!-- PRODUCT IMAGE -->
+                    <a
+                        class="cart-item__media"
+                        href="{% url 'products:product_detail' product.pk %}"
+                    >
+
+                        {% if first_image %}
+
+                        <img
+                            src="{{ first_image.image.url }}"
+                            alt="{{ product.name }}"
+                            loading="lazy"
+                        >
+
+                        {% else %}
+
+                        <span>{{ product.name|first }}</span>
+
+                        {% endif %}
+
+                    </a>
+
+
+                    <!-- PRODUCT INFORMATION -->
+                    <div class="cart-item__info">
+
+                        <a
+                            class="cart-item__name"
+                            href="{% url 'products:product_detail' product.pk %}"
+                        >
+                            {{ product.name }}
+                        </a>
+
+                        <p class="cart-item__seller">
+
+                            <span data-i18n="sellerLabel">
+                                Seller:
+                            </span>
+
+                            <strong>
+                                {{ seller.business_name|default:seller.user.username }}
+                            </strong>
+
+                        </p>
+
+
+                        <div class="cart-item__meta">
+
+                            <span class="badge">
+                                {{ product.category.name|default:"Uncategorized" }}
+                            </span>
+
+                            {% if seller.is_verified %}
+
+                            <span
+                                class="status-badge status-badge--verified"
+                                data-i18n="okVerified"
+                            >
+                                OK Verified
+                            </span>
+
+                            {% elif seller.is_profile_complete %}
+
+                            <span
+                                class="status-badge status-badge--pending"
+                                data-i18n="pendingStatus"
+                            >
+                                ! Pending
+                            </span>
+
+                            {% else %}
+
+                            <span
+                                class="status-badge status-badge--unverified"
+                                data-i18n="unverifiedStatus"
+                            >
+                                X Unverified
+                            </span>
+
+                            {% endif %}
+
+
+                            {% if product.stock <= 5 %}
+
+                            <span
+                                class="stock stock--low"
+                                data-i18n="lowStock"
+                            >
+                                Low Stock
+                            </span>
+
+                            {% else %}
+
+                            <span
+                                class="stock stock--in"
+                                data-i18n="inStock"
+                            >
+                                In Stock
+                            </span>
+
+                            {% endif %}
+
+                        </div>
+
                     </div>
-                  </div>
 
-                  <div class="cart-item__price">
-                    <span data-i18n="price">Price</span>
-                    <strong>Tsh<span data-cart-price>{{ product.price|floatformat:"0"|intcomma }}</span></strong>
-                  </div>
 
-                  <div class="quantity-control" aria-label="Quantity controls">
-                    <button class="quantity-control__button" type="button" data-cart-decrease data-i18n-attr="aria-label:decreaseQuantity" aria-label="Decrease quantity">-</button>
-                    <label class="sr-only" for="qty-{{ item.pk }}" data-i18n="quantity">Quantity</label>
-                    <input id="qty-{{ item.pk }}" class="quantity-control__input" type="number" min="1" max="{{ product.stock }}" value="{{ item.quantity }}" data-cart-quantity>
-                    <button class="quantity-control__button" type="button" data-cart-increase data-i18n-attr="aria-label:increaseQuantity" aria-label="Increase quantity">+</button>
-                  </div>
+                    <!-- PRICE -->
+                    <div class="cart-item__price">
 
-                  <div class="cart-item__subtotal">
-                    <span data-i18n="subtotal">Subtotal</span>
-                    <strong>Tsh<span data-cart-subtotal>0.00</span></strong>
-                  </div>
+                        <span data-i18n="price">
+                            Price
+                        </span>
 
-                  <button class="cart-item__remove" type="button" data-cart-remove data-i18n-attr="aria-label:remove" aria-label="Remove {{ product.name }}" data-i18n="remove">
-                    Remove
-                  </button>
+                        <strong>
+                            Tsh<span data-cart-price>
+                                {{ product.price|floatformat:"0"|intcomma }}
+                            </span>
+                        </strong>
+
+                    </div>
+
+
+                    <!-- QUANTITY -->
+                    <div
+                        class="quantity-control"
+                        aria-label="Quantity controls"
+                    >
+
+                        <button
+                            class="quantity-control__button"
+                            type="button"
+                            data-cart-decrease
+                            data-i18n-attr="aria-label:decreaseQuantity"
+                            aria-label="Decrease quantity"
+                        >
+                            -
+                        </button>
+
+                        <label
+                            class="sr-only"
+                            for="qty-{{ item.pk }}"
+                            data-i18n="quantity"
+                        >
+                            Quantity
+                        </label>
+
+                        <input
+                            id="qty-{{ item.pk }}"
+                            class="quantity-control__input"
+                            type="number"
+                            min="1"
+                            max="{{ product.stock }}"
+                            value="{{ item.quantity }}"
+                            data-cart-quantity
+                        >
+
+                        <button
+                            class="quantity-control__button"
+                            type="button"
+                            data-cart-increase
+                            data-i18n-attr="aria-label:increaseQuantity"
+                            aria-label="Increase quantity"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+
+                    <!-- SUBTOTAL -->
+                    <div class="cart-item__subtotal">
+
+                        <span data-i18n="subtotal">
+                            Subtotal
+                        </span>
+
+                        <strong>
+                            Tsh<span data-cart-subtotal>
+                                0.00
+                            </span>
+                        </strong>
+
+                    </div>
+
+
+                    <!-- REMOVE -->
+                    <button
+                        class="cart-item__remove"
+                        type="button"
+                        data-cart-remove
+                        data-i18n-attr="aria-label:remove"
+                        aria-label="Remove {{ product.name }}"
+                        data-i18n="remove"
+                    >
+                        Remove
+                    </button>
+
                 </article>
-              {% endwith %}
-            {% endfor %}
-          </section>
+
+                {% endwith %}
+
+                {% endfor %}
+
+            </section>
+
         </div>
 
-        <aside class="cart-summary" aria-labelledby="cart-summary-title">
-          <p class="section-heading__eyebrow" data-i18n="orderSummary">Order summary</p>
-          <h2 id="cart-summary-title" data-i18n="cartTotal">Cart total</h2>
 
-          <dl class="cart-summary__lines">
-            <div>
-              <dt data-i18n="itemsSubtotal">Items subtotal</dt>
-              <dd>Tsh<span data-cart-total>0.00</span></dd>
+        <!-- ORDER SUMMARY -->
+        <aside
+            class="cart-summary"
+            aria-labelledby="cart-summary-title"
+        >
+
+            <p class="section-heading__eyebrow"
+               data-i18n="orderSummary">
+                Order summary
+            </p>
+
+            <h2 id="cart-summary-title"
+                data-i18n="cartTotal">
+                Cart total
+            </h2>
+
+
+            <dl class="cart-summary__lines">
+
+                <div>
+                    <dt data-i18n="itemsSubtotal">
+                        Items subtotal
+                    </dt>
+
+                    <dd>
+                        Tsh<span data-cart-total>0.00</span>
+                    </dd>
+                </div>
+
+                <div>
+                    <dt data-i18n="Charges">
+                        Charges
+                    </dt>
+
+                    <dd>
+                        Tsh<span data-payment-fee>0.00</span>
+                    </dd>
+                </div>
+
+                <div>
+                    <dt data-i18n="AmountPayable">
+                        Amount payable
+                    </dt>
+
+                    <dd>
+                        Tsh<span data-amount-payable>0.00</span>
+                    </dd>
+                </div>
+
+                <div>
+                    <dt data-i18n="delivery">
+                        Delivery
+                    </dt>
+
+                    <dd data-i18n="calculatedAtCheckout">
+                        Calculated at checkout
+                    </dd>
+                </div>
+
+                <div>
+                    <dt data-i18n="trustProtection">
+                        Trust protection
+                    </dt>
+
+                    <dd data-i18n="included">
+                        Included
+                    </dd>
+                </div>
+
+            </dl>
+
+
+            <!-- MOBILE MONEY CHECKOUT -->
+            <h3>Pay with Mobile Money</h3>
+
+            <div class="payment-method-block">
+
+                <form
+                    method="post"
+                    action="{% url 'orders:checkout' %}"
+                    id="phonePaymentId"
+                    class="auth-form"
+                    style="width: 100%; display: grid;"
+                >
+
+                    {% csrf_token %}
+
+
+                    <!-- SELECT PROVIDER -->
+                    <label class="auth-field"
+                           for="paymentProvider">
+
+                        <span>
+                            Select mobile money provider
+                        </span>
+
+                        <select
+                            name="provider"
+                            id="paymentProvider"
+                            class="auth-field__input"
+                            required
+                        >
+
+                            <option value="" selected disabled>
+                                Choose provider
+                            </option>
+
+                            <option value="Mpesa">
+                                M-Pesa
+                            </option>
+
+                            <option value="Tigo">
+                                Tigo Pesa
+                            </option>
+
+                            <option value="Airtel">
+                                Airtel Money
+                            </option>
+
+                            <option value="Halopesa">
+                                HaloPesa
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <!-- PHONE NUMBER -->
+                    <label class="auth-field"
+                           for="paymentPhone">
+
+                        <span data-i18n="PaymentPhoneNumber">
+                            Payment phone number
+                        </span>
+
+                        <input
+                            type="tel"
+                            id="paymentPhone"
+                            name="phone"
+                            placeholder="e.g. 0712345678"
+                            class="auth-field__input"
+                            autocomplete="tel"
+                            inputmode="tel"
+                            pattern="(?:\+255|255|0)[67][0-9]{8}"
+                            title="Enter a valid Tanzanian mobile number"
+                            required
+                        >
+
+                        <small>
+                            Enter the number registered
+                            with your selected provider.
+                        </small>
+
+                    </label>
+
+
+                    <!-- SUBMIT PAYMENT -->
+                    <button
+                        class="btn btn--primary cart-summary__checkout"
+                        type="submit"
+                        id="proceedPaymentBtn"
+                        data-i18n="proceedToCheckout"
+                    >
+                        Proceed to Payment
+                    </button>
+
+                </form>
+
             </div>
-            <div>
-              <dt data-i18n="Charges">Charges</dt>
-              <dd>Tsh<span data-payment-fee>0.00</span></dd>
+
+
+            <!-- BUYER PROTECTION NOTICE -->
+            <div class="mobile-money-note">
+
+                <strong>
+                    Your payment is protected
+                </strong>
+
+                <span>
+                    When you pay, Exxabay holds
+                    your money instead of sending
+                    it directly to the seller.
+                </span>
+
+                <span>
+                    The seller becomes eligible
+                    for payment when you confirm
+                    receiving your product, or
+                    60 hours after the seller
+                    marks it as shipped, provided
+                    there is no blocking dispute.
+                </span>
+
+                <span>
+                    If you experience a problem,
+                    report it through Exxabay
+                    before payment is released.
+                </span>
+
             </div>
-            <div>
-              <dt data-i18n="AmountPayable">Amount payable</dt>
-              <dd>Tsh<span data-amount-payable>0.00</span></dd>
+
+
+            <!-- SUPPORTED PROVIDERS -->
+            <div class="mobile-money-note">
+
+                <strong data-i18n="mobileMoneySupported">
+                    Supported mobile money
+                </strong>
+
+                <span>
+                    M-Pesa, Tigo Pesa,
+                    Airtel Money and HaloPesa.
+                </span>
+
             </div>
-            <div>
-              <dt data-i18n="delivery">Delivery</dt>
-              <dd data-i18n="calculatedAtCheckout">Calculated at checkout</dd>
-            </div>
-            <div>
-              <dt data-i18n="trustProtection">Trust protection</dt>
-              <dd data-i18n="included">Included</dd>
-            </div>
-          </dl>
 
-          <!-- <div class="cart-summary__total">
-            <span data-i18n="total">Total</span>
-            <strong>Tsh<span data-cart-grand-total>0.00</span></strong>
-          </div>
-
-          <div class="cart-summary__total">
-            <span data-i18n="Amount payable">Amount payable</span>
-            <strong>Tsh<span data-amount-payable>0.00</span></strong>
-          </div><br> -->
-          <h3>Choose payment method</h3>
-          <div class="payment-method-block">
-            <div class="phone_no_payment toggle-btn" id="PhoneNumberPaymentId"><b>Pay by Phone number</b></div>
-            <div class="billpay toggle-btn" id="BillPayId"><b>Pay by BillPay</b></div>
-          </div> <br>
-
-          <form method="post" action="{% url 'orders:checkout' %}" id="phonePaymentId">
-            {% csrf_token %}
-            <label class="auth-field">
-              <span data-i18n="PaymentPhoneNumber">Payment phone number</span>
-              <input type="text" name="phone" placeholder="Enter phone for payment" class="auth-field__input">
-            </label>
-            <button class="btn btn--primary cart-summary__checkout" type="submit" data-i18n="proceedToCheckout">
-              Proceed to Checkout
-            </button>
-          </form>
-
-          {% include 'partials/billpay.html' %}
-
-          <div class="mobile-money-note">
-            <strong data-i18n="mobileMoneySupported">Mobile money supported</strong>
-            <span data-i18n="mobileMoneyNote">Pay securely with M-Pesa, Tigo Pesa, Airtel Money, during checkout.</span>
-          </div>
         </aside>
-      </section>
+
+    </section>
+
 
     {% else %}
-      <section class="cart-empty" aria-labelledby="empty-cart-title">
-        <div class="cart-empty__icon">0</div>
-        <h2 id="empty-cart-title" data-i18n="cartEmpty">Your cart is empty</h2>
-        <p data-i18n="cartEmptyCopy">Start exploring trusted products from verified sellers across Exxabay.</p>
-        <a class="btn btn--primary" href="/#products" data-i18n="continueShopping">Continue Shopping</a>
-      </section>
-    {% endif %}
-  </main>
 
-  {% include 'partials/footer.html' %}
-  
-  <script src="{% static 'js/scripts.js' %}"></script>
+    <!-- EMPTY CART -->
+    <section
+        class="cart-empty"
+        aria-labelledby="empty-cart-title"
+    >
+
+        <div class="cart-empty__icon">
+            0
+        </div>
+
+        <h2 id="empty-cart-title"
+            data-i18n="cartEmpty">
+            Your cart is empty
+        </h2>
+
+        <p data-i18n="cartEmptyCopy">
+            Start exploring trusted products
+            from verified sellers across Exxabay.
+        </p>
+
+        <a
+            class="btn btn--primary"
+            href="/#products"
+            data-i18n="continueShopping"
+        >
+            Continue Shopping
+        </a>
+
+    </section>
+
+    {% endif %}
+
+</main>
+
+
+{% include 'partials/footer.html' %}
+
+<script src="{% static 'js/scripts.js' %}"></script>
 
 <script>
-  const button_1 = document.getElementById("PhoneNumberPaymentId");
-  const button_2 = document.getElementById("BillPayId");
+document.addEventListener("DOMContentLoaded", function () {
 
-  
-  button_1.addEventListener('click', () => {
-    if (document.getElementById("billPayBlockId").style.display == "block") {
-      document.getElementById("billPayBlockId").style.display = "none"
-      button_2.style.borderColor = "#e2e8f0"
+    const paymentForm = document.getElementById(
+        "phonePaymentId"
+    );
+
+    const submitButton = document.getElementById(
+        "proceedPaymentBtn"
+    );
+
+    if (!paymentForm || !submitButton) {
+        return;
     }
 
-    document.getElementById("phonePaymentId").style.display = "block"
-    button_1.style.borderColor = "blue"
-  })
+    paymentForm.addEventListener("submit", function (event) {
 
-  button_2.addEventListener('click', () => {
-    if (document.getElementById("phonePaymentId").style.display == "block") {
-      document.getElementById("phonePaymentId").style.display = "none"
-      button_1.style.borderColor = "#e2e8f0"
-    }
+        if (!paymentForm.checkValidity()) {
+            event.preventDefault();
+            paymentForm.reportValidity();
+            return;
+        }
 
-    document.getElementById("billPayBlockId").style.display = "block"
-    button_2.style.borderColor = "blue"
-  })
+        submitButton.disabled = true;
+        submitButton.textContent = "Processing payment...";
+
+    });
+
+});
 </script>
 
 {% endblock %}

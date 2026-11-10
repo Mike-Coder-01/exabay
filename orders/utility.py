@@ -1,52 +1,36 @@
-from .services import generate_token
+import base64
+
 import requests
-from django.conf import settings
-from orders.models import Payment
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-import base64
+from django.conf import settings
 from django.core.cache import cache
-from django.http import JsonResponse
 
-# GLOBAL VARIABLES
+from .services import generate_token
+
+
 url = "https://api.clickpesa.com/third-parties/billpay/create-order-control-number"
 TOKEN_URL = "https://authenticator.azampay.co.tz/AppRegistration/GenerateToken"
 
 AZAMPAY_PUBLIC_KEY_CACHE = "azampay_public_key"
-AZAMPAY_PUBLIC_KEY_CACHE_TTL = 60 * 60 * 24  
+AZAMPAY_PUBLIC_KEY_CACHE_TTL = 60 * 60 * 24
 
-# AZAMPAY PAYMENT FLOW
+
+# AzamPay payment utilities
+
 def token_generation():
-    headers = {
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "appName": "Exxabay",
-        "clientId": settings.AZAM_CLIENT_ID,
-        "clientSecret": settings.AZAM_CLIENT_SECRET
-    }
-
     response = requests.post(
         TOKEN_URL,
-        headers=headers,
-        json=payload
+        headers={"Content-Type": "application/json"},
+        json={
+            "appName": "Exxabay",
+            "clientId": settings.AZAM_CLIENT_ID,
+            "clientSecret": settings.AZAM_CLIENT_SECRET,
+        },
+        timeout=(3, 5),
     )
-
-    print("TOKEN STATUS:", response.status_code)
-    print("TOKEN HEADERS:", response.headers)
-    print("TOKEN BODY:", response.text)
-
     response.raise_for_status()
-
-    response_data = response.json()
-
-    access_token = response_data["data"]["accessToken"]
-
-    print("TOKEN RECEIVED:", bool(access_token))
-    print("TOKEN LENGTH:", len(access_token))
-
-    return access_token
+    return response.json()["data"]["accessToken"]
 
 
 def fetch_azampay_public_key(url, headers=None):
@@ -54,89 +38,67 @@ def fetch_azampay_public_key(url, headers=None):
         response = requests.get(
             url,
             headers=headers or {},
-            timeout=10
+            timeout=10,
         )
-
         response.raise_for_status()
-
-        response_dict = response.json()
-
-        if response_dict.get("success"):
-            public_key = response_dict.get("publicKey")
-
-            if public_key:
-                return public_key
-
-        return None
-
+        response_data = response.json()
     except (requests.RequestException, ValueError):
         return None
 
+    if isinstance(response_data, dict) and response_data.get("success"):
+        return response_data.get("publicKey") or None
+
+    return None
+
 
 def get_azampay_public_key(url, headers=None, force_refresh=False):
-    """
-    Get AzamPay public key.
-
-    Normally:
-        Return cached key.
-
-    If force_refresh=True:
-        Fetch a fresh key from AzamPay and update cache.
-    """
-
+    """Return the cached AzamPay public key unless a refresh is requested."""
     if not force_refresh:
         cached_key = cache.get(AZAMPAY_PUBLIC_KEY_CACHE)
-
         if cached_key:
             return cached_key
 
-    # Cache missing, expired, or force_refresh=True
-    public_key = fetch_azampay_public_key(
-        url,
-        headers
-    )
-
+    public_key = fetch_azampay_public_key(url, headers)
     if public_key:
         cache.set(
             AZAMPAY_PUBLIC_KEY_CACHE,
             public_key,
-            AZAMPAY_PUBLIC_KEY_CACHE_TTL
+            AZAMPAY_PUBLIC_KEY_CACHE_TTL,
         )
 
     return public_key
 
-# Verifying callback signature
-def verify_callback_signature(utility_ref: str, external_reference: str,
-                               transaction_status: str, operator_name: str,
-                               signature_b64: str, public_key_pem: str) -> bool:
-    data_to_verify = f"{utility_ref}{external_reference}{transaction_status}{operator_name}".encode("utf-8")
-    signature_bytes = base64.b64decode(signature_b64)
 
-    public_key = serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
+def verify_callback_signature(
+    utility_ref: str,
+    external_reference: str,
+    transaction_status: str,
+    operator_name: str,
+    signature_b64: str,
+    public_key_pem: str,
+) -> bool:
+    data_to_verify = (
+        f"{utility_ref}{external_reference}{transaction_status}{operator_name}"
+    ).encode("utf-8")
 
     try:
+        signature_bytes = base64.b64decode(signature_b64)
+        public_key = serialization.load_pem_public_key(
+            public_key_pem.encode("utf-8")
+        )
         public_key.verify(
             signature_bytes,
             data_to_verify,
             padding.PKCS1v15(),
-            hashes.SHA256()
+            hashes.SHA256(),
         )
-        return True
     except Exception:
         return False
 
-# Usage:
-# is_valid = verify_callback_signature(
-#     callback["utilityref"],
-#     callback["externalreference"],
-#     callback["transactionstatus"],
-#     callback["operator"],
-#     callback["signature"],
-#     cached_public_key_pem
-# )
+    return True
 
 
-class Payments():
+class Payments:
     def __init__(self, webhook, headers, body):
         self.webhook = webhook
         self.headers = headers
@@ -146,12 +108,9 @@ class Payments():
         response = requests.post(
             self.webhook,
             headers=self.headers,
-            json=self.body
+            json=self.body,
+            timeout=(3, 10),
         )
-
-        print("STATUS:", response.status_code)
-        print("HEADERS:", response.headers)
-        print("BODY:", response.text)
 
         try:
             response.raise_for_status()
@@ -160,30 +119,30 @@ class Payments():
                 "success": False,
                 "message": "AzamPay request failed",
                 "status_code": response.status_code,
-                "body": response.text
             }
 
         try:
-            return response.json()
+            data = response.json()
         except requests.exceptions.JSONDecodeError:
+            data = None
+
+        if not isinstance(data, dict):
             return {
                 "success": False,
-                "message": "AzamPay returned a non-JSON response",
+                "message": "AzamPay returned an unexpected response",
                 "status_code": response.status_code,
-                "body": response.text
             }
 
+        return data
 
 
+# Legacy ClickPesa payment utilities
 
-# CLICKPESA PAYMENT UTILITIES
-
-# Function to calculate charges before payment and add to the billAmount
 def get_click_pesa_fee(amount):
     if 500 <= amount <= 999:
         return 54
     if 1000 <= amount <= 1999:
-        return 92
+        return 96
     if 2000 <= amount <= 2999:
         return 124
     if 3000 <= amount <= 3999:
@@ -223,7 +182,6 @@ def get_click_pesa_fee(amount):
 
 
 def generate_paybill_number(descriptions, price, bill_reference):
-    
     headers = {
         "Authorization": "Bearer " + generate_token(),
         "Content-Type": "application/json",
@@ -233,33 +191,22 @@ def generate_paybill_number(descriptions, price, bill_reference):
         "billDescription": descriptions,
         "billPaymentMode": "EXACT",
         "billAmount": price + get_click_pesa_fee(price),
-        "billReference": bill_reference
+        "billReference": bill_reference,
     }
 
     response = requests.post(
         url,
         headers=headers,
-        json=body
+        json=body,
     )
-
-    # DEBUG
-    print("================================")
-    print("CLICKPESA STATUS:", response.status_code)
-    print("CLICKPESA HEADERS:", response.headers)
-    print("CLICKPESA BODY:", repr(response.text))
-    print("================================")
 
     try:
         data = response.json()
     except ValueError:
-        data = {
-            "raw_response": response.text
-        }
+        data = {}
 
     return {
         "success": response.ok,
         "status_code": response.status_code,
         "data": data.get("billPayNumber"),
     }
-
-

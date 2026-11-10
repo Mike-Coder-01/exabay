@@ -634,7 +634,7 @@ def payment_callback(request):
                 return JsonResponse({"ok": True})
 
             # 10. Failed payment
-            if status == "failed":
+            if status in ("failed", "failure"):
                 logger.info(
                     "[AZAMPAY CALLBACK] Processing failed payment"
                 )
@@ -1656,9 +1656,8 @@ def checkout_azam(request):
         if not azampay_response.get("success"):
             logger.warning(
                 "AzamPay checkout initiation unsuccessful. "
-                "Order=%s Response=%s",
+                "Order=%s",
                 order.id,
-                azampay_response,
             )
 
             messages.warning(

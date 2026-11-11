@@ -22,6 +22,7 @@ urlpatterns = [
     path("payment-status/<int:order_id>/", views.payment_status, name="payment_status"),
     path("fulfillments/<int:fulfillment_id>/confirm-received/", views.confirm_received, name="confirm_received"),
     path("fulfillments/<int:fulfillment_id>/report/",views.report_fulfillment_problem,name="report_fulfillment_problem"),
+    path("fulfillments/<int:fulfillment_id>/mark-shipped/", views.mark_order_shipped, name="mark_order_shipped"),
     # path("payment-callback/", views.payment_callback, name="payment_callback"),
     # path("api/azampay/callback/", views.payment_callback, name="azampay-callback"),
 

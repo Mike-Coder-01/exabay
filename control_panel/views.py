@@ -62,60 +62,18 @@ from django.db.models import F, Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_http_methods
-
+from control_panel.services.payout_validation import validate_payout_items
 from control_panel.forms import SellerPayoutInvestigationForm
 from control_panel.models import SellerPayout
 import logging
-
+from control_panel.models import SellerPayoutAttempt
+from control_panel.services.payout_initiation import (
+    mark_payout_submitting,
+    record_payout_submission_result,
+)
 logger = logging.getLogger(__name__)
 
 
-
-def validate_payout_items(payout):
-    """
-    Return an error message if the payout is no longer safe.
-    Return None when all items are eligible.
-    """
-
-    items = list(
-        payout.order_items.select_related(
-            "order",
-            "order__payment",
-            "fulfillment",
-            "product",
-        )
-    )
-
-    if not items:
-        return "This payout contains no order items."
-
-    expected_amount = Decimal("0.00")
-
-    for item in items:
-        if item.product.seller_id != payout.seller_id:
-            return "An item belongs to another seller."
-
-        if item.fulfillment_id is None:
-            return "An item has no fulfillment record."
-
-        if item.fulfillment.seller_id != payout.seller_id:
-            return "Fulfillment seller mismatch."
-
-        if not item.fulfillment.is_payout_eligible:
-            return (
-                f"Order item #{item.id} is not eligible "
-                "for payout. Check payment, shipment or dispute."
-            )
-
-        if item.seller_price is None:
-            return "An item has no seller price."
-
-        expected_amount += item.seller_price * item.quantity
-
-    if expected_amount != payout.amount:
-        return "The payout amount does not match the seller earnings."
-
-    return None
 
 ORDER_STATUS_FILTERS = [
     ("all", "All orders"),
@@ -1399,23 +1357,22 @@ from control_panel.services.azampay_payouts import (
 logger = logging.getLogger(__name__)
 
 
+
 @superuser_required
 @require_POST
 def confirm_seller_payout(request, payout_id):
-
     redirect_name = "control_panel:seller_payouts"
 
-    # STEP 1: Lock, validate and reserve
+    # STEP 1: Lock, validate, reserve and create attempt.
     try:
         with transaction.atomic():
-
             payout_info = get_object_or_404(
                 SellerPayout.objects.only("id", "seller_id"),
                 pk=payout_id,
                 status=SellerPayout.STATUS_PREVIEWED,
             )
 
-            # Preserve the original lock order.
+            # Maintain seller -> payout -> fulfillment lock order.
             SellerProfile.objects.select_for_update().get(
                 pk=payout_info.seller_id
             )
@@ -1492,7 +1449,6 @@ def confirm_seller_payout(request, payout_id):
                 messages.error(request, error)
                 return redirect(redirect_name)
 
-            # Validate AzamPay destination before reserving.
             if not all([
                 payout.account_name.strip(),
                 payout.phone_number.strip(),
@@ -1512,6 +1468,7 @@ def confirm_seller_payout(request, payout_id):
                 )
                 return redirect(redirect_name)
 
+            # Reserve all items before any external request.
             SellerPayoutReservation.objects.bulk_create([
                 SellerPayoutReservation(
                     payout=payout,
@@ -1530,7 +1487,13 @@ def confirm_seller_payout(request, payout_id):
                 ]
             )
 
-            # Snapshot values after validation.
+            # Persist the unique attempt in this same transaction.
+            attempt = SellerPayoutAttempt.objects.create(
+                payout=payout,
+                status=SellerPayoutAttempt.STATUS_CLAIMED,
+            )
+
+            # Snapshot the validated payout details.
             amount = payout.amount
             reference = payout.order_reference
             phone = payout.phone_number
@@ -1549,7 +1512,7 @@ def confirm_seller_payout(request, payout_id):
         )
         return redirect(redirect_name)
 
-    # STEP 2: Authenticate with AzamPay
+    # STEP 2: Authenticate with AzamPay.
     try:
         token = generate_disbursement_token()
     except Exception:
@@ -1577,11 +1540,11 @@ def confirm_seller_payout(request, payout_id):
         )
         return redirect(redirect_name)
 
-    # STEP 3: Generate checksum
-    source = settings.AZAMPAY_DISBURSEMENT_SOURCE
-    epoch_date = int(time.time())
-
+    # STEP 3: Generate the disbursement checksum.
     try:
+        source = settings.AZAMPAY_DISBURSEMENT_SOURCE
+        epoch_date = int(time.time())
+
         checksum = generate_disbursement_checksum(
             source_account=source["accountNumber"],
             destination_account=phone,
@@ -1612,9 +1575,25 @@ def confirm_seller_payout(request, payout_id):
         )
         return redirect(redirect_name)
 
-    # STEP 4: Submit to AzamPay
-    #
-    # Do not automatically retry this request.
+    # STEP 4: Revalidate and mark this attempt SUBMITTING.
+    # Do not call AzamPay unless this succeeds.
+    if not mark_payout_submitting(attempt.pk):
+        logger.warning(
+            "Manual payout submission blocked: payout=%s",
+            payout_id,
+        )
+
+        messages.error(
+            request,
+            "Payout submission was blocked. "
+            "Please review eligibility and attempt status.",
+        )
+        return redirect(redirect_name)
+
+    # STEP 5: Submit exactly one request to AzamPay.
+    # A timeout is not proof that no transfer occurred.
+    response = None
+
     try:
         response = create_mobile_money_payout(
             token=token,
@@ -1634,128 +1613,58 @@ def confirm_seller_payout(request, payout_id):
             "AzamPay disbursement request error: payout=%s",
             payout_id,
         )
-        response = None
 
-    # STEP 5: Handle missing response
-    if response is None:
-        SellerPayout.objects.filter(
-            pk=payout_id,
-            status=SellerPayout.STATUS_PENDING,
-        ).update(
-            failure_reason=(
-                "Disbursement outcome unknown. "
-                "Reconcile with AzamPay before retrying."
-            )
+    # STEP 6: Persist the outcome without sending another request.
+    try:
+        recorded = record_payout_submission_result(
+            attempt.pk,
+            response=response,
         )
-
-        messages.warning(
+    except Exception:
+        logger.exception(
+            "Could not record payout submission result: payout=%s",
+            payout_id,
+        )
+        messages.error(
             request,
-            "AzamPay did not return a response. "
-            "Payout remains reserved.",
+            "Payout requires manual reconciliation. "
+            "Do not retry the transfer.",
         )
         return redirect(redirect_name)
 
-    # STEP 6: Parse gateway response
-    try:
-        payload = response.json()
-    except ValueError:
-        payload = {}
+    if not recorded:
+        logger.error(
+            "Payout submission result was not recorded: payout=%s",
+            payout_id,
+        )
+        messages.error(
+            request,
+            "Payout requires manual reconciliation. "
+            "Do not retry the transfer.",
+        )
+        return redirect(redirect_name)
 
-    if not isinstance(payload, dict):
-        payload = {}
+    attempt.refresh_from_db()
+    payout.refresh_from_db()
 
-    accepted = (
-        response.status_code in (200, 201)
-        and payload.get("success") is True
-        and isinstance(payload.get("pgReferenceId"), str)
-        and bool(payload.get("pgReferenceId"))
+    if attempt.status != SellerPayoutAttempt.STATUS_ACCEPTED:
+        messages.warning(
+            request,
+            "AzamPay acceptance was not confirmed. "
+            "Manual reconciliation is required. "
+            "Do not retry this payout.",
+        )
+        return redirect(redirect_name)
+
+    # ACCEPTED means the gateway accepted the request.
+    # Only a verified callback/status query confirms settlement.
+    logger.info(
+        "AzamPay accepted payout %s with reference %s",
+        payout_id,
+        payout.pg_reference_id,
     )
 
-    if not accepted:
-        # An HTTP error alone does not prove that a transfer
-        # did not occur. Keep the reservation.
-        SellerPayout.objects.filter(
-            pk=payout_id,
-            status=SellerPayout.STATUS_PENDING,
-        ).update(
-            gateway_response=payload,
-            failure_reason=(
-                "AzamPay did not confirm acceptance. "
-                "Manual reconciliation required."
-            ),
-        )
-
-        messages.warning(
-            request,
-            "AzamPay did not confirm payout acceptance. "
-            "Verify before attempting another transfer.",
-        )
-        return redirect(redirect_name)
-
-    pg_reference = payload["pgReferenceId"]
-    gateway_status = str(
-        payload.get("status", "")
-    ).strip().lower()
-
-    # Acceptance is not proof of settlement.
-    if gateway_status not in (
-        "pending",
-        "processing",
-        "success",
-    ):
-        logger.warning(
-            "Unexpected initiation status for payout %s: %s",
-            payout_id,
-            gateway_status,
-        )
-
-    # STEP 7: Persist gateway reference
-    #
-    # The callback may already have finalized this payout.
-    with transaction.atomic():
-
-        payout = (
-            SellerPayout.objects
-            .select_for_update()
-            .get(pk=payout_id)
-        )
-
-        if (
-            payout.pg_reference_id
-            and payout.pg_reference_id != pg_reference
-        ):
-            logger.error(
-                "AzamPay reference conflict for payout %s",
-                payout_id,
-            )
-            messages.error(
-                request,
-                "Gateway reference conflict. Manual review required.",
-            )
-            return redirect(redirect_name)
-
-        payout.pg_reference_id = pg_reference
-
-        # Preserve callback-verified response/status if a
-        # callback was processed before this database write.
-        if payout.status == SellerPayout.STATUS_PENDING:
-            payout.status = SellerPayout.STATUS_PROCESSING
-            payout.gateway_response = payload
-
-        if payout.initiated_at is None:
-            payout.initiated_at = timezone.now()
-
-        payout.save(
-            update_fields=[
-                "pg_reference_id",
-                "status",
-                "gateway_response",
-                "initiated_at",
-                "updated_at",
-            ]
-        )
-
-    # STEP 8: Notify the seller
+    # STEP 7: Notify the seller.
     try:
         notify_user(
             request.user,
@@ -1782,6 +1691,7 @@ def confirm_seller_payout(request, payout_id):
     )
 
     return redirect(redirect_name)
+
 
 @superuser_required
 @require_POST

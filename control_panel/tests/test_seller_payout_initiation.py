@@ -2,7 +2,7 @@
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import Mock, patch
-
+from control_panel.models import SellerPayoutAttempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -487,4 +487,68 @@ class SellerPayoutInitiationTests(TestCase):
 
         mock_transfer.assert_called_once()
         mock_status_query.assert_called_once()
+
+    
+    @patch("control_panel.views.notify_user")
+    @patch("control_panel.views.create_mobile_money_payout")
+    @patch("control_panel.views.generate_disbursement_checksum")
+    @patch("control_panel.views.generate_disbursement_token")
+    def test_manual_payout_creates_unique_transfer_attempt(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_transfer,
+        mock_notify,
+    ):
+        """
+        Manual payout confirmation must create a durable
+        transfer attempt before submitting to AzamPay.
+        """
+
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+
+        response = Mock(status_code=200)
+        response.json.return_value = {
+            "success": True,
+            "pgReferenceId": "PG-MANUAL-001",
+            "status": "processing",
+        }
+        mock_transfer.return_value = response
+
+        # Administrator is already authenticated in setUp().
+        result = self.client.post(self.url)
+
+        self.assertEqual(result.status_code, 302)
+
+        # The payout must have a unique transfer attempt.
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout
+        )
+
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_ACCEPTED,
+        )
+
+        self.assertIsNotNone(attempt.submitting_at)
+        self.assertIsNotNone(attempt.completed_at)
+
+        self.payout.refresh_from_db()
+
+        self.assertEqual(
+            self.payout.status,
+            SellerPayout.STATUS_PROCESSING,
+        )
+        self.assertEqual(
+            self.payout.pg_reference_id,
+            "PG-MANUAL-001",
+        )
+
+        self.assert_reserved()
+
+        # Only one transfer request is permitted.
+        mock_transfer.assert_called_once()
+
+
 

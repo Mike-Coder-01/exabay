@@ -488,3 +488,56 @@ class SellerPayoutFinalization(models.Model):
 
     def __str__(self):
         return f"Manual finalization for payout {self.payout_id}"
+
+class SellerPayoutAttempt(models.Model):
+    STATUS_CLAIMED = "claimed"
+    STATUS_SUBMITTING = "submitting"
+    STATUS_ACCEPTED = "accepted"
+    STATUS_UNKNOWN = "unknown"
+
+    STATUS_CHOICES = [
+        (STATUS_CLAIMED, "Claimed"),
+        (STATUS_SUBMITTING, "Submitting"),
+        (STATUS_ACCEPTED, "Accepted"),
+        (STATUS_UNKNOWN, "Unknown"),
+    ]
+
+    payout = models.OneToOneField(
+        "SellerPayout",
+        on_delete=models.PROTECT,
+        related_name="transfer_attempt",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_CLAIMED,
+    )
+
+    claimed_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    submitting_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    error_message = models.TextField(
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Seller payout attempt"
+        verbose_name_plural = "Seller payout attempts"
+
+    def __str__(self):
+        return (
+            f"Payout attempt #{self.pk} "
+            f"for payout #{self.payout_id}"
+        )

@@ -46,6 +46,33 @@ PAYOUT_QUERY_URL = (
     f"{BASE_URL}/api/v1/azampay/transactionstatus"
 )
 
+AZAMPAY_PROVIDER_MAP = {
+    "mpesa": "Vodacom",
+    "tigo_pesa": "Yas",
+    "airtel_money": "Airtel",
+    "halopesa": "Halotel",
+}
+
+
+def get_azampay_provider(seller_settings):
+    """
+    Convert Exxabay mobile money provider values
+    into AzamPay Disbursement identifiers.
+    """
+
+    if seller_settings is None:
+        raise ValueError("Seller payout settings are missing.")
+
+    provider = seller_settings.mobile_money_provider
+
+    bank_name = AZAMPAY_PROVIDER_MAP.get(provider)
+
+    if not bank_name:
+        raise ValueError(
+            f"Unsupported AzamPay payout provider: {provider}"
+        )
+
+    return bank_name
 
 # ============================================================
 # 1. GENERATE DISBURSEMENT TOKEN

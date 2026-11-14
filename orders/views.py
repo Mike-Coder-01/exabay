@@ -34,7 +34,9 @@ from .services import (
     query_payment_status,
 )
 from orders.utility import generate_paybill_number, get_azampay_public_key, token_generation,verify_callback_signature
-
+from control_panel.services.automatic_payouts import (
+    prepare_automatic_payout,
+)
 logger = logging.getLogger(__name__)
 
 
@@ -713,13 +715,12 @@ from django.views.decorators.http import require_POST
 from orders.models import SellerFulfillment
 
 
+
 @login_required
 @require_POST
 def confirm_received(request, fulfillment_id):
 
     with transaction.atomic():
-
-        # 1. Lock the seller's fulfillment
         fulfillment = get_object_or_404(
             SellerFulfillment.objects
             .select_for_update()
@@ -728,16 +729,13 @@ def confirm_received(request, fulfillment_id):
             order__user=request.user,
         )
 
-        # 2. Confirm receipt using the model method
         try:
             fulfillment.confirm_received()
-
         except ValidationError as error:
             messages.error(
                 request,
                 "; ".join(error.messages),
             )
-
             return redirect(
                 "orders:order_detail",
                 order_id=fulfillment.order_id,
@@ -745,18 +743,21 @@ def confirm_received(request, fulfillment_id):
 
         order_id = fulfillment.order_id
 
-    # 3. Confirmation saved successfully
+        # Prepare payout only after buyer confirmation
+        # has been committed successfully.
+        transaction.on_commit(
+            lambda fid=fulfillment_id: prepare_automatic_payout(fid)
+        )
+
     messages.success(
         request,
-        "You have confirmed receipt of this seller's "
-        "products successfully.",
+        "You have confirmed receipt of this seller's products successfully.",
     )
 
     return redirect(
         "orders:order_detail",
         order_id=order_id,
     )
-
 
 
 from django.core.exceptions import ValidationError

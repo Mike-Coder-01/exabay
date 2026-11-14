@@ -42,8 +42,8 @@ def prepare_automatic_payout(fulfillment_id):
         # STEP 2: Lock and validate the fulfillment.
         fulfillment = (
             SellerFulfillment.objects
-            .select_for_update()
-            .select_related("order", "order__payment")
+            .select_for_update(of=("self",))
+            .select_related("order")
             .get(pk=fulfillment_id, seller=seller)
         )
 

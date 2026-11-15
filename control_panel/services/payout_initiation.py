@@ -13,6 +13,8 @@ from control_panel.models import (
 from control_panel.services.azampay_payouts import (
     generate_disbursement_token,
     generate_disbursement_checksum,
+    lookup_seller_name,
+    validate_name_lookup_response,
     create_mobile_money_payout,
     _validate_transfer_amount,
 )
@@ -218,9 +220,13 @@ def record_payout_submission_result(
         return True
 
 
-def mark_payout_submitting(attempt_id):
+
+def mark_payout_submitting(attempt_id, verified_details=None):
     """
     Revalidate payout eligibility before submission.
+
+    If verified_details is provided, ensure the payout
+    still matches the details verified by NameLookup.
 
     Lock order:
         seller -> payout -> fulfillments -> attempt
@@ -274,12 +280,44 @@ def mark_payout_submitting(attempt_id):
         if attempt.status != SellerPayoutAttempt.STATUS_CLAIMED:
             return False
 
+        # Block unresolved NameLookup failures.
+        if attempt.error_message in {
+            "recipient_verification_failed",
+            "recipient_lookup_unavailable",
+        }:
+            logger.warning(
+                "Payout %s blocked: unresolved NameLookup failure.",
+                payout.pk,
+            )
+            return False
+
         if payout.status != SellerPayout.STATUS_PENDING:
             return False
 
         if payout.pg_reference_id or payout.initiated_at:
             return False
 
+        # Ensure payout details have not changed
+        # since NameLookup verification.
+        if verified_details is not None:
+            current_details = {
+                "phone_number": payout.phone_number,
+                "channel_provider": payout.channel_provider,
+                "account_name": payout.account_name,
+                "amount": payout.amount,
+                "currency": payout.currency,
+                "order_reference": payout.order_reference,
+            }
+
+            if current_details != verified_details:
+                logger.warning(
+                    "Payout %s blocked: payout details changed "
+                    "after recipient verification.",
+                    payout.pk,
+                )
+                return False
+
+        # Revalidate reserved order items.
         error = validate_payout_items(
             payout,
             require_reservations=True,
@@ -293,6 +331,7 @@ def mark_payout_submitting(attempt_id):
             )
             return False
 
+        # Only one worker can transition this attempt.
         attempt.status = SellerPayoutAttempt.STATUS_SUBMITTING
         attempt.submitting_at = timezone.now()
 
@@ -397,14 +436,63 @@ def claim_payout_for_initiation(payout_id):
         return attempt
 
 
+
+def record_name_lookup_failure(attempt_id, reason):
+    """
+    Record a failed recipient verification.
+
+    No transfer has been submitted.
+    Keep the attempt CLAIMED and block progression
+    until the verification issue is resolved.
+    """
+
+    allowed_reasons = {
+        "recipient_verification_failed",
+        "recipient_lookup_unavailable",
+    }
+
+    if reason not in allowed_reasons:
+        reason = "recipient_verification_failed"
+
+    with transaction.atomic():
+        attempt = (
+            SellerPayoutAttempt.objects
+            .select_for_update()
+            .get(pk=attempt_id)
+        )
+
+        if attempt.status != SellerPayoutAttempt.STATUS_CLAIMED:
+            return False
+
+        attempt.error_message = reason
+
+        attempt.save(
+            update_fields=["error_message"]
+        )
+
+        return True
+
+
 def submit_claimed_payout(attempt_id):
     """
     Submit one claimed automatic payout to AzamPay.
 
+    Workflow:
+        1. Check automatic disbursement feature flag.
+        2. Retrieve the claimed payout.
+        3. Capture payout details.
+        4. Generate authentication token and checksum.
+        5. Verify recipient using NameLookup.
+        6. Recheck automatic disbursement feature flag.
+        7. Revalidate payout details under database locks.
+        8. Transition CLAIMED -> SUBMITTING.
+        9. Submit the transfer using verified details.
+       10. Record the submission result.
+
     No automatic retries.
-    Feature flag must be enabled.
     """
 
+    # 1. Ensure automatic disbursements are enabled.
     if not getattr(
         settings,
         "AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED",
@@ -415,6 +503,7 @@ def submit_claimed_payout(attempt_id):
         )
         return False
 
+    # 2. Retrieve the claimed payout attempt.
     attempt = (
         SellerPayoutAttempt.objects
         .select_related("payout")
@@ -424,29 +513,56 @@ def submit_claimed_payout(attempt_id):
     if attempt.status != SellerPayoutAttempt.STATUS_CLAIMED:
         return False
 
+    # Block unresolved recipient verification failures.
+    if attempt.error_message in {
+        "recipient_verification_failed",
+        "recipient_lookup_unavailable",
+    }:
+        logger.warning(
+            "Payout attempt %s has an unresolved "
+            "recipient verification failure.",
+            attempt_id,
+        )
+        return False
+
     payout = attempt.payout
+
+    # 3. Capture payout details before NameLookup.
+    # These values must remain unchanged until submission.
+    verified_details = {
+        "phone_number": payout.phone_number,
+        "channel_provider": payout.channel_provider,
+        "account_name": payout.account_name,
+        "amount": payout.amount,
+        "currency": payout.currency,
+        "order_reference": payout.order_reference,
+    }
 
     source = settings.AZAMPAY_DISBURSEMENT_SOURCE
     epoch_date = int(time.time())
 
+    # 4. Generate token and prepare checksum.
     try:
         token = generate_disbursement_token()
 
         if not token:
             logger.error(
-                "AzamPay authentication failed."
+                "AzamPay authentication failed for payout %s.",
+                payout.pk,
             )
             return False
 
-        validated_amount = _validate_transfer_amount(payout.amount)
+        validated_amount = _validate_transfer_amount(
+            verified_details["amount"]
+        )
 
         checksum = generate_disbursement_checksum(
             source_account=source["accountNumber"],
-            destination_account=payout.phone_number,
-            currency=payout.currency,
+            destination_account=verified_details["phone_number"],
+            currency=verified_details["currency"],
             amount=str(int(validated_amount)),
             epoch_date=epoch_date,
-            external_reference_id=payout.order_reference,
+            external_reference_id=verified_details["order_reference"],
             public_key_pem=(
                 settings.AZAMPAY_DISBURSEMENT_PUBLIC_KEY
             ),
@@ -459,39 +575,98 @@ def submit_claimed_payout(attempt_id):
         )
         return False
 
-    # Only one worker may transition
-    # CLAIMED -> SUBMITTING.
-    if not mark_payout_submitting(attempt_id):
+    # 5. Verify recipient details before submitting money.
+    try:
+        lookup_response = lookup_seller_name(
+            token=token,
+            bank_name=verified_details["channel_provider"],
+            account_number=verified_details["phone_number"],
+            checksum=checksum,
+        )
+
+        recipient_verified = validate_name_lookup_response(
+            response=lookup_response,
+            expected_account_number=verified_details["phone_number"],
+            expected_bank_name=verified_details["channel_provider"],
+            expected_account_name=verified_details["account_name"],
+        )
+
+    except Exception:
+        record_name_lookup_failure(
+            attempt_id,
+            "recipient_lookup_unavailable",
+        )
+
+        logger.exception(
+            "NameLookup request failed for payout %s. "
+            "Transfer was not submitted.",
+            payout.pk,
+        )
         return False
 
-    # Check the automatic disbursement feature flag
-    # again immediately before submission.
+    if not recipient_verified:
+        record_name_lookup_failure(
+            attempt_id,
+            "recipient_verification_failed",
+        )
+
+        logger.warning(
+            "NameLookup verification failed for payout %s. "
+            "Transfer was not submitted.",
+            payout.pk,
+        )
+        return False
+
+    logger.info(
+        "NameLookup verification successful for payout %s.",
+        payout.pk,
+    )
+
+    # 6. Recheck the feature flag BEFORE changing
+    # the attempt to SUBMITTING.
     if not getattr(
         settings,
         "AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED",
         False,
     ):
         logger.warning(
-            "Automatic disbursements disabled before submission."
+            "Automatic disbursements disabled after "
+            "NameLookup for payout %s. "
+            "Transfer was not submitted.",
+            payout.pk,
         )
 
-        record_payout_submission_result(
-            attempt_id,
-            response=None,
-        )
-
+        # Keep the attempt CLAIMED.
+        # No gateway transfer request has been made.
         return False
 
-    # Do not automatically retry this request.
+    # 7. Revalidate eligibility and verified details.
+    # 8. Only one worker can transition CLAIMED -> SUBMITTING.
+    if not mark_payout_submitting(
+        attempt_id,
+        verified_details=verified_details,
+    ):
+        logger.warning(
+            "Payout %s could not transition to SUBMITTING.",
+            payout.pk,
+        )
+        return False
+
+    # 9. Submit using the verified payout snapshot.
+    # Never automatically retry this request.
+    #
+    # After transitioning to SUBMITTING, do not cancel
+    # based on a feature-flag change. The gateway
+    # submission outcome must be recorded or reconciled.
     try:
         response = create_mobile_money_payout(
             token=token,
-            amount=payout.amount,
-            order_reference=payout.order_reference,
-            phone_number=payout.phone_number,
+            amount=verified_details["amount"],
+            order_reference=verified_details["order_reference"],
+            phone_number=verified_details["phone_number"],
             source=source,
-            destination_name=payout.account_name,
-            bank_name=payout.channel_provider,
+            destination_name=verified_details["account_name"],
+            bank_name=verified_details["channel_provider"],
             transfer_type="MobileMoney",
             checksum=checksum,
             date_in_epoch=epoch_date,
@@ -504,6 +679,7 @@ def submit_claimed_payout(attempt_id):
         )
         response = None
 
+    # 10. Record the gateway submission result.
     record_payout_submission_result(
         attempt_id,
         response=response,

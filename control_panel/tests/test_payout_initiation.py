@@ -43,6 +43,21 @@ class PayoutInitiationTests(AutomaticPayoutTests):
 
         return payout, attempt
 
+    @staticmethod
+    def successful_lookup_response(payout):
+        response = Mock(status_code=200)
+        response.json.return_value = {
+            "fname": "Test",
+            "lname": "Seller",
+            "name": payout.account_name,
+            "message": "Success",
+            "status": True,
+            "statusCode": 200,
+            "accountNumber": payout.phone_number,
+            "bankName": payout.channel_provider,
+        }
+        return response
+
     # ---------------------------------------------------------
     # 1. PAYOUT CLAIMING
     # ---------------------------------------------------------
@@ -275,6 +290,10 @@ class PayoutInitiationTests(AutomaticPayoutTests):
     )
     @patch(
         "control_panel.services.payout_initiation."
+        "lookup_seller_name"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
         "create_mobile_money_payout"
     )
     @patch(
@@ -290,11 +309,13 @@ class PayoutInitiationTests(AutomaticPayoutTests):
         mock_token,
         mock_checksum,
         mock_transfer,
+        mock_lookup,
     ):
         payout, attempt = self.create_claimed_payout()
 
         mock_token.return_value = "fake-token"
         mock_checksum.return_value = "fake-checksum"
+        mock_lookup.return_value = self.successful_lookup_response(payout)
 
         response = Mock(status_code=200)
         response.json.return_value = {
@@ -323,6 +344,12 @@ class PayoutInitiationTests(AutomaticPayoutTests):
             "PG-AUTO-SUBMIT-001",
         )
 
+        mock_lookup.assert_called_once_with(
+            token="fake-token",
+            bank_name=payout.channel_provider,
+            account_number=payout.phone_number,
+            checksum="fake-checksum",
+        )
         mock_transfer.assert_called_once()
 
         self.assertEqual(
@@ -345,6 +372,10 @@ class PayoutInitiationTests(AutomaticPayoutTests):
     )
     @patch(
         "control_panel.services.payout_initiation."
+        "lookup_seller_name"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
         "create_mobile_money_payout"
     )
     @patch(
@@ -360,11 +391,13 @@ class PayoutInitiationTests(AutomaticPayoutTests):
         mock_token,
         mock_checksum,
         mock_transfer,
+        mock_lookup,
     ):
         payout, attempt = self.create_claimed_payout()
 
         mock_token.return_value = "fake-token"
         mock_checksum.return_value = "fake-checksum"
+        mock_lookup.return_value = self.successful_lookup_response(payout)
         mock_transfer.return_value = None
 
         first = submit_claimed_payout(attempt.pk)
@@ -385,6 +418,7 @@ class PayoutInitiationTests(AutomaticPayoutTests):
             SellerPayout.STATUS_PENDING,
         )
 
+        mock_lookup.assert_called_once()
         mock_transfer.assert_called_once()
 
 
@@ -421,6 +455,70 @@ class PayoutInitiationTests(AutomaticPayoutTests):
         mock_transfer.assert_not_called()
 
 
+    @override_settings(AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED=True)
+    @patch("control_panel.services.payout_initiation.lookup_seller_name")
+    @patch("control_panel.services.payout_initiation.create_mobile_money_payout")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_checksum")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_token")
+    def test_name_lookup_account_mismatch_blocks_transfer(
+        self, mock_token, mock_checksum, mock_transfer, mock_lookup
+    ):
+        payout, attempt = self.create_claimed_payout()
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+        response = self.successful_lookup_response(payout)
+        response.json.return_value["accountNumber"] = (
+            "255711111111"
+            if payout.phone_number != "255711111111"
+            else "255722222222"
+        )
+        mock_lookup.return_value = response
+
+        self.assertFalse(submit_claimed_payout(attempt.pk))
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.status, SellerPayoutAttempt.STATUS_CLAIMED)
+        self.assertEqual(attempt.error_message, "recipient_verification_failed")
+        mock_transfer.assert_not_called()
+        self.assertFalse(mark_payout_submitting(attempt.pk))
+
+    @override_settings(AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED=True)
+    @patch("control_panel.services.payout_initiation.lookup_seller_name")
+    @patch("control_panel.services.payout_initiation.create_mobile_money_payout")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_checksum")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_token")
+    def test_name_lookup_exception_blocks_transfer(
+        self, mock_token, mock_checksum, mock_transfer, mock_lookup
+    ):
+        _, attempt = self.create_claimed_payout()
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+        mock_lookup.side_effect = TimeoutError("Lookup timed out")
+
+        self.assertFalse(submit_claimed_payout(attempt.pk))
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.status, SellerPayoutAttempt.STATUS_CLAIMED)
+        self.assertEqual(attempt.error_message, "recipient_lookup_unavailable")
+        mock_transfer.assert_not_called()
+        self.assertFalse(mark_payout_submitting(attempt.pk))
+
+    @override_settings(AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED=True)
+    @patch("control_panel.services.payout_initiation.lookup_seller_name")
+    @patch("control_panel.services.payout_initiation.create_mobile_money_payout")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_checksum")
+    @patch("control_panel.services.payout_initiation.generate_disbursement_token")
+    def test_blocked_attempt_does_not_repeat_lookup(
+        self, mock_token, mock_checksum, mock_transfer, mock_lookup
+    ):
+        _, attempt = self.create_claimed_payout()
+        attempt.error_message = "recipient_verification_failed"
+        attempt.save(update_fields=["error_message"])
+
+        self.assertFalse(submit_claimed_payout(attempt.pk))
+        mock_token.assert_not_called()
+        mock_checksum.assert_not_called()
+        mock_lookup.assert_not_called()
+        mock_transfer.assert_not_called()
+
     def test_dispute_opened_after_claim_blocks_submission(self):
         payout, attempt = self.create_claimed_payout()
 
@@ -447,3 +545,153 @@ class PayoutInitiationTests(AutomaticPayoutTests):
             SellerPayout.STATUS_PENDING,
         )
 
+    
+    @override_settings(
+        AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED=True,
+        AZAMPAY_DISBURSEMENT_SOURCE={
+            "countryCode": "TZ",
+            "fullName": "Exxabay Test Wallet",
+            "bankName": "Azampesa",
+            "accountNumber": "TEST-WALLET-001",
+            "currency": "TZS",
+        },
+        AZAMPAY_DISBURSEMENT_PUBLIC_KEY="TEST-PUBLIC-KEY",
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "create_mobile_money_payout"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "lookup_seller_name"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "generate_disbursement_checksum"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "generate_disbursement_token"
+    )
+    def test_account_changed_during_lookup_blocks_transfer(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_lookup,
+        mock_transfer,
+    ):
+        payout, attempt = self.create_claimed_payout()
+
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+
+        original_phone = payout.phone_number
+
+        def lookup_and_change_account(**kwargs):
+            # Simulate a concurrent account update
+            # while NameLookup is in progress.
+            SellerPayout.objects.filter(pk=payout.pk).update(
+                phone_number=(
+                    "255711111111"
+                    if original_phone != "255711111111"
+                    else "255722222222"
+                )
+            )
+
+            response = Mock(status_code=200)
+            response.json.return_value = {
+                "name": payout.account_name,
+                "status": True,
+                "statusCode": 200,
+                "accountNumber": original_phone,
+                "bankName": payout.channel_provider,
+            }
+            return response
+
+        mock_lookup.side_effect = lookup_and_change_account
+
+        result = submit_claimed_payout(attempt.pk)
+
+        attempt.refresh_from_db()
+
+        self.assertFalse(result)
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+
+        mock_transfer.assert_not_called()
+
+    
+    
+    @override_settings(
+        AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED=True,
+        AZAMPAY_DISBURSEMENT_SOURCE={
+            "countryCode": "TZ",
+            "fullName": "Exxabay Test Wallet",
+            "bankName": "Azampesa",
+            "accountNumber": "TEST-WALLET-001",
+            "currency": "TZS",
+        },
+        AZAMPAY_DISBURSEMENT_PUBLIC_KEY="TEST-PUBLIC-KEY",
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "create_mobile_money_payout"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "lookup_seller_name"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "generate_disbursement_checksum"
+    )
+    @patch(
+        "control_panel.services.payout_initiation."
+        "generate_disbursement_token"
+    )
+    def test_feature_disabled_after_lookup_blocks_submission(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_lookup,
+        mock_transfer,
+    ):
+        from django.conf import settings
+
+        payout, attempt = self.create_claimed_payout()
+
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+
+        lookup_response = self.successful_lookup_response(payout)
+
+        def disable_after_lookup(*args, **kwargs):
+            settings.AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED = False
+            return lookup_response
+
+        mock_lookup.side_effect = disable_after_lookup
+
+        result = submit_claimed_payout(attempt.pk)
+
+        payout.refresh_from_db()
+        attempt.refresh_from_db()
+
+        self.assertFalse(result)
+
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+
+        self.assertEqual(
+            payout.status,
+            SellerPayout.STATUS_PENDING,
+        )
+
+        self.assertIsNone(attempt.submitting_at)
+        self.assertIsNone(attempt.completed_at)
+
+        mock_lookup.assert_called_once()
+        mock_transfer.assert_not_called()

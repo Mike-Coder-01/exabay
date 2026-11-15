@@ -378,15 +378,7 @@
                     </form>
                   {% endif %}
                 {% endif %}
-                {% if payout.status != "previewed" %}
-                  <form method="post" action="{% url 'control_panel:refresh_seller_payout_status' payout.id %}">
-                    {% csrf_token %}
-                    <button class="btn btn--outline" type="submit">
-                      <i class="fa-solid fa-arrows-rotate" style="margin-right: 5px;" aria-hidden="true"></i>
-                      <span>Refresh status</span>
-                    </button>
-                  </form>
-                {% endif %}
+            
                 {% if payout.status == "previewed" %}
                   <a class="btn btn--primary" href="{% url 'control_panel:seller_payouts' %}?preview={{ payout.id }}">
                     <i class="fa-solid fa-eye" style="margin-right: 5px;" aria-hidden="true"></i>

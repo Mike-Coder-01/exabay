@@ -114,6 +114,24 @@ class SellerPayoutInitiationTests(TestCase):
 
         self.client.force_login(self.admin)
 
+        # Mock NameLookup for legacy payout tests; never call the live API.
+        # Tests with their own @patch("control_panel.views.lookup_seller_name")
+        # override this default response.
+        self.name_lookup_patcher = patch(
+            "control_panel.views.lookup_seller_name"
+        )
+        self.mock_name_lookup = self.name_lookup_patcher.start()
+        self.addCleanup(self.name_lookup_patcher.stop)
+
+        self.mock_name_lookup.return_value = Mock(status_code=200)
+        self.mock_name_lookup.return_value.json.return_value = {
+            "status": True,
+            "statusCode": 200,
+            "accountNumber": self.payout.phone_number,
+            "bankName": self.payout.channel_provider,
+            "name": self.payout.account_name,
+        }
+
     def assert_reserved(self):
         self.assertTrue(
             SellerPayoutReservation.objects.filter(
@@ -122,22 +140,36 @@ class SellerPayoutInitiationTests(TestCase):
             ).exists()
         )
 
-    # TEST 1: Successful initiation
+    # TEST 1: Successful payout initiation with NameLookup
 
     @patch("control_panel.views.notify_user")
     @patch("control_panel.views.create_mobile_money_payout")
+    @patch("control_panel.views.lookup_seller_name")
     @patch("control_panel.views.generate_disbursement_checksum")
     @patch("control_panel.views.generate_disbursement_token")
     def test_successful_payout_initiation(
         self,
         mock_token,
         mock_checksum,
+        mock_lookup,
         mock_transfer,
         mock_notify,
     ):
+        # STEP 1: Mock AzamPay authentication
         mock_token.return_value = "fake-token"
         mock_checksum.return_value = "fake-checksum"
 
+        # STEP 2: Mock successful recipient verification
+        mock_lookup.return_value = Mock(status_code=200)
+        mock_lookup.return_value.json.return_value = {
+            "status": True,
+            "statusCode": 200,
+            "accountNumber": self.payout.phone_number,
+            "bankName": self.payout.channel_provider,
+            "name": self.payout.account_name,
+        }
+
+        # STEP 3: Mock successful transfer submission
         mock_transfer.return_value = Mock(status_code=200)
         mock_transfer.return_value.json.return_value = {
             "success": True,
@@ -145,69 +177,76 @@ class SellerPayoutInitiationTests(TestCase):
             "status": "processing",
         }
 
+        # STEP 4: Confirm manual payout
         response = self.client.post(self.url)
 
         self.payout.refresh_from_db()
 
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout,
+        )
+
+        # STEP 5: Verify HTTP response
         self.assertEqual(response.status_code, 302)
+
+        # STEP 6: Verify payout status
         self.assertEqual(
             self.payout.status,
             SellerPayout.STATUS_PROCESSING,
         )
+
         self.assertEqual(
             self.payout.pg_reference_id,
             "PG-PAYOUT-001",
         )
 
+        # STEP 7: Verify attempt status
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_ACCEPTED,
+        )
+
         self.assertIsNotNone(self.payout.initiated_at)
+
+        # STEP 8: Verify order item reservation
         self.assert_reserved()
 
-        mock_transfer.assert_called_once()
-
-    # TEST 2: Duplicate confirmation
-
-    @patch("control_panel.views.notify_user")
-    @patch("control_panel.views.create_mobile_money_payout")
-    @patch("control_panel.views.generate_disbursement_checksum")
-    @patch("control_panel.views.generate_disbursement_token")
-    def test_duplicate_confirmation_does_not_transfer_twice(
-        self,
-        mock_token,
-        mock_checksum,
-        mock_transfer,
-        mock_notify,
-    ):
-        mock_token.return_value = "fake-token"
-        mock_checksum.return_value = "fake-checksum"
-
-        mock_transfer.return_value = Mock(status_code=200)
-        mock_transfer.return_value.json.return_value = {
-            "success": True,
-            "pgReferenceId": "PG-PAYOUT-002",
-            "status": "processing",
-        }
-
-        first_response = self.client.post(self.url)
-        second_response = self.client.post(self.url)
-
-        self.payout.refresh_from_db()
-
-        self.assertEqual(first_response.status_code, 302)
-        self.assertEqual(second_response.status_code, 404)
-
-        self.assertEqual(
-            self.payout.status,
-            SellerPayout.STATUS_PROCESSING,
+        # STEP 9: Verify NameLookup called exactly once
+        mock_lookup.assert_called_once_with(
+            token="fake-token",
+            bank_name=self.payout.channel_provider,
+            account_number=self.payout.phone_number,
+            checksum="fake-checksum",
         )
 
+        # STEP 10: Verify transfer called exactly once
         mock_transfer.assert_called_once()
 
+        # STEP 11: Verify transfer destination
+        transfer_kwargs = mock_transfer.call_args.kwargs
+
         self.assertEqual(
-            SellerPayoutReservation.objects.filter(
-                order_item=self.order_item,
-            ).count(),
-            1,
+            transfer_kwargs["phone_number"],
+            self.payout.phone_number,
         )
+
+        self.assertEqual(
+            transfer_kwargs["destination_name"],
+            self.payout.account_name,
+        )
+
+        self.assertEqual(
+            transfer_kwargs["bank_name"],
+            self.payout.channel_provider,
+        )
+
+        self.assertEqual(
+            transfer_kwargs["amount"],
+            self.payout.amount,
+        )
+
+        # STEP 12: Verify no recipient verification failure
+        self.assertFalse(attempt.error_message)
 
     # TEST 3: Authentication failure
 
@@ -271,8 +310,17 @@ class SellerPayoutInitiationTests(TestCase):
         mock_transfer.assert_called_once()
 
         self.assertIn(
-            "outcome unknown",
+            "manual reconciliation required",
             self.payout.failure_reason.lower(),
+        )
+
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout
+        )
+
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_UNKNOWN,
         )
 
     # TEST 5: Ineligible fulfillment
@@ -550,5 +598,216 @@ class SellerPayoutInitiationTests(TestCase):
         # Only one transfer request is permitted.
         mock_transfer.assert_called_once()
 
+    
+    # TEST: Recipient name mismatch must block transfer
 
+    @patch("control_panel.views.create_mobile_money_payout")
+    @patch("control_panel.views.lookup_seller_name")
+    @patch("control_panel.views.generate_disbursement_checksum")
+    @patch("control_panel.views.generate_disbursement_token")
+    def test_recipient_name_mismatch_blocks_transfer(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_lookup,
+        mock_transfer,
+    ):
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
 
+        # AzamPay returns a different account holder
+        mock_lookup.return_value = Mock(status_code=200)
+        mock_lookup.return_value.json.return_value = {
+            "status": True,
+            "statusCode": 200,
+            "accountNumber": self.payout.phone_number,
+            "bankName": self.payout.channel_provider,
+            "name": "Different Account Holder",
+        }
+
+        response = self.client.post(self.url)
+
+        self.payout.refresh_from_db()
+
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout,
+        )
+
+        # Request redirects without sending money
+        self.assertEqual(response.status_code, 302)
+
+        # Payout remains pending for investigation
+        self.assertEqual(
+            self.payout.status,
+            SellerPayout.STATUS_PENDING,
+        )
+
+        # Attempt remains claimed, with a blocking marker
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+
+        self.assertEqual(
+            attempt.error_message,
+            "recipient_verification_failed",
+        )
+
+        # Reserved order items must not be released
+        self.assert_reserved()
+
+        # NameLookup happened, but no transfer was sent
+        mock_lookup.assert_called_once()
+        mock_transfer.assert_not_called()
+
+        # Revalidation must also refuse this attempt
+        from control_panel.services.payout_initiation import (
+            mark_payout_submitting,
+        )
+
+        self.assertFalse(
+            mark_payout_submitting(attempt.pk)
+        )
+
+    
+    # TEST: NameLookup service failure must block transfer
+
+    @patch("control_panel.views.create_mobile_money_payout")
+    @patch("control_panel.views.lookup_seller_name")
+    @patch("control_panel.views.generate_disbursement_checksum")
+    @patch("control_panel.views.generate_disbursement_token")
+    def test_name_lookup_unavailable_blocks_transfer(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_lookup,
+        mock_transfer,
+    ):
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+
+        # Simulate AzamPay NameLookup being unavailable
+        mock_lookup.side_effect = TimeoutError(
+            "AzamPay NameLookup request timed out"
+        )
+
+        response = self.client.post(self.url)
+
+        self.payout.refresh_from_db()
+
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout,
+        )
+
+        # The view redirects without sending money
+        self.assertEqual(response.status_code, 302)
+
+        # Payout remains pending for manual investigation
+        self.assertEqual(
+            self.payout.status,
+            SellerPayout.STATUS_PENDING,
+        )
+
+        # Attempt retains its claimed status
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+
+        # Failure is recorded permanently until resolved
+        self.assertEqual(
+            attempt.error_message,
+            "recipient_lookup_unavailable",
+        )
+
+        # Order items remain reserved
+        self.assert_reserved()
+
+        # No transfer request was submitted
+        mock_lookup.assert_called_once()
+        mock_transfer.assert_not_called()
+
+        # Attempt cannot transition to SUBMITTING
+        from control_panel.services.payout_initiation import (
+            mark_payout_submitting,
+        )
+
+        self.assertFalse(
+            mark_payout_submitting(attempt.pk)
+        )
+
+    
+    # TEST 2: Duplicate confirmation must not transfer twice
+
+    @patch("control_panel.views.notify_user")
+    @patch("control_panel.views.create_mobile_money_payout")
+    @patch("control_panel.views.lookup_seller_name")
+    @patch("control_panel.views.generate_disbursement_checksum")
+    @patch("control_panel.views.generate_disbursement_token")
+    def test_duplicate_confirmation_does_not_transfer_twice(
+        self,
+        mock_token,
+        mock_checksum,
+        mock_lookup,
+        mock_transfer,
+        mock_notify,
+    ):
+        mock_token.return_value = "fake-token"
+        mock_checksum.return_value = "fake-checksum"
+
+        # Successful recipient verification
+        mock_lookup.return_value = Mock(status_code=200)
+        mock_lookup.return_value.json.return_value = {
+            "status": True,
+            "statusCode": 200,
+            "accountNumber": self.payout.phone_number,
+            "bankName": self.payout.channel_provider,
+            "name": self.payout.account_name,
+        }
+
+        # AzamPay accepts the transfer request
+        mock_transfer.return_value = Mock(status_code=200)
+        mock_transfer.return_value.json.return_value = {
+            "success": True,
+            "pgReferenceId": "PG-PAYOUT-002",
+            "status": "processing",
+        }
+
+        # First confirmation
+        first_response = self.client.post(self.url)
+
+        # Second confirmation of the same payout
+        second_response = self.client.post(self.url)
+
+        self.payout.refresh_from_db()
+
+        attempt = SellerPayoutAttempt.objects.get(
+            payout=self.payout,
+        )
+
+        self.assertEqual(first_response.status_code, 302)
+        self.assertEqual(second_response.status_code, 404)
+
+        self.assertEqual(
+            self.payout.status,
+            SellerPayout.STATUS_PROCESSING,
+        )
+
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_ACCEPTED,
+        )
+
+        # Exactly one NameLookup and one transfer
+        mock_lookup.assert_called_once()
+        mock_transfer.assert_called_once()
+
+        # Exactly one reservation for this order item
+        self.assertEqual(
+            SellerPayoutReservation.objects.filter(
+                order_item=self.order_item,
+            ).count(),
+            1,
+        )
+
+        self.assert_reserved()

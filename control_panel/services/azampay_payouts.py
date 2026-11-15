@@ -423,6 +423,88 @@ def lookup_seller_name(
         json=payload,
     )
 
+def validate_name_lookup_response(
+    response,
+    expected_account_number,
+    expected_bank_name,
+    expected_account_name,
+):
+    """
+    Validate the recipient details returned by AzamPay.
+
+    Fail closed: an invalid, incomplete, or mismatched
+    response must never authorize a transfer.
+    """
+
+    if response is None or response.status_code != 200:
+        return False
+
+    try:
+        data = response.json()
+    except (ValueError, TypeError):
+        return False
+
+    if not isinstance(data, dict):
+        return False
+
+    if data.get("status") is not True:
+        return False
+
+    if data.get("statusCode") != 200:
+        return False
+
+    returned_number = str(
+        data.get("accountNumber") or ""
+    ).strip()
+
+    returned_provider = str(
+        data.get("bankName") or ""
+    ).strip()
+
+    returned_name = str(
+        data.get("name") or ""
+    ).strip()
+
+    if not all((
+        returned_number,
+        returned_provider,
+        returned_name,
+    )):
+        return False
+
+    def normalize_phone(value):
+        value = "".join(c for c in str(value) if c.isdigit())
+
+        if value.startswith("255") and len(value) == 12:
+            return value[3:]
+
+        if value.startswith("0") and len(value) == 10:
+            return value[1:]
+
+        return value
+
+    if normalize_phone(returned_number) != normalize_phone(
+        expected_account_number
+    ):
+        return False
+
+    if returned_provider.casefold() != str(
+        expected_bank_name
+    ).strip().casefold():
+        return False
+
+    def normalize_name(value):
+        return " ".join(str(value).casefold().split())
+
+    if not normalize_name(expected_account_name):
+        return False
+
+    if normalize_name(returned_name) != normalize_name(
+        expected_account_name
+    ):
+        return False
+
+    return True
 
 # ============================================================
 # 8. VALIDATE TRANSFER AMOUNT

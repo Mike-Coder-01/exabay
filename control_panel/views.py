@@ -70,7 +70,13 @@ from control_panel.models import SellerPayoutAttempt
 from control_panel.services.payout_initiation import (
     mark_payout_submitting,
     record_payout_submission_result,
+    record_name_lookup_failure,
 )
+from control_panel.services.azampay_payouts import (
+    lookup_seller_name,
+    validate_name_lookup_response,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -1575,9 +1581,79 @@ def confirm_seller_payout(request, payout_id):
         )
         return redirect(redirect_name)
 
+    
+    # STEP 3A: Verify recipient with AzamPay NameLookup.
+    # Never send money to an unverified destination.
+    try:
+        lookup_response = lookup_seller_name(
+            token=token,
+            bank_name=bank_name,
+            account_number=phone,
+            checksum=checksum,
+        )
+
+        recipient_verified = validate_name_lookup_response(
+            response=lookup_response,
+            expected_account_number=phone,
+            expected_bank_name=bank_name,
+            expected_account_name=destination_name,
+        )
+
+    except Exception:
+        record_name_lookup_failure(
+        attempt.pk,
+        "recipient_lookup_unavailable",
+        )
+
+        logger.exception(
+            "Manual payout NameLookup unavailable: payout=%s",
+            payout_id,
+        )
+    
+        messages.error(
+            request,
+            "Recipient verification is unavailable. "
+            "No transfer was sent. "
+            "Payout requires manual review.",
+        )
+        return redirect(redirect_name)
+
+    if not recipient_verified:
+        record_name_lookup_failure(
+        attempt.pk,
+        "recipient_verification_failed",
+        )
+        
+        logger.warning(
+            "Manual payout recipient verification failed: "
+            "payout=%s",
+            payout_id,
+        )
+
+        messages.error(
+            request,
+            "Recipient details could not be verified. "
+            "No transfer was sent. "
+            "Payout requires manual review.",
+        )
+        return redirect(redirect_name)
+
     # STEP 4: Revalidate and mark this attempt SUBMITTING.
     # Do not call AzamPay unless this succeeds.
-    if not mark_payout_submitting(attempt.pk):
+    verified_details = {
+    "phone_number": phone,
+    "channel_provider": bank_name,
+    "account_name": destination_name,
+    "amount": amount,
+    "currency": "TZS",
+    "order_reference": reference,
+    }
+
+    if not mark_payout_submitting(
+        attempt.pk,
+        verified_details=verified_details,
+    ):
+    
         logger.warning(
             "Manual payout submission blocked: payout=%s",
             payout_id,

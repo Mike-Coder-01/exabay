@@ -494,12 +494,14 @@ class SellerPayoutAttempt(models.Model):
     STATUS_SUBMITTING = "submitting"
     STATUS_ACCEPTED = "accepted"
     STATUS_UNKNOWN = "unknown"
+    STATUS_CANCELLED = "cancelled"
 
     STATUS_CHOICES = [
         (STATUS_CLAIMED, "Claimed"),
         (STATUS_SUBMITTING, "Submitting"),
         (STATUS_ACCEPTED, "Accepted"),
         (STATUS_UNKNOWN, "Unknown"),
+        (STATUS_CANCELLED, "Cancelled before submission"),
     ]
 
     payout = models.OneToOneField(

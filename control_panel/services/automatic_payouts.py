@@ -124,6 +124,7 @@ def prepare_automatic_payout(fulfillment_id):
         payout = SellerPayout.objects.create(
             seller=seller,
             created_by=None,
+            is_automatic=True,
             gross_amount=gross_amount,
             commission_rate=Decimal("10.00"),
             commission_amount=commission_amount,

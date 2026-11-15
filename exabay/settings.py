@@ -544,3 +544,10 @@ AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED = env.bool(
     "AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED",
     default=False,
 )
+
+# Controls automatic payout submissions by the scheduled processor.
+# Keep disabled until the workflow is tested and approved.
+AZAMPAY_SCHEDULED_SUBMISSIONS_ENABLED = env.bool(
+    "AZAMPAY_SCHEDULED_SUBMISSIONS_ENABLED",
+    default=False,
+)

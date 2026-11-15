@@ -199,6 +199,9 @@ class SellerPayout(models.Model):
         null=True,
         blank=True,
     )
+    # Identifies payouts created by the automatic payout processor.
+    is_automatic = models.BooleanField(default=False)
+    
     class Meta:
         ordering = ["-created_at"]
 

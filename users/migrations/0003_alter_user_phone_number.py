@@ -14,8 +14,8 @@ class Migration(migrations.Migration):
             model_name="user",
             name="phone_number",
             field=models.CharField(
-                default="Entre your available phone number",
-                max_length=20,
-            ),
+            default="",
+            max_length=20,
+        ),
         ),
     ]

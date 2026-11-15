@@ -203,6 +203,76 @@ def _request(
             response.status_code,
         )
 
+        try:
+            result = response.json()
+
+            if isinstance(result, dict):
+                safe_fields = {}
+
+                for key in ("success", "errorCode", "code"):
+                    value = result.get(key)
+                    if isinstance(value, (bool, int, float)):
+                        safe_fields[key] = value
+                    elif isinstance(value, str) and len(value) <= 60:
+                        if value.isalnum() or value.replace("_", "").isalnum():
+                            safe_fields[key] = value
+
+                safe_fields["has_pg_reference"] = bool(
+                    result.get("pgReferenceId")
+                )
+
+                # Log only a safe error category, not raw gateway text.
+                # Gateway messages may contain account numbers or other PII.
+                for key in ("message", "error", "errors"):
+                    value = result.get(key)
+
+                    if value is None:
+                        continue
+
+                    if isinstance(value, str):
+                        import re
+
+                        cleaned = re.sub(
+                            r"[^a-zA-Z ]",
+                            " ",
+                            value[:200],
+                        )
+                        words = cleaned.lower().split()
+
+                        allowed = {
+                            "checksum", "invalid", "amount",
+                            "signature", "source", "destination",
+                            "account", "balance", "insufficient",
+                            "currency", "reference", "required",
+                            "missing", "duplicate", "unauthorized",
+                            "forbidden", "failed", "error",
+                            "validation", "transfer", "operator",
+                            "bank", "date", "epoch", "expired",
+                        }
+
+                        categories = sorted(set(words) & allowed)
+
+                        safe_fields["error_categories"] = categories
+                        safe_fields["error_message_present"] = True
+                    else:
+                        safe_fields["error_message_type"] = type(value).__name__
+
+                logger.info(
+                    "AzamPay response summary: %s",
+                    safe_fields,
+                )
+            else:
+                logger.warning(
+                    "AzamPay returned unexpected JSON type: %s",
+                    type(result).__name__,
+                )
+
+        except ValueError:
+            logger.warning(
+                "AzamPay returned non-JSON response: status=%s",
+                response.status_code,
+            )
+
         return response
 
     except requests.RequestException:

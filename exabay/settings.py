@@ -419,6 +419,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": True,
         },
+        "control_panel.services": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 
@@ -486,26 +491,35 @@ AZAMPAY_DISBURSEMENT_BANK_NAMES_URL = (
 
 import textwrap
 
-raw_public_key = env(
-    "AZAMPAY_DISBURSEMENT_PUBLIC_KEY"
-).strip()
+_public_key_file = BASE_DIR / "azampay_disbursement_public.pem"
 
-# Accept either a full PEM key or base64 key body.
-if "-----BEGIN PUBLIC KEY-----" in raw_public_key:
-    AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
-        raw_public_key.replace("\\n", "\n").strip() + "\n"
+if _public_key_file.is_file():
+    AZAMPAY_DISBURSEMENT_PUBLIC_KEY = _public_key_file.read_text(
+        encoding="utf-8"
     )
 else:
-    AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
-        "-----BEGIN PUBLIC KEY-----\n"
-        + "\n".join(
-            textwrap.wrap(
-                "".join(raw_public_key.split()),
-                64,
-            )
+    _raw_public_key = env(
+        "AZAMPAY_DISBURSEMENT_PUBLIC_KEY",
+        default="",
+    ).strip()
+
+    if "-----BEGIN PUBLIC KEY-----" in _raw_public_key:
+        AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
+            _raw_public_key.replace("\\n", "\n").strip() + "\n"
         )
-        + "\n-----END PUBLIC KEY-----\n"
-    )
+    elif _raw_public_key:
+        AZAMPAY_DISBURSEMENT_PUBLIC_KEY = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            + "\n".join(
+                textwrap.wrap(
+                    "".join(_raw_public_key.split()),
+                    64,
+                )
+            )
+            + "\n-----END PUBLIC KEY-----\n"
+        )
+    else:
+        AZAMPAY_DISBURSEMENT_PUBLIC_KEY = ""
 
 
 # ==========================================
@@ -526,4 +540,7 @@ AZAMPAY_DISBURSEMENT_SOURCE = {
     "currency": "TZS",
 }
 
-AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED = False
+AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED = env.bool(
+    "AZAMPAY_AUTOMATIC_DISBURSEMENTS_ENABLED",
+    default=False,
+)

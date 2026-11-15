@@ -14,6 +14,7 @@ from control_panel.services.azampay_payouts import (
     generate_disbursement_token,
     generate_disbursement_checksum,
     create_mobile_money_payout,
+    _validate_transfer_amount,
 )
 from control_panel.services.payout_validation import (
     validate_payout_items,
@@ -24,6 +25,62 @@ from users.models import SellerProfile
 
 logger = logging.getLogger(__name__)
 
+
+
+def describe_azampay_submission_error(response):
+    """
+    Return a sanitized diagnostic message.
+
+    Never include raw gateway messages, account numbers,
+    tokens, checksums, or personal information.
+    """
+    if response is None:
+        return "No HTTP response received"
+
+    status = response.status_code
+
+    try:
+        payload = response.json()
+    except (ValueError, TypeError):
+        return f"AzamPay HTTP {status}: non-JSON response"
+
+    if not isinstance(payload, dict):
+        return f"AzamPay HTTP {status}: unexpected response format"
+
+    import re
+
+    categories = set()
+
+    for key in ("message", "error", "errors"):
+        value = payload.get(key)
+
+        if not isinstance(value, str):
+            continue
+
+        words = set(
+            re.findall(r"[a-z]+", value.lower())
+        )
+
+        if {"insufficient", "balance"} <= words:
+            categories.add("insufficient balance")
+        if "checksum" in words:
+            categories.add("checksum validation")
+        if "signature" in words:
+            categories.add("signature validation")
+        if "amount" in words:
+            categories.add("amount validation")
+        if "destination" in words or "account" in words:
+            categories.add("account validation")
+        if "duplicate" in words:
+            categories.add("duplicate reference")
+        if "unauthorized" in words or "forbidden" in words:
+            categories.add("authorization")
+        if "currency" in words:
+            categories.add("currency validation")
+
+    reason = ", ".join(sorted(categories)) if categories else "unspecified rejection"
+
+    return f"AzamPay HTTP {status}: {reason}"
 
 def record_payout_submission_result(
     attempt_id,
@@ -126,8 +183,10 @@ def record_payout_submission_result(
         else:
             attempt.status = SellerPayoutAttempt.STATUS_UNKNOWN
 
+            diagnostic = describe_azampay_submission_error(response)
+
             attempt.error_message = (
-                "AzamPay payout outcome unknown. "
+                f"{diagnostic}. "
                 "Manual reconciliation required. "
                 "Do not retry automatically."
             )
@@ -379,11 +438,13 @@ def submit_claimed_payout(attempt_id):
             )
             return False
 
+        validated_amount = _validate_transfer_amount(payout.amount)
+
         checksum = generate_disbursement_checksum(
             source_account=source["accountNumber"],
             destination_account=payout.phone_number,
             currency=payout.currency,
-            amount=str(payout.amount),
+            amount=str(int(validated_amount)),
             epoch_date=epoch_date,
             external_reference_id=payout.order_reference,
             public_key_pem=(

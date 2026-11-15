@@ -1,1 +1,33 @@
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+
+# AzamPay server-specific key file
+azampay_disbursement_public.pem
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Backups and temporary files
+backups/
+*.bak
+*.backup
+*.sql
+*.dump
+
+# Logs
+*.log
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

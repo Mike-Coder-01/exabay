@@ -15,4 +15,6 @@ urlpatterns = [
     path("notifications/", views.notifications_view, name="notifications"),
     path("notifications/<int:notification_id>/read/", views.mark_notification_read, name="mark_notification_read"),
     path("notifications/read-all/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
+    path("confirm-payout-account/", views.confirm_payout_account_view, name="confirm_payout_account"),
+    path("cancel-payout-verification/", views.cancel_payout_verification_view, name="cancel_payout_verification"),
 ]

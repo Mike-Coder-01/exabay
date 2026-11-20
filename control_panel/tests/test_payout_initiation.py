@@ -1,8 +1,8 @@
 
 from unittest.mock import Mock, patch
-
+from users.models import SellerSettings
 from django.test import override_settings
-
+from decimal import Decimal
 from control_panel.models import (
     SellerPayout,
     SellerPayoutAttempt,
@@ -13,6 +13,7 @@ from control_panel.services.automatic_payouts import (
 )
 from control_panel.services.payout_initiation import (
     claim_payout_for_initiation,
+    claim_reserved_manual_payout,
     mark_payout_submitting,
     record_payout_submission_result,
     submit_claimed_payout,
@@ -21,7 +22,7 @@ from control_panel.tests.test_automatic_payouts import (
     AutomaticPayoutTests,
 )
 from orders.models import SellerFulfillment
-
+from users.models import SellerSettings
 
 class PayoutInitiationTests(AutomaticPayoutTests):
     """
@@ -58,9 +59,71 @@ class PayoutInitiationTests(AutomaticPayoutTests):
         }
         return response
 
+    def create_reserved_manual_payout(self):
+        payout = SellerPayout.objects.create(
+            seller=self.seller,
+            amount=Decimal("1000.00"),
+            gross_amount=Decimal("1100.00"),
+            commission_amount=Decimal("100.00"),
+            currency="TZS",
+            phone_number="255700000000",
+            account_name="Test Seller",
+            channel_provider="Vodacom",
+            order_reference="MANUAL-TEST-001",
+            status=SellerPayout.STATUS_PENDING,
+            is_automatic=False,
+        )
+
+        payout.order_items.add(self.item)
+
+        SellerPayoutReservation.objects.create(
+            payout=payout,
+            order_item=self.item,
+        )
+
+        return payout
+
     # ---------------------------------------------------------
     # 1. PAYOUT CLAIMING
     # ---------------------------------------------------------
+    def test_verified_account_can_claim_manual_payout(self):
+        payout = self.create_reserved_manual_payout()
+
+        attempt = claim_reserved_manual_payout(payout.pk)
+
+        self.assertIsNotNone(attempt)
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+        self.assertEqual(
+            attempt.payout_id,
+            payout.pk,
+        )
+        self.assertEqual(
+            SellerPayoutAttempt.objects.count(),
+            1,
+        )
+
+    def test_unverified_account_cannot_claim_manual_payout(self):
+        payout = self.create_reserved_manual_payout()
+
+        settings_obj = SellerSettings.objects.get(
+            seller=self.seller
+        )
+        settings_obj.payout_account_verified = False
+        settings_obj.save(
+            update_fields=["payout_account_verified"]
+        )
+
+        attempt = claim_reserved_manual_payout(payout.pk)
+
+        self.assertIsNone(attempt)
+        self.assertFalse(
+            SellerPayoutAttempt.objects.filter(
+                payout=payout,
+            ).exists()
+        )
 
     def test_eligible_payout_can_be_claimed(self):
         payout, attempt = self.create_claimed_payout()
@@ -73,6 +136,26 @@ class PayoutInitiationTests(AutomaticPayoutTests):
         self.assertEqual(
             SellerPayoutAttempt.objects.count(),
             1,
+        )
+
+    def test_unverified_account_cannot_claim_payout(self):
+        payout = prepare_automatic_payout(self.fulfillment.pk)
+
+        settings_obj = SellerSettings.objects.get(
+            seller=self.seller
+        )
+        settings_obj.payout_account_verified = False
+        settings_obj.save(
+            update_fields=["payout_account_verified"]
+        )
+
+        attempt = claim_payout_for_initiation(payout.pk)
+
+        self.assertIsNone(attempt)
+        self.assertFalse(
+            SellerPayoutAttempt.objects.filter(
+                payout=payout,
+            ).exists()
         )
 
     def test_same_payout_cannot_be_claimed_twice(self):
@@ -695,3 +778,34 @@ class PayoutInitiationTests(AutomaticPayoutTests):
 
         mock_lookup.assert_called_once()
         mock_transfer.assert_not_called()
+
+    def test_unverified_account_after_claim_blocks_submission(self):
+        payout, attempt = self.create_claimed_payout()
+
+        # Revoke the seller's payout account verification.
+        settings_obj = SellerSettings.objects.get(
+            seller=self.seller
+        )
+        settings_obj.payout_account_verified = False
+        settings_obj.save(
+            update_fields=["payout_account_verified"]
+        )
+
+        # Try to move the payout from CLAIMED to SUBMITTING.
+        result = mark_payout_submitting(attempt.pk)
+
+        attempt.refresh_from_db()
+        payout.refresh_from_db()
+
+        self.assertFalse(result)
+
+        self.assertEqual(
+            attempt.status,
+            SellerPayoutAttempt.STATUS_CLAIMED,
+        )
+
+        self.assertEqual(
+            payout.status,
+            SellerPayout.STATUS_PENDING,
+        )
+        

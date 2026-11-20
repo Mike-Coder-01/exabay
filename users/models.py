@@ -126,6 +126,11 @@ class SellerSettings(models.Model):
     )
     payout_phone_number = models.CharField(max_length=20, blank=True)
     payout_account_name = models.CharField(max_length=255, blank=True)
+    payout_account_verified = models.BooleanField(default=False)
+    payout_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

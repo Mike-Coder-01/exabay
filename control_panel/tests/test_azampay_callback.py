@@ -4,10 +4,14 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from django.urls import reverse
 
 from users.models import SellerProfile
-from control_panel.models import SellerPayout
+from control_panel.models import (
+    SellerPayout,
+    SellerPayoutAttempt,
+)
 
 
 class AzamPayCallbackTests(TestCase):
@@ -44,6 +48,12 @@ class AzamPayCallbackTests(TestCase):
             pg_reference_id="PG-TEST-001",
             channel_provider="Azampesa",
             status=SellerPayout.STATUS_PROCESSING,
+        )
+
+        self.attempt = SellerPayoutAttempt.objects.create(
+            payout=self.payout,
+            status=SellerPayoutAttempt.STATUS_SUBMITTING,
+            submitting_at=timezone.now(),
         )
 
     def callback_payload(self):
@@ -324,5 +334,30 @@ class AzamPayCallbackTests(TestCase):
 
         mock_token.assert_called_once()
         mock_query.assert_called_once()
+
+    
+    def test_callback_without_submission_attempt_is_rejected(self):
+        # Remove the attempt to simulate a payout that was
+        # never authorized for submission.
+        self.attempt.delete()
+
+        response = self.client.post(
+            self.url,
+            data=self.callback_payload(),
+            content_type="application/json",
+        )
+
+        self.payout.refresh_from_db()
+
+        self.assertEqual(response.status_code, 409)
+
+        self.assertEqual(
+            self.payout.status,
+            SellerPayout.STATUS_PROCESSING,
+        )
+
+        self.assertIsNone(self.payout.completed_at)
+        self.assertIsNone(self.payout.gateway_verified_at)
+
 
 

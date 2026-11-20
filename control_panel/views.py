@@ -1114,6 +1114,48 @@ def azampay_disbursement_callback(request):
             status=400,
         )
 
+    # A callback must belong to an attempt that could
+    # actually have reached AzamPay.
+    try:
+        attempt = (
+            SellerPayoutAttempt.objects
+            .only("id", "status", "submitting_at")
+            .get(payout=payout)
+        )
+    except SellerPayoutAttempt.DoesNotExist:
+        logger.warning(
+            "Callback received without payout attempt: payout=%s",
+            payout.pk,
+        )
+
+        return JsonResponse(
+            {"error": "No valid payout submission attempt"},
+            status=409,
+        )
+
+    valid_submission_statuses = {
+        SellerPayoutAttempt.STATUS_SUBMITTING,
+        SellerPayoutAttempt.STATUS_ACCEPTED,
+        SellerPayoutAttempt.STATUS_UNKNOWN,
+    }
+
+    if (
+        attempt.status not in valid_submission_statuses
+        or attempt.submitting_at is None
+    ):
+        logger.warning(
+            "Callback received for invalid payout attempt: "
+            "payout=%s attempt=%s status=%s",
+            payout.pk,
+            attempt.pk,
+            attempt.status,
+        )
+
+        return JsonResponse(
+            {"error": "No valid payout submission attempt"},
+            status=409,
+        )
+
     # ---------------------------------------------
     # STEP 5: Independently query AzamPay
     # ---------------------------------------------
@@ -1261,6 +1303,46 @@ def azampay_disbursement_callback(request):
                     {"error": "Payout state changed"},
                     status=409,
                 )
+
+            # A callback must belong to a payout attempt
+            # that could actually have reached AzamPay.
+            try:
+                attempt = (
+                    SellerPayoutAttempt.objects
+                    .select_for_update()
+                    .get(payout=locked)
+                )
+            except SellerPayoutAttempt.DoesNotExist:
+                logger.warning(
+                    "AzamPay callback rejected: no payout attempt "
+                    "exists for payout %s",
+                    locked.pk,
+                )
+                return JsonResponse(
+                    {"error": "No valid payout submission attempt"},
+                    status=409,
+                )
+
+            valid_submission_statuses = {
+                SellerPayoutAttempt.STATUS_SUBMITTING,
+                SellerPayoutAttempt.STATUS_ACCEPTED,
+                SellerPayoutAttempt.STATUS_UNKNOWN,
+            }
+
+            if (
+                attempt.status not in valid_submission_statuses
+                or attempt.submitting_at is None
+            ):
+                logger.warning(
+                    "AzamPay callback rejected: payout %s "
+                    "has no valid submitted attempt",
+                    locked.pk,
+                )
+                return JsonResponse(
+                    {"error": "No valid payout submission attempt"},
+                    status=409,
+                )
+
 
             # Prevent transaction reference replacement.
             if (

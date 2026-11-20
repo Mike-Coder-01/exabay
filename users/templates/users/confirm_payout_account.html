@@ -1,0 +1,93 @@
+
+{% extends "main/base.html" %}
+
+{% block content %}
+
+<section class="auth-page">
+    <div class="auth-shell auth-shell--wide">
+
+        <div class="auth-card">
+
+            <h2>Confirm Payout Account</h2>
+
+            <p>
+                AzamPay has returned the following
+                mobile money account details.
+                Please confirm they are correct.
+            </p>
+
+            <div class="onboarding-section">
+
+                <div class="onboarding-section__header">
+                    <h3>Account Details</h3>
+
+                    <span class="status-badge status-badge--pending">
+                        Awaiting confirmation
+                    </span>
+                </div>
+
+                <div class="auth-form__grid">
+
+                    <div class="auth-field">
+                        <span>Mobile Money Provider</span>
+                        <p>{{ provider }}</p>
+                    </div>
+
+                    <div class="auth-field">
+                        <span>Mobile Money Number</span>
+                        <p>{{ phone_number }}</p>
+                    </div>
+
+                    <div class="auth-field">
+                        <span>Registered Account Holder</span>
+                        <p>
+                            <strong>{{ account_name }}</strong>
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Confirm verified payout account -->
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+
+                <p>
+                    By confirming, you authorize Exxabay
+                    to use this mobile money account
+                    for your seller payouts.
+                </p>
+
+                <button
+                    type="submit"
+                    class="auth-button"
+                >
+                    Confirm and Save Account
+                </button>
+
+            </form>
+
+            <!-- Cancel pending verification -->
+            <form
+                method="post"
+                action="{% url 'users:cancel_payout_verification' %}"
+                class="auth-form"
+            >
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="auth-button"
+                >
+                    Cancel and Return to Settings
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

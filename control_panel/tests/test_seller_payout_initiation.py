@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from users.models import SellerProfile
+from users.models import SellerProfile, SellerSettings
 from products.models import Product
 from orders.models import (
     Order,
@@ -51,6 +51,15 @@ class SellerPayoutInitiationTests(TestCase):
             business_name="Exxabay Test Seller",
             located_region="DSM",
             is_verified=True,
+        )
+
+        SellerSettings.objects.create(
+            seller=self.seller,
+            mobile_money_provider=SellerSettings.MOBILE_PROVIDER_MPESA,
+            payout_phone_number="255700000000",
+            payout_account_name="Test Seller",
+            payout_account_verified=True,
+            payout_verified_at=timezone.now(),
         )
 
         self.product = Product.objects.create(
@@ -100,7 +109,7 @@ class SellerPayoutInitiationTests(TestCase):
             currency="TZS",
             phone_number="255700000000",
             account_name="Test Seller",
-            channel_provider="Azampesa",
+            channel_provider="Vodacom",
             order_reference="EXX-PAYOUT-TEST-001",
             status=SellerPayout.STATUS_PREVIEWED,
         )
@@ -463,7 +472,7 @@ class SellerPayoutInitiationTests(TestCase):
             "pgReferenceId": pg_reference,
             "fspReferenceId": "FSP-EARLY-001",
             "amount": "1000.00",
-            "operator": "Azampesa",
+            "operator": "vodacom",
             "status": "success",
         }
 
@@ -483,7 +492,7 @@ class SellerPayoutInitiationTests(TestCase):
                         self.payout.order_reference
                     ),
                     "pgReferenceId": pg_reference,
-                    "operator": "Azampesa",
+                    "operator": "Vodacom",
                     "amount": "1000.00",
                 },
                 content_type="application/json",

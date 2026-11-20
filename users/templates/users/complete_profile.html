@@ -125,6 +125,43 @@
             </label>
           </section>
 
+          <section class="onboarding-section" data-seller-fields>
+            <div class="onboarding-section__header">
+              <h3>Payout Account Setup</h3>
+              <span class="status-badge status-badge--pending">
+                Verification required
+              </span>
+            </div>
+
+            <p>
+              Set up the mobile money account where you want to
+              receive payments from Exxabay.
+            </p>
+
+            <div class="auth-form__grid">
+              <label class="auth-field"
+                    for="{{ form.payout_provider.id_for_label }}">
+                <span>Mobile money provider</span>
+                {{ form.payout_provider }}
+                {{ form.payout_provider.errors }}
+              </label>
+
+              <label class="auth-field"
+                    for="{{ form.payout_phone.id_for_label }}">
+                <span>Mobile money number</span>
+                {{ form.payout_phone }}
+                {{ form.payout_phone.errors }}
+              </label>
+            </div>
+
+            <p>
+              The registered account holder's name will be
+              retrieved through AzamPay NameLookup.
+              You will need to confirm the details before
+              this account can receive payouts.
+            </p>
+          </section>
+
           <button class="btn btn--primary auth-submit" type="submit">Save and continue</button>
         </form>
       </div>

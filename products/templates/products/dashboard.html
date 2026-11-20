@@ -77,6 +77,16 @@
         {% endif %}
 
         <li class="nav__item-wrapper">
+          <a class="nav__item"
+            href="{% url 'users:manage_payout_account' %}">
+            <span class="nav__icon">
+              <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+            </span>
+            <span class="nav__text">Manage Payout Account</span>
+          </a>
+        </li>
+        
+        <li class="nav__item-wrapper">
           <a class="nav__item" href="{% url 'users:seller_settings' %}">
             <span class="nav__icon"><i class="fa-solid fa-gear" aria-hidden="true"></i></span>
             <span class="nav__text">Settings</span>

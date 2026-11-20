@@ -542,6 +542,29 @@ class CompleteProfileForm(forms.Form):
         widget=forms.ClearableFileInput(attrs={"class": "auth-field__input auth-field__input--file"}),
     )
 
+
+    payout_provider = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "-- Select mobile money provider --"),
+            *SellerSettings.MOBILE_PROVIDER_CHOICES,
+        ],
+        widget=forms.Select(attrs={
+            "class": "auth-field__input",
+        }),
+    )
+
+    payout_phone = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            "class": "auth-field__input",
+            "placeholder": "07XXXXXXXX",
+            "autocomplete": "tel",
+        }),
+    )
+
+
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
@@ -765,27 +788,27 @@ class SellerNotificationSettingsForm(forms.ModelForm):
         }
 
 
+
 class SellerMobileMoneySettingsForm(forms.ModelForm):
     class Meta:
         model = SellerSettings
+
         fields = (
             "mobile_money_provider",
             "payout_phone_number",
-            "payout_account_name",
         )
+
         widgets = {
-            "mobile_money_provider": forms.Select(attrs={"class": "auth-field__input"}),
+            "mobile_money_provider": forms.Select(attrs={
+                "class": "auth-field__input",
+            }),
+
             "payout_phone_number": forms.TextInput(attrs={
                 "class": "auth-field__input",
-                "placeholder": "Mobile money payout number",
+                "placeholder": "07XXXXXXXX",
                 "autocomplete": "tel",
             }),
-            "payout_account_name": forms.TextInput(attrs={
-                "class": "auth-field__input",
-                "placeholder": "Registered account holder name",
-            }),
         }
-
 
 class ExabayPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

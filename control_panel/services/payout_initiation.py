@@ -22,12 +22,124 @@ from control_panel.services.payout_validation import (
     validate_payout_items,
 )
 from orders.models import SellerFulfillment
-from users.models import SellerProfile
+
+from users.models import SellerProfile, SellerSettings
+
+from control_panel.services.azampay_payouts import (
+    AZAMPAY_PROVIDER_MAP,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
+def payout_matches_verified_seller_account(payout):
+    """
+    Ensure the payout destination matches the seller's
+    currently verified mobile-money account.
+
+    Fail closed if settings are missing, unverified,
+    or do not match the payout destination.
+    """
+
+    try:
+        seller_settings = SellerSettings.objects.get(
+            seller_id=payout.seller_id
+        )
+
+    except SellerSettings.DoesNotExist:
+        logger.warning(
+            "Payout %s blocked: seller settings missing.",
+            payout.pk,
+        )
+        return False
+
+    if not seller_settings.payout_account_verified:
+        logger.warning(
+            "Payout %s blocked: seller account is not verified.",
+            payout.pk,
+        )
+        return False
+
+    verified_phone = str(
+        seller_settings.payout_phone_number or ""
+    ).strip()
+
+    payout_phone = str(
+        payout.phone_number or ""
+    ).strip()
+
+    def normalize_phone(value):
+        digits = "".join(
+            char for char in str(value)
+            if char.isdigit()
+        )
+
+        if digits.startswith("255") and len(digits) == 12:
+            return digits[3:]
+
+        if digits.startswith("0") and len(digits) == 10:
+            return digits[1:]
+
+        return digits
+
+    if normalize_phone(verified_phone) != normalize_phone(
+        payout_phone
+    ):
+        logger.warning(
+            "Payout %s blocked: payout phone does not "
+            "match seller's verified phone.",
+            payout.pk,
+        )
+        return False
+
+    verified_provider = (
+        seller_settings.mobile_money_provider
+    )
+
+    expected_bank_name = AZAMPAY_PROVIDER_MAP.get(
+        verified_provider
+    )
+
+    if not expected_bank_name:
+        logger.warning(
+            "Payout %s blocked: unsupported verified provider.",
+            payout.pk,
+        )
+        return False
+
+    if str(payout.channel_provider or "").strip().casefold() != (
+        expected_bank_name.strip().casefold()
+    ):
+        logger.warning(
+            "Payout %s blocked: provider does not match "
+            "seller's verified provider.",
+            payout.pk,
+        )
+        return False
+
+    def normalize_name(value):
+        return " ".join(
+            str(value or "").casefold().split()
+        )
+
+    verified_name = normalize_name(
+        seller_settings.payout_account_name
+    )
+
+    payout_name = normalize_name(
+        payout.account_name
+    )
+
+    if not verified_name or verified_name != payout_name:
+        logger.warning(
+            "Payout %s blocked: payout name does not "
+            "match seller's verified account name.",
+            payout.pk,
+        )
+        return False
+
+    return True
 
 def describe_azampay_submission_error(response):
     """
@@ -221,6 +333,7 @@ def record_payout_submission_result(
 
 
 
+
 def mark_payout_submitting(attempt_id, verified_details=None):
     """
     Revalidate payout eligibility before submission.
@@ -229,7 +342,8 @@ def mark_payout_submitting(attempt_id, verified_details=None):
     still matches the details verified by NameLookup.
 
     Lock order:
-        seller -> payout -> fulfillments -> attempt
+        seller -> SellerSettings -> payout
+        -> fulfillments -> attempt
     """
 
     with transaction.atomic():
@@ -245,16 +359,35 @@ def mark_payout_submitting(attempt_id, verified_details=None):
             .get(pk=attempt_info.payout_id)
         )
 
+        # 1. Lock seller.
         SellerProfile.objects.select_for_update().get(
             pk=payout_info.seller_id
         )
 
+        # 2. Lock current seller payout settings.
+        list(
+            SellerSettings.objects
+            .select_for_update()
+            .filter(seller_id=payout_info.seller_id)
+        )
+
+        # 3. Lock payout.
         payout = (
             SellerPayout.objects
             .select_for_update()
             .select_related("seller")
             .get(pk=attempt_info.payout_id)
         )
+
+        # 4. Verify destination against the seller's
+        # currently verified mobile-money account.
+        if not payout_matches_verified_seller_account(payout):
+            logger.warning(
+                "Payout %s blocked: seller payout account "
+                "is not currently verified or does not match.",
+                payout.pk,
+            )
+            return False
 
         fulfillment_ids = sorted(
             set(
@@ -264,6 +397,7 @@ def mark_payout_submitting(attempt_id, verified_details=None):
             )
         )
 
+        # 5. Lock fulfilments.
         list(
             SellerFulfillment.objects
             .select_for_update()
@@ -271,6 +405,7 @@ def mark_payout_submitting(attempt_id, verified_details=None):
             .order_by("pk")
         )
 
+        # 6. Lock attempt.
         attempt = (
             SellerPayoutAttempt.objects
             .select_for_update()
@@ -351,6 +486,7 @@ def claim_payout_for_initiation(payout_id):
 
     Does not contact AzamPay.
     A payout can be claimed only once.
+    Requires the seller's currently verified payout account.
     """
 
     with transaction.atomic():
@@ -360,10 +496,19 @@ def claim_payout_for_initiation(payout_id):
             .get(pk=payout_id)
         )
 
+        # 1. Lock the seller profile.
         SellerProfile.objects.select_for_update().get(
             pk=payout_info.seller_id
         )
 
+        # 2. Lock the seller's payout settings.
+        list(
+            SellerSettings.objects
+            .select_for_update()
+            .filter(seller_id=payout_info.seller_id)
+        )
+
+        # 3. Lock the payout.
         payout = (
             SellerPayout.objects
             .select_for_update()
@@ -394,6 +539,15 @@ def claim_payout_for_initiation(payout_id):
             )
             return None
 
+        # 4. Verify the current seller payout account.
+        if not payout_matches_verified_seller_account(payout):
+            logger.warning(
+                "Payout %s rejected: seller payout account "
+                "is not currently verified or does not match.",
+                payout_id,
+            )
+            return None
+
         fulfillment_ids = sorted(
             set(
                 payout.order_items
@@ -402,6 +556,7 @@ def claim_payout_for_initiation(payout_id):
             )
         )
 
+        # 5. Lock fulfilments.
         list(
             SellerFulfillment.objects
             .select_for_update()
@@ -434,7 +589,6 @@ def claim_payout_for_initiation(payout_id):
         )
 
         return attempt
-
 
 
 def record_name_lookup_failure(attempt_id, reason):
@@ -688,11 +842,13 @@ def submit_claimed_payout(attempt_id):
     return True
 
 
+
 def claim_reserved_manual_payout(payout_id):
     """
     Claim an already-reserved manual payout.
 
     Does not contact AzamPay.
+    Requires the seller's currently verified payout account.
     """
 
     with transaction.atomic():
@@ -702,10 +858,19 @@ def claim_reserved_manual_payout(payout_id):
             .get(pk=payout_id)
         )
 
+        # 1. Lock the seller profile.
         SellerProfile.objects.select_for_update().get(
             pk=payout_info.seller_id
         )
 
+        # 2. Lock the seller's payout settings.
+        list(
+            SellerSettings.objects
+            .select_for_update()
+            .filter(seller_id=payout_info.seller_id)
+        )
+
+        # 3. Lock the payout.
         payout = (
             SellerPayout.objects
             .select_for_update()
@@ -725,6 +890,15 @@ def claim_reserved_manual_payout(payout_id):
         ):
             return None
 
+        # 4. Verify the current seller payout account.
+        if not payout_matches_verified_seller_account(payout):
+            logger.warning(
+                "Manual payout %s rejected: seller payout account "
+                "is not currently verified or does not match.",
+                payout.pk,
+            )
+            return None
+
         fulfillment_ids = sorted(
             set(
                 payout.order_items
@@ -733,6 +907,7 @@ def claim_reserved_manual_payout(payout_id):
             )
         )
 
+        # 5. Lock fulfilments.
         list(
             SellerFulfillment.objects
             .select_for_update()
@@ -753,7 +928,15 @@ def claim_reserved_manual_payout(payout_id):
             )
             return None
 
-        return SellerPayoutAttempt.objects.create(
+        attempt = SellerPayoutAttempt.objects.create(
             payout=payout,
             status=SellerPayoutAttempt.STATUS_CLAIMED,
         )
+
+        logger.info(
+            "Manual payout %s claimed, attempt %s.",
+            payout.pk,
+            attempt.pk,
+        )
+
+        return attempt

@@ -15,6 +15,26 @@ from control_panel.payout_services import generate_payout_reference
 from control_panel.services.azampay_payouts import (
     get_azampay_provider,
 )
+from users.models import SellerProfile, SellerSettings
+
+
+
+from decimal import Decimal
+
+from django.db import transaction
+from django.db.models import Q
+
+from orders.models import OrderItem, SellerFulfillment
+from users.models import SellerProfile, SellerSettings
+
+from control_panel.models import (
+    SellerPayout,
+    SellerPayoutReservation,
+)
+from control_panel.payout_services import generate_payout_reference
+from control_panel.services.azampay_payouts import (
+    get_azampay_provider,
+)
 
 
 def prepare_automatic_payout(fulfillment_id):
@@ -39,7 +59,39 @@ def prepare_automatic_payout(fulfillment_id):
             .get(pk=fulfillment_info.seller_id)
         )
 
-        # STEP 2: Lock and validate the fulfillment.
+        # STEP 2: Lock the seller's payout settings.
+        seller_settings = (
+            SellerSettings.objects
+            .select_for_update()
+            .filter(seller=seller)
+            .first()
+        )
+
+        if seller_settings is None:
+            return None
+
+        # Require a verified payout account.
+        if not seller_settings.payout_account_verified:
+            return None
+
+        phone = (
+            seller_settings.payout_phone_number or ""
+        ).strip()
+
+        account_name = (
+            seller_settings.payout_account_name or ""
+        ).strip()
+
+        if not phone or not account_name:
+            return None
+
+        # Require a supported AzamPay provider.
+        bank_name = get_azampay_provider(seller_settings)
+
+        if not bank_name:
+            return None
+
+        # STEP 3: Lock and validate the fulfillment.
         fulfillment = (
             SellerFulfillment.objects
             .select_for_update(of=("self",))
@@ -56,20 +108,6 @@ def prepare_automatic_payout(fulfillment_id):
 
         if not fulfillment.is_payout_eligible:
             return None
-
-        # STEP 3: Retrieve seller payout settings.
-        try:
-            seller_settings = seller.settings
-        except SellerProfile.settings.RelatedObjectDoesNotExist:
-            return None
-
-        phone = seller_settings.payout_phone_number.strip()
-        account_name = seller_settings.payout_account_name.strip()
-
-        if not phone or not account_name:
-            return None
-
-        bank_name = get_azampay_provider(seller_settings)
 
         # STEP 4: Select eligible, unpaid order items.
         # Exclude all items already associated with a payout,

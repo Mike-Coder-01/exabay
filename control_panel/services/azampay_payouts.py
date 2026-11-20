@@ -335,6 +335,7 @@ def retrieve_bank_names(token):
 # 6. GENERATE DISBURSEMENT CHECKSUM
 # ============================================================
 
+
 def generate_disbursement_checksum(
     source_account,
     destination_account,
@@ -365,6 +366,7 @@ def generate_disbursement_checksum(
             "AzamPay Disbursement public key is missing."
         )
 
+    # Step 1: Concatenate transaction fields.
     input_string = (
         str(source_account)
         + str(destination_account)
@@ -374,23 +376,35 @@ def generate_disbursement_checksum(
         + str(external_reference_id)
     )
 
+    # Step 2: Generate SHA-512 digest.
     sha512_hash = hashlib.sha512(
         input_string.encode("utf-8")
     ).digest()
 
+    # Step 3: Normalize the public key.
+    if isinstance(public_key_pem, str):
+        public_key_pem = (
+            public_key_pem
+            .strip()
+            .replace("\\n", "\n")
+            .encode("utf-8")
+        )
+
+    # Step 4: Load RSA public key.
     public_key = serialization.load_pem_public_key(
-        public_key_pem.encode("utf-8")
+        public_key_pem
     )
 
+    # Step 5: Encrypt SHA-512 digest.
     encrypted_data = public_key.encrypt(
         sha512_hash,
         padding.PKCS1v15(),
     )
 
+    # Step 6: Encode encrypted data using Base64.
     return base64.b64encode(
         encrypted_data
     ).decode("utf-8")
-
 
 # ============================================================
 # 7. LOOK UP SELLER ACCOUNT NAME
@@ -505,6 +519,147 @@ def validate_name_lookup_response(
         return False
 
     return True
+
+
+
+def validate_payout_account_lookup(
+    response,
+    expected_account_number,
+    expected_bank_name,
+):
+    """
+    Validate AzamPay NameLookup during seller account setup.
+
+    Return verified account details or None.
+    """
+
+    if response is None or response.status_code != 200:
+        return None
+
+    try:
+        data = response.json()
+    except (ValueError, TypeError):
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    if data.get("status") is not True:
+        return None
+
+    if data.get("statusCode") != 200:
+        return None
+
+    account_number = str(
+        data.get("accountNumber") or ""
+    ).strip()
+
+    bank_name = str(
+        data.get("bankName") or ""
+    ).strip()
+
+    account_name = str(
+        data.get("name") or ""
+    ).strip()
+
+    if not all((account_number, bank_name, account_name)):
+        return None
+
+    def normalize_phone(value):
+        digits = "".join(
+            char for char in str(value) if char.isdigit()
+        )
+
+        if digits.startswith("255") and len(digits) == 12:
+            return digits[3:]
+
+        if digits.startswith("0") and len(digits) == 10:
+            return digits[1:]
+
+        return digits
+
+    if normalize_phone(account_number) != normalize_phone(
+        expected_account_number
+    ):
+        return None
+
+    if bank_name.casefold() != str(
+        expected_bank_name
+    ).strip().casefold():
+        return None
+
+    return {
+        "account_number": account_number,
+        "bank_name": bank_name,
+        "account_name": account_name,
+        "first_name": str(data.get("fname") or "").strip(),
+        "last_name": str(data.get("lname") or "").strip(),
+    }
+
+
+def verify_seller_payout_account(provider, phone_number):
+    """
+    Verify a seller's mobile-money account through AzamPay.
+
+    TZS 200 is used only to construct the checksum.
+    No money transfer is initiated.
+    """
+
+    import time
+    import uuid
+
+    bank_name = AZAMPAY_PROVIDER_MAP.get(provider)
+
+    if not bank_name:
+        raise ValueError("Unsupported mobile money provider.")
+
+    phone_number = str(phone_number).strip()
+
+    if not phone_number:
+        raise ValueError("Payout phone number is required.")
+
+    token = generate_disbursement_token()
+
+    if not token:
+        raise ValueError("Unable to authenticate with AzamPay.")
+
+    source = settings.AZAMPAY_DISBURSEMENT_SOURCE
+
+    reference_id = (
+        f"EXX-VERIFY-{uuid.uuid4().hex[:16].upper()}"
+    )
+
+    epoch_date = int(time.time())
+
+    checksum = generate_disbursement_checksum(
+        source_account=source["accountNumber"],
+        destination_account=phone_number,
+        currency="TZS",
+        amount="200",
+        epoch_date=epoch_date,
+        external_reference_id=reference_id,
+        public_key_pem=settings.AZAMPAY_DISBURSEMENT_PUBLIC_KEY,
+    )
+
+    response = lookup_seller_name(
+        token=token,
+        bank_name=bank_name,
+        account_number=phone_number,
+        checksum=checksum,
+    )
+
+    result = validate_payout_account_lookup(
+        response=response,
+        expected_account_number=phone_number,
+        expected_bank_name=bank_name,
+    )
+
+    if result is None:
+        raise ValueError(
+            "AzamPay could not verify this mobile money account."
+        )
+
+    return result
 
 # ============================================================
 # 8. VALIDATE TRANSFER AMOUNT

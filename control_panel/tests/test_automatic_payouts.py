@@ -57,6 +57,7 @@ class AutomaticPayoutTests(TestCase):
         )
         settings_obj.payout_phone_number = "255700000000"
         settings_obj.payout_account_name = "Test Seller"
+        settings_obj.payout_account_verified = True
         settings_obj.save()
 
         self.product = Product.objects.create(
@@ -241,6 +242,26 @@ class AutomaticPayoutTests(TestCase):
 
         self.assertIsNotNone(
             self.fulfillment.buyer_confirmed_at
+        )
+
+    def test_unverified_payout_account_cannot_prepare_payout(self):
+        settings_obj = SellerSettings.objects.get(
+            seller=self.seller
+        )
+
+        settings_obj.payout_account_verified = False
+        settings_obj.save(
+            update_fields=["payout_account_verified"]
+        )
+
+        payout = prepare_automatic_payout(
+            self.fulfillment.pk
+        )
+
+        self.assertIsNone(payout)
+        self.assertEqual(SellerPayout.objects.count(), 0)
+        self.assertEqual(
+            SellerPayoutReservation.objects.count(), 0
         )
 
 
